@@ -1,0 +1,187 @@
+\chapter{Problema} % 20 páginas mas o menos...
+
+\section{Introducción}
+Este proyecto aborda una problemática actual existente en el mundo de la computación gráfica que es la generación de imágenes fotorealistas en tiempos de cálculo bajos. En la actualidad existen muchos algoritmos para la generación de imágenes fotorrealistas, a la vista está que hay películas de animación en todos los cines en todas las épocas del año. Un tema no menor es el tiempo de procesamiento que requieren este tipo de trabajos, para cada una de las imágenes que se van a incluir en la versión final de la película se gastan varios minutos u horas dependiendo de la complejidad de la imagen a generar. Si tiene reflejos o no, si tiene transparencias, si tiene muchos fragmentos pequeños de cosas, entre otros aspéctos de calidad del modelo 3D a mostrar en la pantalla. No solo son un problema los tiempos que se requieren para generar las imágenes sino que además estas imágenes, además, requieren de una capacidad de computo enorme, se utilizan grandes clusters de computadoras para realizar el renderizado.
+Para poder comprender la forma en que se generan las imágenes fotorealistas por computadora hay que conocer más en profundidad: cómo se especifican los modelos y cuáles son las formas en que se puede, a partir de los modelos, generar o computar las imágenes. En las siguientes subsecciones se introduce a dichos temas.
+
+
+
+\subsection{Concepto de escena}
+Una escena es una colección de objetos y fuentes de luz que será vista por medio de una cámara. Cada una de estas partes esta colocada en lo que se llama ``mundo'', que es un espacio resultante de modelar cuerpos tridimensionales en una imagen bidimensional \cite{Hearn88}. Por ejemplo, si se quiere una imagen de una habitación con una mesa en el centro, la escena debe estar compuesta por dos objetos principales que representen la habitación y la mesa, una o más fuentes de luz, y la cámara, que es desde donde se ve la escena.
+
+Cada objeto de una escena es una ``primitiva geométrica'', que por lo general es una figura geométrica simple como un polígono, una esfera, un cono, etc. Sin embargo las primitivas en una escena pueden ser matemáticamente más complejas, algunos ejemplos pueden ser superficies de Bezier, subdivisiones de superficies, superficies ISO, etc. Casi cualquier tipo de objeto puede ser usado como primitiva de una escena.
+
+\subsection{Trazado de rayos}
+El concepto principal de cualquier tipo de algoritmo trazador de rayos es encontrar eficientemente la intersección de un rayo con una escena compuesta por una lista de primitivas geométricas. El rayo $R(t) = O + tD$ es por lo general representado mediante un punto de origen $O$ y una dirección $D$. En el marco de un algoritmo que traza rayos hay tres principales problemas que deben ser resueltos: encontrar la intersección más cercana al origen del rayo $O$, encontrar alguna intersección a lo largo del rayo\footnote{Se define $t_{max}$, si $t > t_{max}$ no se consideran las intersecciones.} y encontrar todas las intersecciones a lo largo de él\footnotemark[\value{footnote}].
+
+La operación más requerida en este tipo de algoritmos es obtener la in\-ter\-sec\-ción más cercana al origen del rayo. Los datos que se requieren son la primitiva $P$ más cercana que interseca con el rayo y la distancia $t_{hit}$ desde $O$ al punto de intersección. Además pueden determinarse otros pa\-r\'a\-me\-tros opcionales que serán utilizados en pasos posteriores del algoritmo, como pueden ser propiedades de la superficie o la normal a la misma en el punto de intersección.
+Para gran parte de las primitivas usadas para construir escenas existen diferentes algoritmos que evalúan la intersección con un rayo. Cada uno de los algoritmos tienen diferentes valores respecto a propiedades como velocidad, elegancia, precisión o robustez lo cual hace que no resulte fácil la elección del mismo \cite{RealTimeRendering02}.
+Las escenas serán entonces aptas para un algoritmo de trazas mientras sea posible evaluar su intersección con un rayo.
+
+La segunda operación por orden de relevancia es la que determina si existe alguna intersección a lo largo del rayo. El problema que surge a partir de esta operación es igual a la prueba de visibilidad entre dos puntos, en este caso los puntos son: $O$ y $O + t_{max}D$. Encontrar si existe alguna intersección en el camino del rayo es un problema más simple que encontrar la intersección más cercana. Si bien puede emplearse el mismo procedimiento que para encontrar la intersección más cercana, existen algoritmos más eficientes que resuelven este caso especial de trazado de rayo.
+
+El tercer problema, encontrar todas las intersecciones a lo largo de un rayo, es el menos requerido y solo es requerido para algoritmos de iluminación avanzados. Excepto para estos modelos de iluminación especiales, este problema no es común en los algoritmos trazadores de rayos.
+
+\subsection{Algoritmos}
+Raycasting y Raytracing son algoritmos utilizados en computación gráfica para la generación de imágenes bidimensionales a partir de escenas tridimensionales que se basan en lanzar rayos desde el ``ojo'' del observador o punto de vista hasta una fuente de luz.
+
+El algoritmo de Raycasting fue introducido por Arthur Appel en 1968 \cite{Appel1968}. Su funcionamiento se describe a continuación. Se lanzan rayos desde el punto de vista del observador hacia un plano de vista que se encuentra entre el observador y la escena. La unidad mínima de visualización en los dispositivos actuales (monitores o dispositivos similares) es el pixel, cada uno de los cuadros de la grilla en la que se basa la vi\-sua\-li\-za\-ci\'on de imágenes. Por esto el algoritmo genera tantos rayos como pixels haya en el dispositivo de visualización a utilizar. También puede ser que se tenga un tamaño de imagen en pixels, en este caso se genera un rayo por cada pixel de la imagen a generar. Las coordenadas de los pixels se mapean a coordenadas del plano de vista, lanzando un rayo desde el punto de vista del observador que pase por la coordenada del plano de vista y calculando el punto de intersección con la escena, en caso de haberlo. Luego de hallado el punto de intersección con la escena se procede a calcular cuánta energía le llega al punto desde las fuentes de luz, sin tener en cuenta los posibles ``rebotes'' de la luz, como tampoco la posibilidad de que un objeto se encuentre interpuesto entre el objeto y la fuente de luz. Este algoritmo permite calcular fácilmente cuales son los objetos visibles además de facilitar la inclusión de objetos geométricos no planares en las escenas. Este último hecho, en el momento que se propuso el algoritmo, fue muy importante porque con los algoritmos de scan lines que se utilizaban en la generación de gráficos no era posible incluir este tipo de objetos de forma sencilla. Los algoritmos de scan lines se basan en rasterización mientras que en el algoritmo de Raycasting los rayos no van más allá del primer objeto encontrado.
+
+El término rasterización hace referencia a la técnica más popular para producir gráficos tridimensionales en tiempo real. La técnica es simplemente el proceso de computar la correspondencia entre la geometría de la escena y los pixels de la imagen y no tiene una forma particular de computar el color de esos pixels. Por ejemplo, esta técnica no tiene en cuenta el cálculo de sombras ni las re\-fle\-xio\-nes entre objetos.
+
+
+
+\section{Modelos computacionales de iluminación}
+En esta sección se abordarán las técnicas más populares para la generación de imágenes fotorealistas. Comenzando por el algoritmo en el que se basan la mayoría de los algoritmos actuales: el algoritmo de Raytracing de Whitted.
+
+
+\subsection{Raytracing de Whitted}
+El algoritmo de Raytracing propuesto por Turner Whitted en 1980 está basado en el algoritmo de Raycasting \cite{PaperDel80}. Whitted extendió la idea proponiendo hacer la traza de rayos recursiva. Entonces el algoritmo no termina cuando el rayo encuentra un objeto en su trayectoria, sino que en ese momento se hace la invocación recursiva del trazado de rayo, desde el punto de la intersección en el caso de ser necesario. Con la posibilidad de la invocación recursiva del algoritmo se le añade a las imágenes generadas un grado de realismo muy superior, agregando sombreado realista dado que se puede calcular la interposición de otros objetos de la escena entre el objeto y la luz. Así mismo introduce los conceptos de refracción y reflexión a las imágenes, admitiendo objetos transparentes y espejados en las escenas obteniendo un grado de realismo visual superior de los generados por Raycasting.
+
+\subsubsection{Iluminación de Whitted}
+
+Además de considerar las fuentes de luz para obtener sombras en la escena, el algoritmo de trazado de rayos recursivo de Whitted genera rayos de reflexión y de refracción desde el punto de intersección, como se muestra en la Figura~\ref{fig:exampleRT}.
+
+Los rayos de sombra ($L_{i}$), reflexión ($R_{i}$) y refracción ($T_{i}$) son llamados secundarios para diferenciarlos de los primarios que son los que salen desde el punto de vista del observador o cámara.
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.7\textwidth]{../DOC_Relevamiento/exampleRT}
+  \caption{Generación de rayos del algoritmo de Whitted a partir de un único rayo primario.}
+  \label{fig:exampleRT}
+\end{figure}
+
+En el primer nivel del algoritmo, cuando se traza un rayo primario, solo se tienen dos posibilidades: el rayo interseca con algún objeto de la escena o no lo hace. Si el rayo no encuentra ningún objeto en su camino, entonces, se debe usar el color de fondo de la escena para pintar ese pixel. Por el contrario, si encuentra un objeto en su trayectoria, se deben realizar los siguientes pasos en el punto de intersección:
+\begin{itemize}
+  \item Paso uno: para calcular las sombras, se traza un rayo de sombra ($L_{1}$) desde el punto de intersección del rayo con el objeto hacia cada fuente de luz existente en la escena. Si alguno de estos rayos interseca cualquier objeto en su camino hacia la fuente de luz, dependiendo del material del objeto se debe calcular la cantidad de luz que pasa a través de él. Si el objeto es opaco, como es el caso del objeto más pequeño de la Figura~\ref{fig:exampleRT}, la luz es bloqueada totalmente y el punto de intersección estará bajo la sombra del objeto. Esto quiere decir que esta fuente de luz no será tomada en cuenta para calcular la iluminación en el punto. Si el objeto es transparente, como es el caso del objeto más grande de la Figura~\ref{fig:exampleRT}, la intensidad de la fuente de luz se ve disminuida, incluso puede ser absorbida totalmente por el objeto. Existen tablas que indican que cantidad de luz es absorbida por cierto material transparente. En caso de que la luz no sea bloqueada totalmente por el objeto, esta contribuirá a la iluminación del punto de intersección del rayo primario.
+  \item Paso dos: si el objeto tiene reflexión especular, como es el caso de la Figura~\ref{fig:exampleRT}, un rayo de reflexión es reflejado a partir del rayo primario, con respecto a la normal ($N_{1}$) en el punto de intersección, en la dirección del vector $R_{1}$. Este rayo permite obtener la cantidad de luz que llega al punto de intersección del rayo primario por el fenómeno de reflexión. Esta cantidad de luz puede verse afectada por el material del objeto, para considerar esto se usa un coeficiente dependiente del material, que escala la cantidad de luz.
+  \item Paso tres: si el objeto es transparente, como es el caso de la Figura~\ref{fig:exampleRT} y no ocurre refracción total, es decir si la luz no es absorbida totalmente por la transparencia que posee el objeto, entonces un rayo de refracción es trazado a través del objeto siguiendo la dirección del vector $T_{1}$. Esta dirección es calculada usando la ley de Snell \cite{LibroCompGrafica}. Este rayo permite obtener la cantidad de luz que llega al punto de intersección del rayo primario por el fenómeno de refracción. Esta cantidad de luz puede verse afectada por el material del objeto, para considerar esto se usa un coeficiente dependiente del material, que escala la cantidad de luz.
+\end{itemize}
+Cada uno de los rayos de reflexión genera rayos de sombra, reflexión y refracción. Lo mismo sucede con cada uno de los de refracción. En el ejemplo de la Figura~\ref{fig:exampleRT}, para calcular la intensidad de luz aportada por $R_{1}$ se usan los mismos pasos que para calcular la intensidad aportada por el rayo primario. Por consiguiente los pasos dos y tres se deben calcular recursivamente. De esta manera se forma un árbol de rayos para cada rayo primario, como se muestra en la Figura~\ref{fig:TreeExample}.
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.7\textwidth]{../DOC_Relevamiento/TreeExample}
+  \caption{Árbol de rayos que surge del ejemplo de la Figura~\ref{fig:exampleRT}.}
+  \label{fig:TreeExample}
+\end{figure}
+La profundidad del árbol de rayos afecta directamente el tiempo de ejecución del algoritmo y la calidad de la imagen que se quiere obtener. Dicha profundidad está determinada por distintos aspectos como por ejemplo un máximo dispuesto por el usuario del algoritmo o por no haber intersección entre los rayos reflejados y refractados y algún objeto o por la capacidad de almacenamiento del sistema donde ejecuta el algoritmo.
+
+Luego de obtener la cantidad de luz aportada por cada uno de los pasos anteriores, están dadas las condiciones para calcular la iluminación en el punto de intersección del rayo primario. Para esto se debe recorrer un árbol de rayos (por ejemplo el de la Figura~\ref{fig:TreeExample}) de abajo hacia arriba, aplicando la ecuación de iluminación desarrollada por Whitted.
+
+La ecuación de Whitted que se presenta en la Ecuación \ref{eqn:EcIluWhitted}, considera tres componentes, la primera es la iluminación local, es decir, la iluminación dada por el ambiente y por las fuentes de luz de la escena pero sin considerar que los objetos reflejan o refractan luz. Esta primera parte usa la ecuación de iluminación de Phong \cite{LibroCompGrafica}. La segunda ($k_{s}I_{r\lambda}$) y la tercera ($k_{t}I_{t\lambda}$) componente consideran la reflexión y la refracción de los objetos respectivamente.
+
+\begin{equation}
+    I_{\lambda} = I_{a\lambda}k_{a}O_{d\lambda}
+                + \sum_{1 \leq i \leq m} S_{i} f_{att_{i}} I_{p\lambda_{i}} [k_{d}O_{d\lambda}(\overline{N} \cdot \overline{L_{i}})
+                                                                            + k_{s} (\overline{N} \cdot \overline{H_{i}})^n]
+                + k_{s}I_{r\lambda}
+                + k_{t}I_{t\lambda}
+    \label{eqn:EcIluWhitted}
+\end{equation}
+
+En la siguiente lista se puede observar el significado de cada variable presente en la Ecuación \ref{eqn:EcIluWhitted}:
+\begin{itemize}
+  \item $I_{a\lambda}$ - Intensidad de la luz ambiente: luz que ha sido esparcida por todo el ambiente y es imposible determinar su origen, cuando golpea una superficie se esparce igualmente en todas direcciones.
+  \item $k_{a}$ - Coeficiente de reflexión de luz ambiente: se encuentra entre 0 y 1. Determina la cantidad de luz ambiente reflejada por la superficie del objeto. Es una propiedad del material del objeto.
+  \item $O_{d\lambda}$ - Componente difusa del color del objeto.
+  \item $m$ - Cantidad de luces de la escena.
+  \item $S_{i}$ - Indicador de sombra: indica si hay algún objeto entre la fuente de luz número $i$ y el punto de evaluación. Toma el valor 1 si la luz no está bloqueada y 0 en caso contrario.
+  \item $f_{att_{i}}$ - Factor de atenuación para la luz número $i$: soluciona el problema de que dos superficies se vean iguales al estar a distinta distancia de una fuente de luz. Lo más común es usar el inverso del cuadrado de la distancia hacia la luz.
+  \item $I_{p\lambda_{i}}$ - Intensidad de la fuente de luz número $i$ en el punto de evaluación.
+  \item $k_{d}$ - Coeficiente de reflexión de luz difusa: se encuentra entre 0 y 1. Determina la cantidad de luz difusa reflejada por la superficie del objeto. Es una propiedad del material del objeto.
+  \item $k_{s}$ - Coeficiente de reflexión de luz especular: se encuentra entre 0 y 1. Determina la cantidad de luz especular reflejada por la superficie del objeto. Es una propiedad del material del objeto.
+  \item $\overline{H_{i}}$ - Vector de dirección media o vector de iluminación máxima: vector utilizado por la ecuación de iluminación de Phong \cite{LibroCompGrafica}. Se calcula como la dirección media entre el vector normal y el vector que indica la dirección del observador.
+  \item $n$ - Exponente de ajuste de la iluminación: este exponente sirve para ajustar la imagen, no es un resultado teórico sino que es resultado de la observación empírica.
+  \item $I_{r\lambda}$ - Intensidad del rayo reflejado: esta intensidad es determinada evaluando recursivamente la Ecuación \ref{eqn:EcIluWhitted}.
+  \item $k_{t}$ - Coeficiente de trasmisión: se encuentra entre 0 y 1. Determina la cantidad de luz que pasa a través del objeto. Es una propiedad del material del objeto. Existen tablas con valores para distintos materiales.
+  \item $I_{t\lambda}$ - Intensidad del rayo refractado: esta intensidad es determinada evaluando recursivamente la Ecuación \ref{eqn:EcIluWhitted}.
+\end{itemize}
+
+\subsection{El algoritmo de raytracing}
+
+El algoritmo de Raytracing tiene como ventajas la simplicidad de su implementación, así como también el realismo que logra. Las simplificaciones que utiliza el modelo de iluminación no permiten que se generen envolventes de los rayos de luz reflejados o refractados por una superficie curva. A los efectos generados por este fenómeno se les llama cáusticas. Otra simplificación en el cálculo de la iluminación es la introducción de un componente de color de ``luz ambiente'', luz que tiene origen en alguna fuente de luz desconocida y parece llegar de todas las direcciones, esto permite no calcular algunos rebotes de la luz en objetos de la escena que harían más complejo al algoritmo. Dada esta última simplificación tampoco se generan efectos de ``sangrado de luz'', este fenómeno es causado por la reflexión de luz de los objetos en forma parcial que hace que el color de una pared, por ejemplo, sea extendido por la zona del suelo cercana a la pared, dando la idea de que la pared ``sangra'' color sobre el suelo.
+Una de las principales desventajas que muestra el algoritmo es el costo computacional en especial en los modelos utilizados en la mayoría de las aplicaciones 3D basados en la ras\-te\-ri\-za\-ci\'on de imágenes formadas por polígonos. Por este motivo Raytracing no es una técnica utilizable para la aplicaciones que necesiten mostrar imágenes que se actualicen en tiempo real. Sin embargo, en los últimos tiempos se han desarrollado diferentes esfuerzos por alcanzar tiempo real en aplicaciones basadas en Raytracing, como por ejemplo el juego Quake 3 que utiliza el motor openRT, que requiere un cluster con 20 procesadores Athlon 64. Dependiendo de lo que se esté intentando dibujar en el juego en ese momento puede requerir algo más de capacidad de cómputo para funcionar de manera adecuada.
+
+En el Algoritmo \ref{alg:algoritmoRTracingI} se muestra un pseudocódigo del algoritmo de Raytracing. El algoritmo calcula el color para cada pixel de la imagen. Para lograrlo traza un rayo que se define mediante el punto de observación y el pixel que esta procesando.
+
+En la función $trazarRayo$ (Algoritmo \ref{alg:algoritmoRTracingII}), cada objeto de la escena es analizado para probar si el mismo es atravesado por el rayo; del conjunto de objetos atravesados interesa el objeto que tiene el punto de intersección más cercano a la posición del observador. Una vez obtenido el punto de intersección más cercano (si existe) se aplica la Ecuación \ref{eqn:EcIluWhitted}.
+
+La función $verificarSombra$ (ver Algoritmo \ref{alg:algoritmoRTracingII}) se resuelve lanzando un rayo desde el punto de intersección hacia cada uno de los focos de luz para comprobar cuanta luz incide en el objeto. Si todos los rayos intersecan a un objeto antes de llegar al foco de luz entonces el punto está en sombra, caso contrario se tendrá alguna función que calcule cuanto aporta el foco a la iluminación del punto.
+Si el objeto atravesado más cercano tiene reflexión se genera un rayo reflejado con origen en la intersección y cuya dirección es calculada en función del ángulo de incidencia del rayo original sobre la superficie del objeto. Si la superficie del objeto tiene refracción se genera un rayo refractado con origen en la intersección cuya dirección es calculada en base a las densidades de los medios por los que atraviesa el rayo utilizando, por ejemplo, la ley de Snell \cite{LibroCompGrafica}. Los rayos reflejado y refractado se usan para invocar recursivamente. Con el color del objeto, el trazado de los rayos de sombra y las dos invocaciones recursivas, de reflexión y refracción se calcula el color del pixel invocando a la función $calcularColorFinal$. Esta función aplica la ecuación de iluminación del modelo de Whitted.
+
+\begin{algorithm}
+    \caption{Pseudocódigo del algoritmo de Raytracing.}
+    \label{alg:algoritmoRTracingI}
+    \begin{algorithmic}
+        \ForAll{pixel $p$ en imagen a generar}
+            \State $r = rayo(observador, p);$
+            \State $p.color = trazarRayo(r, 1);$
+        \EndFor
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+    \caption{Seudocódigo de la función trazarRayo.}
+    \label{alg:algoritmoRTracingII}
+    \begin{algorithmic}
+        \Require Rayo $r$, Entero $profActual$
+        \Ensure Color $color$
+        \If {$profActual < MAXPROF$}
+            \State \Return $colorNulo$;
+        \EndIf
+
+        \State $objetoMasCercano = \infty;$
+        \ForAll{objeto $o$ en la escena}
+            \If {$hayInterseccion(o, r)$}
+                \If {$masCercaObservador(o, objetoMasCercano)$}
+                    \State $objetoMasCercano = o;$
+                \EndIf
+            \EndIf
+        \EndFor
+        \If {$objetoMasCercano <> \infty$}
+            \State $sombra = verificarSombra(objetoMasCercano,r,luces);$
+            \If {$objetoMasCercano$ es reflectivo}
+                \State $rR = rayoReflejado(objetoMasCercano, r);$
+			    \State $reflex = trazarRayo(rR, profActual + 1);$
+            \EndIf
+            \If {$objetoMasCercano$ es transparente}
+                \State $rT = rayoRefractado(objetoMasCercano, r);$
+    			\State $refrac = trazarRayo(rT, profActual + 1);$
+            \EndIf
+            \State $color = calcularColorFinal(objetoMasCercano, sombra, reflex, refrac);$
+        \Else
+            \State $color = obtenerColorFondo(r)$;
+        \EndIf
+    \end{algorithmic}
+\end{algorithm}
+
+
+
+
+
+
+\subsection{Clasificación de los algoritmos basados en raytracing}
+Los algoritmos basados en Raytracing pueden ser clasificados utilizando distintas estrategias, nosotros particularmente preferimos dividir los algoritmos basándonos en el modelo utilizado por el algoritmo para el cálculo de la iluminación:
+\begin{itemize}
+  \item modelo de simple de iluminación local diseñado por Whitted.
+  \item modelo de iluminación global. Se puede dividir aun más en dos clases según como se calcule el valor de iluminación en cada uno de los puntos de la escena, estas clases son: elementos finitos y métodos de Monte Carlo.
+\end{itemize}
+Todos los algoritmos independientemente de la categoría en la que se encuentren buscan dada una escena, definición matemática o en algún tipo de representación abstracta, generar una imagen en base a eso, nosotros nos referimos en todo momento a la generación de imágenes realistas aunque los mismos algoritmos podrían ser utilizados para generar otro tipo de escenas. Las categorías que se identifican son las siguientes.
+
+\begin{itemize}
+\item El modelo planteado por Whitted es un algoritmo sencillo para la ge\-ne\-ra\-ción de imágenes que tiene un modelo de iluminación propio y muy simple que se basa en emular las características que cumple la luz al llegar a los objetos o al cambiar de un medio de transmisión a otro. Por ejemplo al pasar del aire al agua, ese es el cambio de medio, se genera una desviación de la luz, dando la impresión de que los objetos se deforman.
+
+\item El modelo basado en elementos finitos es bastante simple también pero muy diferente, plantea que para calcular la radiancia, el valor de energía lumínica en un punto dado de la escena, en cada uno de los puntos se divide la escena en pequeñas partes y se utiliza alguna solución numérica para aproximar los valores.
+
+\item Los algoritmos cuyo modelo de iluminación está basado en métodos de Monte Carlo busca aproximar los valores de radiancia en base a aproximaciones estadísticas, más específicamente basadas en la integración de Monte Carlo.
+\end{itemize}
+
+A continuación una pequeña descripción de los algoritmos de iluminación global que se mencionaron anteriormente.
+
+\subsection{Radiosidad}
+El algoritmo de radiosidad utiliza los principios de Raytracing para el cálculo de las superficies visibles y sombras, así como las reflexiones y refracciones pero a diferencia del algoritmo de Raytracing básico plantea que para hacer el cálculo de la iluminación es necesario pre calcular los valores de iluminación en cada uno de los parches en los que se divide arbitrariamente la escena, por esta división es que este es un método de elementos finitos. Luego de realizado el cálculo de la radiancia de cada uno de los parches se utiliza un rastreo de la escena para el cálculo de los valores de color de los pixels de la imagen que se quiere generar. Como se pre calculan los valores de la iluminación en toda la escena a menos que se modifique la escena o las luces se pueden utilizar los mismos valores de radiancia pre calculados para generar imágenes desde distintos puntos de vista.
+\subsection{Photon mapping}
+Este algoritmo fue introducido por Henrik Wan Jensen en el año 1996\cite{Jensen2001}. Este algoritmo está aún en desarrollo dado que cuenta con una excelente calidad en las imágenes que puede generar y a su vez es computacionalmente menos costoso que el algoritmo de radiosidad. En lugar de utilizar el modelo de elementos finitos utiliza un modelo basado en métodos de Monte Carlo para el cálculo de la cantidad de energía en cada punto.
+El algoritmo de Photon Mapping tiene dos etapas diferenciadas al igual que el algoritmo de radiosidad, pero tiene una aproximación distinta para el cálculo de la radiancia de los puntos. La primera pasada es similar a la recorrida de la escena por el algoritmo de Raytracing con la diferencia que sigue el sentido inverso. Esta primer pasada se llama emisión de fotones, se generan fotones, cuantos más se generen más fiable será el resultado de la iluminación, que son lanzados desde los emisores de luz hacia la escena en direcciones que sean factibles. Se calcula el lugar en el que el fotón incide en la escena recursivamente de manera análoga al algoritmo de Raytracing. Esto es debido a que en el caso de los objetos reales, estos no absorben toda la luz incidente sino que hay luz que es reflejada y por lo tanto fotones son vueltos a lanzar desde el punto en el que chocaron con un objeto. Para hallar la dirección con la que es emitido el nuevo fotón y la energía que tendrá el mismo se utiliza un modelo para los materiales de los objetos de la escena teniendo que agregar al material de los objetos una función de BRDF (Función de Distribución de Reflectancia Bidireccional). Esta función representa la proporción de radiación reflejada por una determinada superficie en cada dirección del rayo reflejado, proyectada sobre el plano horizontal.
+
+

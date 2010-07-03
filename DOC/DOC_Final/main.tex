@@ -1,0 +1,58 @@
+\documentclass[12pt]{report}
+
+\usepackage[spanish,activeacute]{babel}
+\usepackage[fixlanguage]{babelbib}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{ifthen}
+\usepackage{fancyhdr}
+\usepackage{tabularx}
+\usepackage{subfigure}
+
+% Martin
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{longtable}
+\usepackage{multirow}
+% Martin
+
+\hyphenation{sa-tis-fa-ce pro-ble-mas pro-ble-ma Eppstein Hoffman Whitted pro-pues-ta pro-pues-tas fe-ro-mo-na ge-ne-ra-das in-de-pen-dien-tes co-rres-pon-der cons-tru-ir si-guien-do con-fi-gu-ra-cio-nes mo-de-lo re-a-li-za-das ins-tan-cias me-ca-nis-mo ge-ne-ral ge-ne-ran cons-tru-ye pre-via-men-te ob-te-ner Maniezzo pa-ra-le-las pro-pues-to e-xis-ten-tes me-dia-no pos-te-rior-men-te con-si-de-ra-dos pro-ce-di-mien-to va-lo-res Esbensen Hamming Nesmachnow a-tra-ve-sa-do ba-sa-do re-bo-tes des-ven-ta-jas e-va-lu-an-do cal-cu-lar des-cri-ben ge-ne-ra-da u-sa-ron co-lor re-fe-ren-cia-do ob-je-tos a-ce-le-rar ge-ne-ra}
+
+
+\newcommand{\piRsquare}{\pi r^2}		% This is my own macro !!!
+
+\title{Documentación - ``Computación Gráfica sobre GPU''}
+\author{Gonzalo Ordeix, Santiago Cioli}
+\date{\today}
+
+%%\includeonly{./Capitulo2/cap2_Problema,./Capitulo3/cap3_Propuesta}
+
+\begin{document}
+
+\input{./../DOC_Implementacion/spanishAlgorithmic} % mi archivo de traducción
+\renewcommand{\tablename}{Tabla}
+
+\maketitle						% automatic title!
+
+\newpage
+\tableofcontents
+
+\include{./Capitulo1/cap1_Introduccion}
+\include{./Capitulo2/cap2_Problema}
+\include{./Capitulo3/cap3_RealTime}
+\include{./Capitulo4/cap4_Propuesta}
+\include{./Capitulo5/cap5_Experimentacion}
+\include{./Capitulo6/cap6_Concl_TF}
+
+\appendix
+
+\include{./Apendices/Ap_A/ApA_Esctructuras_datos}
+
+\newpage
+\bibliography{./../bibliografia}
+\bibliographystyle{plain}
+
+\end{document} 

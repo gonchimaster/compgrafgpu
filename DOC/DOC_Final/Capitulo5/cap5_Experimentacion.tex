@@ -1,0 +1,73 @@
+\chapter{Experimentación} % 20 páginas mas o menos...
+
+\section{Relevamiento calidad imagen}
+
+Para evaluar la corrección de la solución implementada es necesario, además de una evaluación de la velocidad de generación de las imágenes, una medida de la calidad de las mismas. Por eso es que se relevó en el campo de la generación de imágenes cuáles eran los métodos con los que se evaluaba la calidad de los generadores de imágenes más importantes. En esta investigación se llegó a una decisión, que si bien afecta al proyecto de forma negativa, también nos da la pauta de que en el área hay mucho que recorrer e investigar. Esto es porque no se encontró ningún método para evaluar la calidad de las imágenes generadas a partir de modelos con algún algoritmo de Raytracing o similar, por lo menos que fueran relevantes para este proyecto. A continuación se describen a grandes rasgos los algoritmos que existen para la evaluación de calidad de imágenes.
+
+Basado en el articulo "Statistical analisys of image quality measures" \cite{QualityMeasuresCategories} y analizando el resto de la información disponible \cite{HVSQualityAssessment}\cite{IdentifyingComputerGeneratedImages}\cite{SegmentationPerceptualImageQualityAssessment}\cite{StructuralSimilarityPerceptualImageQualityAssessment} entre otros artículos que no resultaron de relevancia suficiente como para aportar en el análisis, es que se realiza una categorización de las medidas de evaluación de calidad. Cabe señalar que si bien el artículo \cite{QualityMeasuresCategories} no es sobre la generación de imágenes si se pueden ver ciertas similitudes en los objetivos de todas y cada una de las medidas de calidad de imágenes.
+Las categorías en las que se dividen los algoritmos de evaluación de calidad son:
+Basados en diferencias a nivel de píxeles, basados en correlación, basados en aristas, basados en análisis espectral, basados en contexto y basados en el sistema visual humano (HVS de sus siglas en inglés).
+
+\begin{itemize}
+\item Los algoritmos basados en diferencias a nivel de píxeles son los más simples, calculan la diferencia entre 2 imágenes tomando como referencia que un pixel en una imagen se corresponde con el mismo pixel de la imagen objetivo y, dependiendo de cuál de los algoritmos se trate, calcula alguna ponderación de los pixeles para retornar un valor que indicará la diferencia que hay entre ambas imágenes, la generada y la imagen objetivo.
+\item Los algoritmos basados en correlación son muy similares a los que se basan en diferencia de pixel pero pueden además introducir una nueva variable y es que los píxeles se pueden mover y no estar en el mismo lugar en ambas imágenes. Este tipo de algoritmos son útiles en muchos casos para el área de procesamiento de imagen, en especial porque una misma imagen puede ser generada vista de distintos ángulos y en el análisis de calidad de las mismas considerar que no tienen diferencias.
+\item Las imágenes en general presentan en su composición aristas que son los bordes que separan los componentes de la imagen entre  si, estas aristas se pueden utilizar para el análisis de calidad de imagen. Para esto es que se tiene en cuenta que si son imágenes que representan la misma escena, entonces las aristas que se presentan en la imagen objetivo tienen que presentarse también en la imagen generada.
+\item Los algoritmos que se basan en el análisis espectral son particularmente útiles en el análisis de algoritmos de compresión en los que se da este tipo de distorsión. Miden la distorsión en fase y magnitud, entrando más en el área de tratamiento de señales, base del tratamiento de imágenes, pero tampoco se ve una aplicación directa para nuestro trabajo.
+\item En el análisis de contexto para medir la calidad de imagen se analiza para cada pixel sus vecinos en una cantidad de niveles arbitraria. Estos píxeles en caso de que difieran de alguna manera (esto varía para cada algoritmo dentro de la familia) modificaran, no solo la calidad de ellos mismos como analizan los algoritmos de diferencia por pixel, sino también la calidad de los vecinos, dado que no será lo mismo, por ejemplo, un pixel negro entre píxeles rojos que un pixel negro entre píxeles blancos.
+\item Por último nos quedan los métodos basados en el análisis de la percepción humana para brindar una medida de calidad de la imagen generada. Este tipo de algoritmos utilizan los modelos que se han generado para la percepción del ojo humano declarando que dos imágenes son iguales si para la percepción del ojo humano no tienen diferencias. Modelo razonable en muchos aspectos, en particular en la industria audiovisual (léase películas, videojuegos, generación de imágenes fotorealistas, etc.).
+\end{itemize}
+
+Como se puede ver todos estos algoritmos son para comparar imágenes y no lo que realmente nos interesa en el contexto de este proyecto que es evaluar la calidad de las imágenes generadas por nuestro algoritmo. En este sentido es que apunta más que nada el artículo "New features to identify computer generated images" \cite{IdentifyingComputerGeneratedImages}. Claro que plantea, al contrario de lo que se requiere en el caso de este proyecto, detectar que imágenes son generadas por un algoritmo de generación de imágenes y cuales son imágenes reales tomadas con una cámara. Aunque el objetivo que persigue este artículo es muy similar al que se persigue en el análisis de esta sección, el algoritmo propuesto e implementado no cumple con ser fotorealista porque el modelo utilizado, Raytracing, no es un modelo tan preciso, por esto es que no se podrían utilizar los métodos propuestos en el artículo.  Por otro lado los algoritmos basados en las capacidades de percepción del sistema visual humano en general también apuntan en esta dirección, pero al igual que en el caso anterior no aplicarían en el contexto que se requiere. En este caso, por lo tanto, no se aplicarían las medidas relevadas para la evaluación de calidad de las imágenes generadas. Si bien se entiende que este podría ser un tema de estudio interesante.
+
+\section{Casos de prueba}
+
+Para probar el rendimiento del algoritmo de generación de imágenes implementado es importante generar escenas a renderizar. Como se ha mencionado en la descripción del algoritmo una escena se especifica mediante dos archivos que siguen un formato establecido.
+
+Al momento de diseñar los casos de prueba para el algoritmo de Raytracing se busco cubrir los aspectos críticos del algoritmo. Un aspecto importante a tener en cuenta es que el algoritmo de Raytracing implementado usa una grilla uniforme como estructura de aceleración. Como se analizó en la etapa de relevamiento del proyecto este tipo de estructura no es buena cuando la escena tiene una distribución espacial no uniforme de sus elementos. Por ello resulta importante probar el mismo con un conjunto de escenas que mantengan fija la cantidad de objetos, pero que varíen la distribución de ellos.
+
+La cantidad de objetos de la escena es un aspecto que afecta directamente el tiempo de ejecución de un algoritmo de Raytracing. Por este motivo es importante verificar el tiempo de ejecución del algoritmo implementado con escenas que tengan distinta cantidad de objetos pero que mantengan fijas todas las demás propiedades.
+
+La comparación con implementaciones similares es importante para establecer la calidad del algoritmo de Raytracing desarrollado en el marco de este proyecto. Por este motivo se incluyen dentro de los casos de prueba escenas pertenecientes a la comunidad web de Raytracing. Dentro de esta clase de escenas externas al proyecto, hay escenas usadas en todo proyecto de generación de imágenes, por ejemplo ``\emph{stanford bunny}'' y también hay escenas únicas de proyectos particulares.
+
+Es importante decir que es difícil encontrar un algoritmo similar al implementado ya que existen numerosas variantes del mismo, se pueden encontrar diversas técnicas de aceleración del algoritmo, entre otros aspectos. Los datos comparables entre las distintas implementaciones son los frames por segundo (FPS), la calidad de la imagen generada, etc.
+
+\subsubsection{Distribución de los objetos en la escena}
+
+Para verificar el comportamiento del algoritmo implementado frente a la uniformidad espacial de los objetos de la escena se diseñaron varios casos de prueba que se muestran a continuación.
+
+\begin{enumerate}
+    \item \emph{elefantesChicosDistUniforme.obj}: escena con 9 elefantes uniformemente distribuidos. Tiene 10338 triángulos, donde cada elefante tiene 1148 triángulos. Se muestra una imagen generada por el algoritmo implementado en la Figura \ref{fig:RenderelefantesChicosDistUniforme} del Apéndice \ref{sec:ApendiceImagenes}.
+    \item \emph{elefantesChicosDistNoUniforme.obj}: escena con 9 elefantes no uniformemente distribuidos. Tiene 10338 triángulos, donde cada elefante tiene 1148 triángulos. Se muestra una imagen generada por el algoritmo implementado en la Figura \ref{fig:RenderelefantesChicosDistNOUniforme} del Apéndice \ref{sec:ApendiceImagenes}.
+    \item \emph{elefantesChicosDistNoUniformeSOLAP.obj}: escena con 9 elefantes no uniformemente distribuidos. Tiene 10338 triángulos, donde cada elefante tiene 1148 triángulos. Se muestra una imagen generada por el algoritmo implementado en la Figura \ref{fig:RenderelefantesChicosDistNOUniformeSOLAP} del Apéndice \ref{sec:ApendiceImagenes}.
+\end{enumerate}
+
+
+\subsubsection{Cantidad de objetos de la escena}
+
+Para verificar el comportamiento del algoritmo implementado frente a la cantidad de objetos de las escenas de entrada se diseñaron varios casos de prueba, los cuales se muestran a continuación.
+
+\begin{enumerate}
+    \item \emph{dosElefMediumSobreConos.obj}: escena con 2 elefantes, cada uno sobre un cono. Tiene 20884 triángulos, donde cada elefante tiene 10150 triángulos. Se muestra una imagen generada por el algoritmo implementado en la Figura \ref{fig:RenderdosElefMediumSobreConos} del Apéndice \ref{sec:ApendiceImagenes}.
+    \item \emph{dosElefChicosSobreConos.obj}: escena con 9 elefantes no uniformemente distribuidos. Tiene 10338 triángulos. Se muestra una imagen generada por el algoritmo implementado en la Figura \ref{fig:RenderdosElefChicosSobreConos} del Apéndice \ref{sec:ApendiceImagenes}.
+\end{enumerate}
+
+
+\subsubsection{Comparando con otras implementaciones}
+
+Para la evaluación de la calidad del algoritmo implementado en el marco de este proyecto, resulta imprescindible la comparación con otros algoritmos de Raytracing similares. Por ello se buscaron algoritmos que se ajustaran al modelo de Whitted, implementados sobre CUDA por la comunidad mundial de Raytracing.
+
+Los integrantes del grupo de Computación Gráfica del \emph{Alexandra Institute} de Dinamarca implementaron un algoritmo de Raytracing y se encuentra publicado en su página web \cite{BlogAlexandraInst}. Este algoritmo no permite cambiar la escena que renderiza de forma sencilla, ya que su cargador de escena es distinto al que se usa en este proyecto. Como se dispone de información (cantidad de triángulos de cada uno de los elementos) sobre la escena del algoritmo del \emph{Alexandra Institute}, se decidió replicar manualmente dicha escena en el formato que usa el algoritmo implementado en este proyecto. Esta escena esta formada por un conjunto de 13 cajas y una esfera como se muestra en la Figura \ref{fig:RenderescenaAlexandra} del Apéndice \ref{sec:ApendiceImagenes}. Cada caja tiene 2 triángulos por cara y la esfera tiene 80 caras, por lo tanto la escena completa tiene 236 triángulos. Al renderizar su escena el Raytracing sobre GPU del \emph{Alexandra Institute} logra 13 \emph{frames} por segundo (FPS).
+
+\section{Equipos utilizados}
+
+Falta completar...
+
+\section{Pruebas}
+
+Falta completar...
+
+\subsection{Comparación entre versiones}
+
+\subsection{Comparación entre equipos}
+
+\subsection{Casos más exitosos}

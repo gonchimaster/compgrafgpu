@@ -1,0 +1,498 @@
+\documentclass[12pt]{article}
+
+\usepackage[spanish,activeacute]{babel}
+\usepackage[fixlanguage]{babelbib}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{ifthen}
+\usepackage{fancyhdr}
+\usepackage{tabularx}
+
+% Martin
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{longtable}
+\usepackage{multirow}
+% Martin
+
+\hyphenation{sa-tis-fa-ce pro-ble-mas pro-ble-ma Eppstein Hoffman pro-pues-ta pro-pues-tas fe-ro-mo-na ge-ne-ra-das in-de-pen-dien-tes co-rres-pon-der cons-tru-ir si-guien-do con-fi-gu-ra-cio-nes mo-de-lo re-a-li-za-das ins-tan-cias me-ca-nis-mo ge-ne-ral ge-ne-ran cons-tru-ye pre-via-men-te ob-te-ner Maniezzo pa-ra-le-las pro-pues-to e-xis-ten-tes me-dia-no pos-te-rior-men-te con-si-de-ra-dos pro-ce-di-mien-to va-lo-res Esbensen Hamming Nesmachnow a-tra-ve-sa-do ba-sa-do re-bo-tes des-ven-ta-jas e-va-lu-an-do cal-cu-lar des-cri-ben ge-ne-ra-da u-sa-ron co-lor re-fe-ren-cia-do ob-je-tos pa-ra-le-lo elefantesChicosDistNOUniformeSOLAP elefantesChicosDistNOUniforme elefantesChicosDistUniforme dosElefChicosSobreConos dosElefMediumSobreConos escenaAlexandra}
+
+
+\newcommand{\piRsquare}{\pi r^2}		% This is my own macro !!!
+
+\title{Diseño, Implementación y Testing - Raytracing en GPU}
+\author{Gonzalo Ordeix, Santiago Cioli}
+\date{\today}
+
+\begin{document}
+
+\input{spanishAlgorithmic} % mi archivo de traducción
+\renewcommand{\tablename}{Tabla}
+
+\maketitle						% automatic title!
+
+\newpage
+\tableofcontents
+
+\newpage
+\section{Cargador de la escena}\label{sec:CargadorEscena}
+
+El algoritmo de Raytracing propuesto por Turner Whitted en 1980 requiere de un preprocesamiento para cargar la escena a renderizar. En este trabajo la escena es cargada desde un archivo de texto usando exclusivamente la CPU. El formato de este archivo esta basado en el Wavefront OBJ version 3.0 \cite{OBJFileFormat}. Además de los datos que permite especificar un archivo OBJ, el formato utilizado permite precisar otros objetos que no son parte del estándar de Wavefront pero que son muy útiles para el algoritmo de Raytracing.
+
+El formato Wavefron OBJ es un formato basado en una tira de caracteres ASCII, el cual es muy usado para guardar, intercambiar y representar modelos en tres dimensiones.
+El hecho que sea texto plano lo hace muy fácil de comprender y de extender. Por lo general una escena en formato OBJ esta compuesta por dos archivos, un archivo con extensión obj y otro con extensión mtl. En el archivo obj se definen todos los elementos que componen la escena mientras que en el otro se definen los materiales de los elementos.
+En este formato se pueden especificar datos a nivel de vertices, como por ejemplo posición, mapeo de textura, normales, etc. También es posible definir elementos, como por ejemplo, puntos, líneas, polígonos, curvas, curvas en dos dimensiones y superficies. En el archivo de materiales (extensión mtl) es posible definir tantos materiales como se desee y asignar los mismos a los distintos elementos de la escena \cite{OBJSpecification}.
+
+En el marco de este proyecto se usa un cargador que ya se encontraba implementado y que extiende al formato base con el agregado de nuevas características \cite{FuenteCargadorOBJ}. Las extensiones son muy útiles para el algoritmo de Raytracing y fueron implementadas por la misma persona que desarrollo el cargador. Las características que extienden el formato OBJ son:
+\begin{itemize}
+    \item Primitivas: se agregaron nuevas primitivas como plano y esfera.
+    \item Elementos: se agregaron nuevos elementos como luces puntuales, luces cuadradas, luces en forma de disco y la posibilidad de definir una cámara.
+    \item Materiales: se agregaron nuevas propiedades a los materiales, como por ejemplo el coeficiente de reflexión y el de transmisión.
+\end{itemize}
+
+En la propuesta implementada en el proyecto el uso que se le da a este cargador es externo. Después de cargar la escena, esta se almacena en una estructura propia, definida especialmente para el contexto de este proyecto. La metodología explicada permite desacoplar el resto del algoritmo de la etapa de carga, lo cual permite cambiar la herramienta de cargar la escena fácilmente.
+La estructura utilizada para almacenar la escena se detalla en los Algoritmos \ref{alg:EstructuraEscenaI} y \ref{alg:EstructuraEscenaII} del Apéndice \ref{sec:ApendiceEstructurasDatos}.
+
+
+\section{Estructura de datos}\label{sec:EsturcturaDatos}
+
+En el Apéndice \ref{sec:ApendiceEstructurasDatos} se detallan las estructuras de datos utilizadas en los algoritmos de Raytracing (C y CUDA) implementados. En las primeras etapas del proyecto se uso la misma estructura para ambos algoritmos, dado que en ese momento la performance de los mismos no era un objetivo de primera linea. A medida que avanzó el proyecto y la prioridad fue mejorar la eficiencia se creo una estructura por cada algoritmo. La estructura para el algoritmo en CPU se mantuvo igual, mientras que para el algoritmo en GPU se hicieron cambios que afectaron negativamente la legibilidad de código del mismo pero que mejoraron el tiempo de ejecución.
+
+Los cambios en la estructura de almacenamiento de la escena para el algoritmo en CUDA estuvieron determinados por la forma de utilizar la jerarquía de memoria de la GPU. La estructura tuvo que ser modificada de manera de minimizar las operaciones de memoria al momento de cargar los datos de la escena en la GPU. Lo que más afecta la eficiencia es reordenar los datos antes de cargarlos en memoria de textura de la GPU. Es importante que el copiado de memoria de la CPU hacia la GPU sea lo más eficiente posible ya que de esta manera el algoritmo puede tornarse interactivo sin mayores costos computacionales.
+
+Entre los campos más importantes de la estructura utilizada para almacenar la escena se encuentra la lista de objetos de la misma, que se guardan en un arreglo con tope \emph{objetos} (el tope es \emph{cant\_objetos}).
+
+Otro campo importante donde se guarda la información referente a la división espacial de la escena, el campo \emph{grilla}, que es de tipo \emph{UniformGrid}. Este tipo tiene varios campos:
+\begin{itemize}
+    \item \emph{dimension}: almacena la dimensión de la grilla que divide el espacio de la escena.
+    \item \emph{bbEscema}: almacena una caja alineada a los ejes de coordenadas que contiene a toda la escena.
+    \item \emph{voxels}: array de punteros a entradas de \emph{listasGrid}. Cada entrada de \emph{voxels} se corresponde con un voxel de la escena y en cada una de sus entradas se almacena un puntero a la lista de objetos que contiene el voxel.
+    \item \emph{listasGrid}: array de listas de punteros a objetos.
+\end{itemize}
+
+Se puede ver un ejemplo esquemático de la estructura \emph{UniformGrid} en la Figura \ref{fig:exampleEstructuraUGrid}.
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.9\textwidth]{estructuraGrilla}
+  \caption{Ejemplo de estructura \emph{UniformGrid}.}
+  \label{fig:exampleEstructuraUGrid}
+\end{figure}
+
+
+\newpage
+\section{Técnicas de aceleración de Raytracing}
+\subsection{Introducción}
+
+La principal desventaja del algoritmo de Raytracing es que posee un elevado tiempo de ejecución. Esto se debe a que para cada rayo trazado se ha de probar si interseca con cada objeto de la escena, tarea que puede tomar hasta 95\% del tiempo de generación de imagen. Por lo tanto, las principales técnicas de aceleración buscan minimizar el tiempo empleado en la búsqueda de intersecciones.
+
+Las técnicas de aceleración que se le pueden aplicar a un algoritmo de Raytracing pueden ser clasificadas en tres grandes ramas. Estas son:
+\begin{itemize}
+    \item aumentar la velocidad de búsqueda de las intersecciones.
+    \item reducir el número de rayos trazados.
+\end{itemize}
+
+El objetivo del primer item puede lograrse procurando que el cálculo de las intersecciones sea lo más rápido posible, o bien utilizando algoritmos que minimicen el número de intersecciones rayo-objeto.
+Para disminuir el tiempo de ejecución de las intersecciones se deben optimizar los algoritmos de intersección, disminuyendo la cantidad de operaciones aritméticas de los mismos. Otra opción es realizar los chequeos de intersección con primitivas simples, lo cual implica algoritmos de intersección más simples.
+
+La otra manera de aumentar la velocidad de búsqueda de intersecciones es utilizar técnicas que minimicen la cantidad de intersecciones rayo-objeto que se verifican por cada rayo primario. Algunas de estas técnicas son la jerarquía de volúmenes envolventes (BVH), la subdivisión espacial uniforme y no uniforme, etc.
+
+Otra opción posible para acelerar el algoritmo de Raytracing es reducir el número de rayos trazados para generar la imagen. Al momento de generarla además de los rayos primarios se trazan rayos generados por reflexión, refracción y sombra. Para disminuir la cantidad de rayos trazados se puede utilizar la técnica de control adaptativo de la profundidad del árbol de rayos. Aplicando esta técnica el árbol de rayos generado a partir de un rayo primario no finalizará en una profundidad constante, sino cuando se determine que el trazado de nuevos rayos no aportarán una cantidad significativa de color al pixel.
+
+\subsection{Estructura de aceleración espacial}\label{sec:SeccionDetallesGrilla}
+
+En este proyecto se decidió acelerar el algoritmo de Raytracing por medio de disminuir el tiempo de ejecución que toman las intersecciones rayo-objeto, pues estas consumen más del 90\% del tiempo de generación de imagen \cite{TesisEstructuras}.
+
+Es importante escoger un buen método para la verificación de intersección entre los rayos y las primitivas de construcción de escenas, dado que este es parte central del Raytracing. El algoritmo de trazado de rayos implementado solo posee un tipo de primitiva, el triángulo, por lo tanto solo se debió escoger un método para la intersección rayo-triángulo. El método utilizado para verificar la intersección entre un rayo y un triángulo es el de coordenadas baricéntricas. Dicho método verifica que el rayo interseque con el plano que contiene al triángulo y luego mediante un cambio de coordenadas verifica que la intersección se de dentro de los límites del mismo. Este método no es el más eficiente que existe pero su consumo de memoria es mínimo, lo cual es importante si se quiere implementar en una GPU.
+
+A pesar de contar con un algoritmo de intersección eficiente es importante implementar una estrategia para no probar la intersección con todos los objetos de la escena, para cada rayo primario. En la etapa de relevamiento y evaluación de las distintas estrategias se consideraron tres estructuras de aceleración espacial: la subdivisión espacial uniforme, la subdivisión espacial adaptativa (utilizando Kd-trees) y la jerarquía de volúmenes envolventes (BVH).
+
+La estrategia de aceleración espacial que se adopto en el proyecto ``Computación Gráfica sobre GPU'' fue la subdivisión espacial uniforme. El argumento de mayor peso para la elección de esta estructura fue la simplicidad de construcción y recorrida de la misma, lo cual resulta imprescindible para paralelizar los algoritmos usando una GPU.
+
+\subsection{Construcción de la grilla}
+
+Para la construcción de la grilla se adoptaron dos métodos. Esto se hizo así por dos razones, comparar cual resulta más eficiente y validar el resultado del algoritmo más complejo (pero más eficiente) con el resultado del menos eficiente (pero más sencillo de implementar). El algoritmo de construcción se ejecuta exclusivamente en la CPU, aunque se podría acelerar ejecutándolo en la GPU.
+
+\subsubsection{Construcción por fuerza bruta}
+
+Como se muestra en el Algoritmo \ref{alg:SeudoConsGrillaBruto} este método de construcción recorre todos los voxels de la grilla y para cada uno de ellos recorre todos los objetos de la escena para probar si hay intersección voxel-objeto. Este método es ineficiente porque por lo general se recorren muchos voxels innecesarios (que no tienen intersección con el objeto) por cada objeto de la escena.
+
+\begin{algorithm}
+    \caption{Seudocódigo del algoritmo menos eficiente de construcción de la grilla uniforme.}
+    \label{alg:SeudoConsGrillaBruto}
+    \begin{algorithmic}
+        \ForAll {voxel en grilla}
+            \ForAll {obj en listaObjetos}
+                \State //En coordenadas de grilla
+                \State bbObj = calcularBoundingBoxObjeto(obj);
+                \If{(voxel $\cap$ bbObj) $\neq$ $\emptyset$}
+                    \State agregarObjetoEnVoxel(voxel, obj);
+                \EndIf
+            \EndFor
+        \EndFor
+    \end{algorithmic}
+\end{algorithm}
+
+
+\subsubsection{Construcción inteligente}
+
+En el Algoritmo \ref{alg:SeudoConsGrillaOptimizado} se describe un algoritmo optimizado, en este método de construcción se recorren todos los objetos de la escena, donde para cada uno ellos se calcula (en coordenadas de grilla) una caja alineada a los ejes que lo envuelve. A partir de la caja se obtienen voxels candidatos a solaparse con el objeto. Para cada voxel candidato se prueba el solapamiento caja-objeto y si da positiva se agrega el objeto al voxel que dio origen a la caja. La optimización introducida con respecto al método mostrado en el Algoritmo \ref{alg:SeudoConsGrillaBruto} permite desechar una cantidad importante de voxels que no tienen intersección con el objeto. Si no consideramos el peor caso de este método (cuando todos los objetos de la escena se solapan con todos los voxels de la grilla), que es muy poco probable, este método siempre supera al anterior en cantidad de pruebas de intersección voxel-objeto.
+
+\begin{algorithm}
+    \caption{Seudocódigo del algoritmo eficiente de construcción de la grilla uniforme.}
+    \label{alg:SeudoConsGrillaOptimizado}
+    \begin{algorithmic}
+        \ForAll {obj en listaObjetos}
+            \State //En coordenadas de grilla
+            \State bbObj = calcularBoundingBoxObjeto(obj);
+            \ForAll {voxel $\subset$ bbObj}
+                \State //En coordenadas de mundo
+                \State voxelMundo = transformarCoorMundo(voxel);
+                \If{boundingBoxOverlapObject(voxelMundo, obj)}
+                    \State agregarObjetoEnVoxel(voxel, obj);
+                \EndIf
+            \EndFor
+        \EndFor
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection{Recorrido de la grilla}
+
+El algoritmo para la recorrida de la grilla está basado en el renderizado de una línea en pantalla que se implementa en las tarjetas gráficas, el algoritmo se basa en incrementos y en cada paso para el cálculo del siguiente paso no se realizan más que unas pocas sumas y evaluaciones de condiciones.
+La implementación se realiza en 2 pasos, primero se computa el cálculo del voxel inicial y de los incrementos en cada una de las 3 direcciones para un rayo específico y por otra parte la manera en que se computa cada cambio de voxel.
+
+\subsubsection{Cálculo del voxel inicial y los incrementos}
+
+El voxel inicial se calcula de manera sencilla intersecando el rayo con el cubo que acota toda la escena que se utiliza para generar la grilla, con el punto de intersección se calcula cual es el voxel al que pertenece el punto. Para obtener el incremento se calcula la derivada en cada una de las 3 componentes, con esa derivada y el tamaño de los voxels en x, y, z se obtiene la distancia que debe recorrer el rayo para poder alcanzar el siguiente voxel, esta se calcula para cada una de las 3 componentes y se almacena en una variable, así como también se hace con las derivadas.
+
+\subsubsection{Cálculo del siguiente voxel}
+
+La forma en que se calcula es en base a la distancia que tiene que recorrer el rayo desde su origen hasta el siguiente punto de intersección. Se tienen tres distancias que debe recorrer el rayo para pasar al siguiente voxel en el eje X, para pasar al siguiente voxel en el eje Y y para pasar al siguiente voxel en el eje Z. La mínima de estas distancias determina cual de los tres incrementos es el que hay que realizar, el voxel que esté más cerca es el siguiente, por lo tanto hay que incrementar 1 en la dirección determinada por dicho mínimo. El Algoritmo \ref{alg:SeudoSiguinteVoxelGrilla} se muestra un seudocódigo para el cálculo del siguiente voxel.
+
+\begin{algorithm}
+    \caption{Seudocódigo del algoritmo para avanzar en los voxels.}
+    \label{alg:SeudoSiguinteVoxelGrilla}
+    \begin{algorithmic}
+        \State DM = Minimo(DX, DY, DZ);
+        \If{(DM == DX)}
+            \State DX = DX + incrementoX;
+            \State VoxelActualX = VoxelActualX + signo(incrementoX) * 1;
+        \EndIf
+        \If{(DM == DY)}
+            \State DY = DY + incrementoY;
+            \State VoxelActualY = VoxelActualY + signo(incrementoY) * 1;
+        \EndIf
+        \If{(DM == DZ)}
+            \State DZ = DZ + incrementoZ;
+            \State VoxelActualZ = VoxelActualZ + signo(incrementoZ) * 1;
+        \EndIf
+    \end{algorithmic}
+\end{algorithm}
+
+\newpage
+\section{Algoritmo de Raytracing}
+
+%%YA SE PUSO EN LA INTRO DEL CAP3
+Para mantener un punto de comparación del desempeño computacional que se alcanza en el mismo algoritmo cambiando CPU por GPU lo que se hizo fue generar el mismo algoritmo, o muy parecido en lo que a optimizaciones se refiere, en CPU y en GPU. Estos algoritmos comparten el programa principal y los datos de la escena. Para que se genere un ejecutable para CPU o para GPU lo que se hace es compilar con directivas al preprocesador de que se genere el ejecutable en una u otra variante según lo que se quiera.
+%FIN - YA SE PUSO
+
+\subsection{CPU}
+
+Hay que completar....
+
+\subsection{GPU}
+
+\subsubsection{Paralelización del algoritmo}
+
+Para la paralelización del algoritmo se optó por paralelizar a nivel de rayos. Para cada uno de los rayos se ejecutará un thread distinto.
+La imagen a generar está formada por pixels, para calcular el color de un pixel se lanza un rayo tal y como se ve en los detalles del algoritmo de Raytracing, para la paralelización la escena se divide en bloques de pixels que serán los que se correspondan con los bloques que se enviarán a ejecutar en la GPU.
+
+
+\subsubsection{Eliminación de la recursión}
+
+El algoritmo de Raytracing es un algoritmo inherentemente recursivo, esto es una limitación a la hora de hacer que se ejecute en la GPU dado que la ejecución debe ser secuencial. Para esto hubo que hacer modificaciones al algoritmo original generando que cada rayo sea el encargado de hacer su trayectoria de manera iterativa, para esto hay que hacer que en cada iteración en caso de que haya algún tipo de reflejo o refracción el rayo tenga que ser modificado para que en la siguiente iteración se trace de manera de simular la interacción con materiales reflejantes.
+
+\subsubsection{Estructura del algoritmo}
+
+El algoritmo es un algoritmo simple, se divide en varios pasos. El primer paso es el cargado de la escena, el cual fue analizado anteriormente en la Sección \ref{sec:CargadorEscena}.
+Luego de cargar la escena completamente formada por triángulos se procede a la generación de la grilla que permitirá acelerar el proceso de intersección con los objetos previamente cargados. En la Sección \ref{sec:SeccionDetallesGrilla} se muestra en detalle la construcción de la grilla.
+Luego de hacer este proceso se generan los rayos a paralelizar en la GPU, estos rayos se generan en CPU, por lo que para generar el algoritmo que funcione en tiempo real deberíamos modificar el algoritmo para que se tenga en cuenta que cada rayo en paralelo se genera según el thread en el cual se esté ejecutando. Esto sería por si se quiere cambiar la posición de la cámara en tiempo real lo que haría posible el cambio de punto de vista de manera sencilla. Luego de generados los rayos se realiza la copia de las estructuras a la memoria de la GPU para luego invocar a la función que correrá en la GPU, esta función será invocada en tantos threads como rayos tenga la imagen a generar. Cada uno de los rayos lanzados recorrerá la estructura siguiendo los reflejos y refracciones. Al finalizar esta ejecución es que se realiza la copia de los datos generados en la GPU nuevamente a la CPU para ser escritos en un archivo.
+
+\newpage
+\section{Casos de Prueba}
+
+\subsection{Descripción}
+
+Al momento de diseñar los casos de prueba para el algoritmo de Raytracing se busco cubrir los aspectos críticos del algoritmo. Un aspecto importante a tener en cuenta es que el algoritmo de Raytracing implementado usa una grilla uniforme como estructura de aceleración. Como se analizó en la etapa de relevamiento del proyecto este tipo de estructura no es buena cuando la escena tiene una distribución espacial no uniforme de sus elementos. Por ello resulta importante probar el mismo con un conjunto de escenas que mantengan fija la cantidad de objetos, pero que varíen la distribución de ellos.
+
+La cantidad de objetos de la escena es un aspecto que afecta directamente el tiempo de ejecución de un algoritmo de Raytracing. Por este motivo es importante verificar el tiempo de ejecución del algoritmo implementado con escenas que tengan distinta cantidad de objetos pero que mantengan fijas todas las demás propiedades.
+
+La comparación con implementaciones similares es importante para establecer la calidad del algoritmo de Raytracing desarrollado en el marco de este proyecto. Por este motivo se incluyen dentro de los casos de prueba, escenas pertenecientes a la comunidad web de Raytracing. Es importante decir que es difícil encontrar un algoritmo similar al implementado ya que existen numerosas variantes del mismo, se pueden encontrar diversas técnicas de aceleración del algoritmo, entre otros aspectos. Los datos comparables entre las distintas implementaciones son los frames por segundo (FPS), la calidad de la imagen generada, etc.
+
+\subsubsection{Distribución de los objetos en la escena}
+
+Para verificar el comportamiento del algoritmo implementado frente a la uniformidad espacial de los objetos de la escena se diseñaron varios casos de prueba que se muestran a continuación.
+
+\begin{enumerate}
+    \item \emph{elefantesChicosDistUniforme.obj}: escena con 9 elefantes uniformemente distribuidos. Tiene 10338 triángulos, donde cada elefante tiene 1148 triángulos. Se muestra una imagen generada por el algoritmo implementado en la Figura \ref{fig:RenderelefantesChicosDistUniforme} del Apéndice \ref{sec:ApendiceImagenes}.
+    \item \emph{elefantesChicosDistNoUniforme.obj}: escena con 9 elefantes no uniformemente distribuidos. Tiene 10338 triángulos, donde cada elefante tiene 1148 triángulos. Se muestra una imagen generada por el algoritmo implementado en la Figura \ref{fig:RenderelefantesChicosDistNOUniforme} del Apéndice \ref{sec:ApendiceImagenes}.
+    \item \emph{elefantesChicosDistNoUniformeSOLAP.obj}: escena con 9 elefantes no uniformemente distribuidos. Tiene 10338 triángulos, donde cada elefante tiene 1148 triángulos. Se muestra una imagen generada por el algoritmo implementado en la Figura \ref{fig:RenderelefantesChicosDistNOUniformeSOLAP} del Apéndice \ref{sec:ApendiceImagenes}.
+\end{enumerate}
+
+
+\subsubsection{Cantidad de objetos de la escena}
+
+Para verificar el comportamiento del algoritmo implementado frente a la cantidad de objetos de las escenas de entrada se diseñaron varios casos de prueba, los cuales se muestran a continuación.
+
+\begin{enumerate}
+    \item \emph{dosElefMediumSobreConos.obj}: escena con 2 elefantes, cada uno sobre un cono. Tiene 20884 triángulos, donde cada elefante tiene 10150 triángulos. Se muestra una imagen generada por el algoritmo implementado en la Figura \ref{fig:RenderdosElefMediumSobreConos} del Apéndice \ref{sec:ApendiceImagenes}.
+    \item \emph{dosElefChicosSobreConos.obj}: escena con 9 elefantes no uniformemente distribuidos. Tiene 10338 triángulos. Se muestra una imagen generada por el algoritmo implementado en la Figura \ref{fig:RenderdosElefChicosSobreConos} del Apéndice \ref{sec:ApendiceImagenes}.
+\end{enumerate}
+
+
+\subsubsection{Comparando con otras implementaciones}
+
+Para la evaluación de la calidad del algoritmo implementado en el marco de este proyecto, resulta imprescindible la comparación con otros algoritmos de Raytracing similares. Por ello se buscaron algoritmos que se ajustaran al modelo de Whitted, implementados sobre CUDA por la comunidad mundial de Raytracing.
+
+Los integrantes del grupo de Computación Gráfica del \emph{Alexandra Institute} de Dinamarca implementaron un algoritmo de Raytracing y se encuentra publicado en su página web \cite{BlogAlexandraInst}. Este algoritmo no permite cambiar la escena que renderiza de forma sencilla, ya que su cargador de escena es distinto al que se usa en este proyecto. Como se dispone de información (cantidad de triángulos de cada uno de los elementos) sobre la escena del algoritmo del \emph{Alexandra Institute}, se decidió replicar manualmente dicha escena en el formato que usa el algoritmo implementado en este proyecto. Esta escena esta formada por un conjunto de 13 cajas y una esfera como se muestra en la Figura \ref{fig:RenderescenaAlexandra} del Apéndice \ref{sec:ApendiceImagenes}. Cada caja tiene 2 triángulos por cara y la esfera tiene 80 caras, por lo tanto la escena completa tiene 236 triángulos. Al renderizar su escena el Raytracing sobre GPU del \emph{Alexandra Institute} logra 13 \emph{frames} por segundo (FPS).
+
+
+\subsection{Resultados obtenidos}
+
+\subsubsection{Versión 1.0}
+
+En esta sección se muestran los resultados obtenidos con la versión 1.0 del algoritmo de Raytracing implementado, para más detalles de la versión consultar el Apéndice \ref{sec:ApendiceVersiones}. En todos los casos de prueba la resolución usada es 640 de ancho por 480 de alto. Todas las pruebas del algoritmo en CUDA realizadas en esta sección fueron hechas usando una tarjeta de video \emph{NVIDIA GeForce 9600M GT}.
+
+Los gráficos que presentan los resultados obtenidos pretenden mostrar para cada una de las escenas de prueba, los frames por segundo que genera el algoritmo en función de la partición de la escena, según la estrategia de aceleración espacial utilizada.
+
+Cuando en un gráfico no se muestra la barra de FPS en GPU (para un tamaño de grilla dado) quiere decir que el Raytracing no puede generar una imagen antes que el sistema operativo (Windows) reinicie el controlador de video. Se puede ver un ejemplo de un caso de este tipo en la Figura \ref{fig:Result1.0elefantesChicosDistUniforme}. Si bien es importante intentar no tener que convivir con esta molestia que genera el sistema operativo, se resolvió continuar trabajando de esta manera porque el tiempo de generación de un render de una escena promedio debería ser muy inferior a 5 segundos (tiempo máximo que puede ejecutar un kernel de CUDA en la GPU sin que el sistema operativo reinicie el controlador de video).
+
+El tamaño de la grilla para las distintas pruebas realizadas fue seleccionado en base a lo relevado en el comienzo de este proyecto (Documento de Relevamiento). Thrane y Ole sugieren que la resolución sea $3\sqrt[3]{N}$ voxeles a lo largo del eje más corto, donde $N$ es el número de triángulos de la escena. Los demás valores fueron escogidos de manera de mostrar que una grilla con muy baja resolución o con muy alta resolución no es lo óptimo.
+
+En las Figuras \ref{fig:Result1.0elefantesChicosDistUniforme}, \ref{fig:Result1.0elefantesChicosDistNOUniforme} y \ref{fig:Result1.0elefantesChicosDistNOUniformeSOLAP} se muestran los resultados obtenidos al renderizar las escenas que buscan probar la eficiencia de la estructura de aceleración espacial utilizada. Para este conjunto de escenas, los resultados obtenidos fueron contrarios a los que se esperaban, pues se esperaba que cuanto más uniforme sea la distribución espacial de los objetos en la escena, más eficiente sería la estructura de a\-ce\-le\-ra\-ci\'on y por lo tanto el algoritmo de Raytracing podría generar más FPS. Esta situación puede explicarse teniendo en cuenta que la sombra generada por los objetos más dispersos es mayor a la generada por objetos que se encuentren juntos. Además en la etapa de implementación de esta versión, al momento de incorporar el calculo de los rayos de sombra, se noto un marcado deterioro de la eficiencia del algoritmo. Esta baja en la eficiencia se dio en ambas implementaciones del algoritmo, en CPU y en GPU.
+
+Un aspecto muy importante a tener en cuenta es que en estos tres primeros casos de prueba el algoritmo de Raytracing desarrollado para GPU supera en un factor de 30 (factor promedio) al algoritmo para CPU, hablando en términos de FPS.
+
+También es importante notar que la tendencia de los FPS al incrementar la resolución de la grilla se mantiene en ambos algoritmos, comienza creciendo hasta llegar a una meseta para luego disminuir suavemente. Esto se ha dado para todos los casos de prueba analizados hasta el momento, lo cual era esperable.
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.8\textwidth]{./Test/23_10_2009/elefantesChicosDistUniforme}
+  \caption{Resultados al renderizar la escena elefantesChicosDistUniforme.obj utilizando distintas grillas.}
+  \label{fig:Result1.0elefantesChicosDistUniforme}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.8\textwidth]{./Test/23_10_2009/elefantesChicosDistNOUniforme}
+  \caption{Resultados al renderizar la escena elefantesChicosDistNOUniforme.obj utilizando distintas grillas.}
+  \label{fig:Result1.0elefantesChicosDistNOUniforme}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.8\textwidth]{./Test/23_10_2009/elefantesChicosDistNOUniformeSOLAP}
+  \caption{Resultados al renderizar la escena elefantesChicosDistNOUniformeSOLAP.obj utilizando distintas grillas.}
+  \label{fig:Result1.0elefantesChicosDistNOUniformeSOLAP}
+\end{figure}
+
+En las Figuras \ref{fig:Result1.0dosElefChicosSobreConos} y \ref{fig:Result1.0dosElefMediumSobreConos} se muestran los resultados obtenidos al renderizar dos escenas con los mismos elementos visuales pero con distinta cantidad de triángulos. Como se esperaba, en los resultados obtenidos se refleja que cuanto más triángulos contenga la escena más tiempo necesita el algoritmo para generar una imagen, lo cual afecta directamente la cantidad de FPS que puede generar el mismo. Se puede apreciar que para escenas con una cantidad de triángulos cercana a 21000, como la escena \emph{dosElefMediumSobreConos.obj}, la resolución de la grilla se torna un parámetro critico del algoritmo para GPU, implica la generación o no del render de la escena en un tiempo razonable. Esto permite concluir que todo algoritmo de Raytracing que pretenda ser eficiente debe contar con estructuras de aceleración.
+
+Un dato que vale la pena destacar es que la aceleración que se puede lograr usando la GPU para ejecutar el algoritmo de Raytracing con respecto al mismo en CPU, depende de la cantidad de triángulos que contenga la escena. Si se observan las Figuras \ref{fig:Result1.0dosElefChicosSobreConos} y \ref{fig:Result1.0dosElefMediumSobreConos} para el caso en que la grilla tiene resolución 50 en todos los ejes, se puede apreciar que el factor de aceleración logrado en la escena con menos triángulos es aproximadamente 36, mientras que el mismo factor para la escena con mayor cantidad de triángulos es 25.
+
+La aceleración que logra el algoritmo en GPU con respecto al mismo algoritmo para CPU, para los casos de prueba cuyos renders se muestran en las Figuras \ref{fig:RenderdosElefChicosSobreConos} y \ref{fig:RenderdosElefMediumSobreConos} del Apéndice \ref{sec:ApendiceImagenes}, es 34 y 25 en promedio respectivamente. Se considera una muy buena aceleración pero existen aspectos para mejorar, lo cual hace pensar que la aceleración puede ser aun mayor. Estos aspectos de mejora se detallan en la descripción de la versión, en el Apéndice \label{sec:ApendiceVersiones}.
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.8\textwidth]{./Test/23_10_2009/dosElefChicosSobreConos}
+  \caption{Resultados al renderizar la escena dosElefChicosSobreConos.obj utilizando distintas grillas.}
+  \label{fig:Result1.0dosElefChicosSobreConos}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.8\textwidth]{./Test/23_10_2009/dosElefMediumSobreConos}
+  \caption{Resultados al renderizar la escena dosElefMediumSobreConos.obj utilizando distintas grillas.}
+  \label{fig:Result1.0dosElefMediumSobreConos}
+\end{figure}
+
+
+En la Figura \ref{fig:Result1.0escenaAlexandra} se muestran los resultados obtenidos al renderizar una escena idéntica a la que usa el Raytracing sobre GPU del \emph{Alexandra Institute}, usando el Raytracing implementado en el marco de este proyecto. Como se aprecia en el gráfico los resultados indican que el algoritmo del \emph{Alexandra Institute} supera al implementado en este proyecto por más de 8 FPS. Sin duda se esta muy por debajo de un resultado aceptable, lo que indica que se deben mejorar los puntos débiles del algoritmo implementado. Afortunadamente se conocen varios puntos débiles a mejorar, los mismos se mencionan en el Apéndice \ref{sec:ApendiceVersiones}, como se citó anteriormente.
+
+La aceleración lograda por el algoritmo para GPU con respecto al algoritmo para CPU para este caso también es buena, para esta escena el algoritmo para GPU es en promedio, casi 20 veces más rápido que el implementado en CPU, como se muestra en la Figura \ref{fig:Result1.0escenaAlexandra}. Es importante considerar que esta escena contiene objetos que reflejan luz, situación que no se daba en los casos de prueba anteriores. La aceleración un poco más baja que en los casos anteriores puede explicarse teniendo en cuenta esta realidad.
+
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.8\textwidth]{./Test/23_10_2009/escenaAlexandra}
+  \caption{Resultados al renderizar la escena escenaAlexandra.obj utilizando distintas grillas.}
+  \label{fig:Result1.0escenaAlexandra}
+\end{figure}
+
+\newpage
+\bibliography{./../bibliografia}
+\bibliographystyle{plain}
+
+\newpage
+\section{Apéndices}
+\appendix
+\section{Renders}\label{sec:ApendiceImagenes}
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.7\textwidth]{./Renders/23_10_2009/elefantesChicosDistUniforme}
+  \caption{Render de la escena contenida en el archivo elefantesChicosDistUniforme.obj.}
+  \label{fig:RenderelefantesChicosDistUniforme}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.7\textwidth]{./Renders/23_10_2009/elefantesChicosDistNOUniforme}
+  \caption{Render de la escena contenida en el archivo elefantesChicosDistNOUniforme.obj.}
+  \label{fig:RenderelefantesChicosDistNOUniforme}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.7\textwidth]{./Renders/23_10_2009/elefantesChicosDistNOUniformeSOLAP}
+  \caption{Render de la escena contenida en el archivo elefantesChicosDistNOUniformeSOLAP.obj.}
+  \label{fig:RenderelefantesChicosDistNOUniformeSOLAP}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.7\textwidth]{./Renders/23_10_2009/dosElefChicosSobreConos}
+  \caption{Render de la escena contenida en el archivo dosElefChicosSobreConos.obj.}
+  \label{fig:RenderdosElefChicosSobreConos}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.7\textwidth]{./Renders/23_10_2009/dosElefMediumSobreConos}
+  \caption{Render de la escena contenida en el archivo dosElefMediumSobreConos.obj.}
+  \label{fig:RenderdosElefMediumSobreConos}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.7\textwidth]{./Renders/23_10_2009/escenaAlexandra}
+  \caption{Render de la escena contenida en el archivo escenaAlexandra.obj.}
+  \label{fig:RenderescenaAlexandra}
+\end{figure}
+
+
+\newpage
+\section{Versiones}\label{sec:ApendiceVersiones}
+\subsection{Version 1.0 - 23\_10\_2009}
+
+\begin{description}
+    \item \textbf{Algoritmo en C}
+        \begin{itemize}
+            \item Implementado el algoritmo de Whitted con reflexión y refracción de forma recursiva, usando punteros a memoria para no afectar el tiempo de ejecución con copias innecesarias.
+            \item Implementada la estructura de aceleración espacial \emph{Uniform Grid}.
+            \item Restricción de la versión: las escenas deben tener una luz puntual como máximo.
+            \item Restricción de la versión: la sombra proyectada por un objeto transparente no tiene en cuenta el color del objeto.
+        \end{itemize}
+    \item \textbf{Algoritmo en CUDA}
+        \begin{itemize}
+            \item Implementado el algoritmo de Whitted con reflexión y refracción de forma iterativa.
+            \item Implementada la estructura de aceleración espacial \emph{Uniform Grid}.
+            \item La generación de rayos primarios se hace en un kernel de CUDA.
+            \item Para la recorrida de la grilla, el trazado de rayos de sombra y secundarios se utiliza un solo kernel de CUDA.
+            \item Las operaciones sobre vectores se hacen usando las operaciones propias de CUDA.
+            \item Restricción de la versión: las escenas deben tener una luz puntual como máximo.
+            \item Restricción de la versión: las escenas no pueden tener objetos reflexivos y transparentes a la vez.
+            \item Restricción de la versión: la sombra proyectada por un objeto transparente no tiene en cuenta el color del objeto.
+            \item Restricción de la versión: no explota al máximo la estructura de memoria de la GPU.
+            \item Restricción de la versión: sufre el problema que genera el sistema operativo al ejecutar un kernel por mas de 5 segundos.
+        \end{itemize}
+\end{description}
+
+
+\newpage
+\section{Esturcturas de Datos}\label{sec:ApendiceEstructurasDatos}
+\subsection{Algoritmo en C}
+
+\begin{algorithm}[H]
+    \caption{Estructura de datos para almacenar la escena. Parte I.}
+    \label{alg:EstructuraEscenaI}
+    \begin{algorithmic}
+        \State typedef struct $\{$
+            \State $\ \ \ \ $ObjetoEscena* objetos;
+	        \State $\ \ \ \ $int cant\_objetos;
+            \State $\ \ \ \ $Camara camara;
+            \State $\ \ \ \ $Triangulo plano\_de\_vista;
+            \State $\ \ \ \ $Luz* luces;
+            \State $\ \ \ \ $int cant\_luces;
+            \State $\ \ \ \ $UniformGrid grilla;
+            \State $\ \ \ \ $Material* materiales;
+            \State $\ \ \ \ $int cant\_materiales;
+        \State $\}$ Escena;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $Vector3 v1;
+            \State $\ \ \ \ $Vector3 v2;
+            \State $\ \ \ \ $Vector3 v3;
+        \State $\}$ Triangulo;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $TipoObjeto tipo;
+            \State $\ \ \ \ $Triangulo tri;
+            \State $\ \ \ \ $Triangulo normales;
+            \State $\ \ \ \ $int id\_material;
+        \State $\}$ ObjetoEscena;
+        \\
+        \State typedef enum $\{$
+            \State $\ \ \ \ $Triangle,
+        	\State $\ \ \ \ $Sphere\\
+        $\}$ TipoObjeto;
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+    \caption{Estructura de datos para almacenar la escena. Parte II.}
+    \label{alg:EstructuraEscenaII}
+    \begin{algorithmic}
+        \State typedef struct $\{$
+            \State $\ \ \ \ $Vector3 ojo;
+            \State $\ \ \ \ $Vector3 direccion;
+            \State $\ \ \ \ $Vector3 up;
+        \State $\}$ Camara;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $Vector3 posicion;
+            \State $\ \ \ \ $Vector3 color;
+        \State $\}$ Luz;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $Vector3 dimension;
+            \State $\ \ \ \ $BoundingBox bbEscena;
+            \State $\ \ \ \ $int* voxels;
+            \State $\ \ \ \ $int* listasGrid;
+        \State $\}$ UniformGrid;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $Vector3 diffuse\_color;
+            \State $\ \ \ \ $Vector3 ambient\_color;
+            \State $\ \ \ \ $Vector3 specular\_color;
+            \State $\ \ \ \ $float refraction;
+            \State $\ \ \ \ $float reflection;
+            \State $\ \ \ \ $float transparency;
+            \State $\ \ \ \ $int coef\_at\_especular;
+        \State $\}$ Material;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $Vector3 minimum;
+            \State $\ \ \ \ $Vector3 maximum;
+        \State $\}$ BoundingBox;
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection{Algoritmo en CUDA}
+
+
+
+\end{document} % End of document.
