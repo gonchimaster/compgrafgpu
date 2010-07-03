@@ -1,0 +1,45 @@
+#=		CONFIGURACION BASICA
+#=	NO COLOQUE ESPACIOS DE MAS EN LAS LINEAS
+#=	PARAMETRO=VALOR
+#=	SI NO SE COLOCA UN PARAMETRO TOMARA EL VALOR POR DEFECTO
+
+
+
+
+#=TAMANIO DE LA PARTICION
+TAMANIO_GRILLA.X=19
+TAMANIO_GRILLA.Y=19
+TAMANIO_GRILLA.Z=19
+#=RESOLUCION DE LA IMAGEN
+RESOLUCION.X=1024
+RESOLUCION.Y=768
+#=VALOR TOMADO COMO EL INFINITO SEGUN EL PROGRAMA
+INFINITO=3.402823466e+38F
+#=VALOR TOMADO COMO EL CERO DE LOS float
+ZERO=0.0000000001
+#=VALOR DE PROFUNDIDAD EN LA RECURSION DE LAS REFLECCIONES ESPECULARES
+PROFUNDIDAD_RECURSION=3
+#=CANTIDAD DE THREADS A LANZAR
+THREADS.X=8
+THREADS.Y=16
+#=UNUSED
+THREADS.Z=1
+#=NOMBRE DE LA ESCENA A CARGAR
+#=ESCENA=..\escenas\dosElefChicosSobreConos.obj
+#= OTRAS ESCENAS POR SI SE QUIERE
+#=ESCENA=..\escenas\ahhtololo.obj
+#=ESCENA=..\escenas\locoJuan.obj
+#=ESCENA=..\escenas\porqueria.obj
+#=ESCENA=..\escenas\elephal.obj
+#=ESCENA=..\escenas\elephav.obj
+#=ESCENA=..\escenas\cajasConColores.obj
+#=ESCENA=..\escenas\bolaPrueba.obj
+#=ESCENA=..\escenas\dosBolasConPiso.obj
+#=ESCENA=..\escenas\bolaCajaDeColores.obj
+#=ESCENA=..\escenas\bolaCajaDeColoresT.obj
+#=ESCENA=..\escenas\elefantesChicosDistUniforme.obj
+#=ESCENA=..\escenas\elefantesChicosDistNOUniforme.obj
+#=ESCENA=..\escenas\elefantesChicosDistNOUniformeSOLAP.obj
+#=ESCENA=..\escenas\dosElefMediumSobreConos.obj
+#=ESCENA=..\escenas\dosElefChicosSobreConos.obj
+ESCENA=..\escenas\escenaAlexandra.obj
