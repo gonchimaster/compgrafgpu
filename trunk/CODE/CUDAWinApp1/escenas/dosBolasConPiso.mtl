@@ -1,0 +1,36 @@
+# 3ds Max Wavefront OBJ Exporter v0.94b - (c)2007 guruware
+# File Created: 22.09.2009 00:14:48
+
+newmtl caja
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	illum 2
+	Ka 0.3137 0.3163 0.2457
+	Kd 0.9412 0.9490 0.7373
+	Ks 0.0000 0.0000 0.0000
+
+newmtl bolas
+	Ns 50.0000
+	Ni 1.5000
+	d 1.0000
+	illum 2
+	Ka 0.1960 0.2706 0.3228
+	Kd 0.5882 0.8118 0.9686
+	Ks 0.0000 0.0000 0.5000
+	r 0.7
+
+newmtl piso
+	Ns 10.0000
+	Ni 1.5000
+	d 1.0000
+	illum 2
+	Ka 0.1608 0.2444 0.2418
+	Kd 0.4824 0.7333 0.7255
+	Ks 0.0000 0.0000 0.0000
+	
+newmtl light_material
+	Ka  1 1 1
+	Kd  0.8 0.8 0.8
+	Ks  1 1 1
+	
