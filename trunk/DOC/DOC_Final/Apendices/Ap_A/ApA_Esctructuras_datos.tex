@@ -1,0 +1,145 @@
+\chapter{Estructuras de datos}\label{sec:ApendiceEstructurasDatos}
+
+En las próximas dos secciones se presentan las estructuras de datos usadas en ambas implementaciones del algoritmo de raytracing de Whitted. Primero se muestra la estructura usada en la implementación para CPU, y luego se muestra la usada en la versión implementada para CUDA.
+
+Es importante conocer que en las primeras etapas del proyecto las dos versiones usaban la misma estructura de datos. A medida que el proyecto fue avanzando la estructura para CUDA fue evolucionando hasta llegar a la actual. Por no contar con experiencia en programación sobre CUDA la estructura tuvo que ir evolucionando junto con el aprendizaje de la herramienta.
+
+\section{Algoritmo para CPU}
+
+\begin{algorithm}[H]
+    \caption{Estructura de datos para almacenar la escena. Parte I.}
+    \label{alg:EstructuraEscenaCI}
+    \begin{algorithmic}
+        \State typedef struct $\{$
+            \State $\ \ \ \ $ObjetoEscena* objetos;
+	        \State $\ \ \ \ $int cant\_objetos;
+            \State $\ \ \ \ $Camara camara;
+            \State $\ \ \ \ $Triangulo plano\_de\_vista;
+            \State $\ \ \ \ $Luz* luces;
+            \State $\ \ \ \ $int cant\_luces;
+            \State $\ \ \ \ $UniformGrid grilla;
+            \State $\ \ \ \ $Material* materiales;
+            \State $\ \ \ \ $int cant\_materiales;
+        \State $\}$ Escena;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $float3 v1;
+            \State $\ \ \ \ $float3 v2;
+            \State $\ \ \ \ $float3 v3;
+        \State $\}$ Triangulo;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $TipoObjeto tipo;
+            \State $\ \ \ \ $Triangulo tri;
+            \State $\ \ \ \ $Triangulo normales;
+            \State $\ \ \ \ $int id\_material;
+        \State $\}$ ObjetoEscena;
+        \\
+        \State typedef enum $\{$
+            \State $\ \ \ \ $Triangle,
+        	\State $\ \ \ \ $Sphere\\
+        $\}$ TipoObjeto;
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+    \caption{Estructura de datos para almacenar la escena. Parte II.}
+    \label{alg:EstructuraEscenaCII}
+    \begin{algorithmic}
+        \State typedef struct $\{$
+            \State $\ \ \ \ $float3 ojo;
+            \State $\ \ \ \ $float3 direccion;
+            \State $\ \ \ \ $float3 up;
+        \State $\}$ Camara;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $float3 posicion;
+            \State $\ \ \ \ $float3 color;
+        \State $\}$ Luz;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $float3 dimension;
+            \State $\ \ \ \ $BoundingBox bbEscena;
+            \State $\ \ \ \ $int* voxels;
+            \State $\ \ \ \ $int* listasGrid;
+        \State $\}$ UniformGrid;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $float3 diffuse\_color;
+            \State $\ \ \ \ $float3 ambient\_color;
+            \State $\ \ \ \ $float3 specular\_color;
+            \State $\ \ \ \ $float refraction;
+            \State $\ \ \ \ $float reflection;
+            \State $\ \ \ \ $float transparency;
+            \State $\ \ \ \ $int coef\_at\_especular;
+        \State $\}$ Material;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $float3 minimum;
+            \State $\ \ \ \ $float3 maximum;
+        \State $\}$ BoundingBox;
+    \end{algorithmic}
+\end{algorithm}
+
+\section{Algoritmo para GPU}
+
+\begin{algorithm}[H]
+    \caption{Estructura de datos para almacenar la escena. Parte I.}
+    \label{alg:EstructuraEscenaCUDAI}
+    \begin{algorithmic}
+        \State typedef struct $\{$
+            \State $\ \ \ \ $Triangulo* triangulos;
+            \State $\ \ \ \ $Triangulo* normales;
+	        \State $\ \ \ \ $int cant\_objetos;
+            \State $\ \ \ \ $Camara camara;
+            \State $\ \ \ \ $Triangulo plano\_de\_vista;
+            \State $\ \ \ \ $Luz* luces;
+            \State $\ \ \ \ $int cant\_luces;
+            \State $\ \ \ \ $UniformGrid grilla;
+            \State $\ \ \ \ $Material* materiales;
+            \State $\ \ \ \ $int cant\_materiales;
+        \State $\}$ Escena;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $float4 v1;
+            \State $\ \ \ \ $float4 v2;
+            \State $\ \ \ \ $float4 v3;
+        \State $\}$ Triangulo;
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+    \caption{Estructura de datos para almacenar la escena. Parte II.}
+    \label{alg:EstructuraEscenaCUDAII}
+    \begin{algorithmic}
+        \State typedef struct $\{$
+            \State $\ \ \ \ $float3 ojo;
+            \State $\ \ \ \ $float3 direccion;
+            \State $\ \ \ \ $float3 up;
+        \State $\}$ Camara;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $float4 posicion;
+            \State $\ \ \ \ $float4 color;
+        \State $\}$ Luz;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $float3 dimension;
+            \State $\ \ \ \ $BoundingBox bbEscena;
+            \State $\ \ \ \ $int* voxels;
+            \State $\ \ \ \ $int* listasGrid;
+        \State $\}$ UniformGrid;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $float4 diffuse\_color;
+            \State $\ \ \ \ $float4 ambient\_color;
+            \State $\ \ \ \ $float4 specular\_color;
+            \State $\ \ \ \ $float4 others;
+        \State $\}$ Material;
+        \\
+        \State typedef struct $\{$
+            \State $\ \ \ \ $float3 minimum;
+            \State $\ \ \ \ $float3 maximum;
+        \State $\}$ BoundingBox;
+    \end{algorithmic}
+\end{algorithm} 
