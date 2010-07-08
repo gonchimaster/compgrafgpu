@@ -2,21 +2,29 @@
 
 \section{Introducción}
 
-El algoritmo de raytracing desarrollado por Whitted traza un rayo primario por cada pixel de la imagen a renderizar. Teniendo esto en cuenta, si se quiere renderizar una imagen cuya resolución sea 1024 por 768 pixeles se deben trazar 786432 rayos primarios. En una implementación tradicional del algoritmo de Whitted se procesa un pixel a la vez, es decir se trazan los rayos primarios en forma secuencial.
+Uno de los objetivos de este proyecto es paralelizar el algoritmo de Whitted para lograr renderizar imágenes en un tiempo menor al que insume el algoritmo tradicional, sin perder calidad en la imagen generada.
 
-Uno de los objetivos de este proyecto es paralelizar el algoritmo de Whitted para lograr renderizar imágenes en un tiempo menor al que insume el algoritmo tradicional, sin perder calidad en la imagen generada. Como todo algoritmo trazador de rayos el desarrollado por Whitted consume gran parte de su tiempo de ejecución en el proceso de lanzar rayos desde el punto de vista del observador hacia la escena. Conociendo este dato se decidió paralelizar el trazado de rayos primarios. El algoritmo de raytracing implementado lanza los rayos primarios en forma paralela, es decir procesa todos los pixeles de la imagen en paralelo. De esta manera se ataca el cuello de botella que produce el trazado de rayos en el algoritmo tradicional.
+Para obtener el color de un pixel usando el algoritmo de Raytracing se debe lanzar un rayo primario (como mínimo), si se quiere renderizar una imagen cuya resolución sea 1024 por 768 pixeles se deben trazar 786432 rayos primarios. En una implementación tradicional del algoritmo de Whitted se procesa un pixel a la vez, es decir se trazan los rayos primarios en forma secuencial. Basado en la información anterior se decidió paralelizar el algoritmo en el trazado de rayos primarios. De esta manera se ataca el cuello de botella que produce el trazado de rayos en el algoritmo tradicional.
 
 Para mantener un punto de comparación del desempeño computacional que se alcanza en el mismo algoritmo cambiando CPU por GPU lo que se hizo fue generar el mismo algoritmo, o muy parecido en lo que a optimizaciones se refiere, en CPU y en GPU. Los algoritmos se implementaron usando el lenguaje C y CUDA respectivamente. Estos algoritmos comparten el programa principal y los datos de la escena. Para que se genere un ejecutable para CPU o para GPU lo que se hace es compilar con directivas al preprocesador de que se genere el ejecutable en una u otra variante según lo que se quiera. En las secciones posteriores se detallan aspectos comunes de ambos algoritmos para luego dar detalles particulares de cada uno por separado.
 
 \section{Descripción general}
 
+Los algoritmos implementados tienen varios aspectos en común, tanto que en algunos casos utilizan el mismo modulo de software. Un ejemplo de esto es el cargado de la escena desde archivo, el cual se ejecuta a nivel de CPU para las soluciones implementadas. La construcción de la estructura de aceleración espacial también se hace utilizando el mismo modulo en ambos algoritmos.
+
+Otros aspectos en común son la recorrida de la estructura de aceleración espacial y el algoritmo de intersección rayo-primitiva. Si bien estos aspectos son comunes se implementaron en dos versiones distintas, una versión en C que usa el algoritmo para CPU y una versión para GPU que utiliza el Raytracing implementado en CUDA.
+
+La estructura de datos que usan ambas implementaciones son similares, comenzaron siendo idénticas al inicio del proyecto pero por razones de optimización la utilizada por el algoritmo para GPU fue modificada en términos de estructura y no en términos de los datos almacenados.
+
+Al mismo tiempo ambas implementaciones son muy distintas en otros aspectos, por ejemplo el núcleo del algoritmo de Raytracing esta implementado en el lenguaje C para el algoritmo para CPU, mientras que el que ejecuta en GPU esta implementado usando el modelo de programación que provee CUDA.
+
 \subsection{Aspectos comunes a ambas implementaciones}\label{sec:AspComunesAmbasImpl}
 
 \subsubsection{Cargador de escena}
 
-El algoritmo de Raytracing propuesto por Turner Whitted en 1980 requiere como entrada una escena, la cual será renderizada. Para cargar la escena a renderizar debe existir una etapa de preprocesamiento. En este trabajo la escena es cargada desde un archivo de texto usando exclusivamente la CPU. El formato de este archivo esta basado en el Wavefront OBJ version 3.0 \cite{OBJFileFormat}. Además de los datos que permite especificar un archivo OBJ, el formato utilizado permite precisar otros objetos que no son parte del estándar de Wavefront pero que son muy útiles para el algoritmo de Raytracing.
+El algoritmo de Raytracing de Whitted requiere como entrada una escena, la cual será renderizada. Para cargar la escena a renderizar debe existir una etapa de preprocesamiento. En este trabajo la escena es cargada desde un archivo de texto usando exclusivamente la CPU. El formato de este archivo esta basado en el Wavefront OBJ version 3.0 \cite{OBJFileFormat}. Además de los datos que permite especificar un archivo OBJ, el formato utilizado permite precisar otros objetos que no son parte del estándar de Wavefront pero que son muy útiles para el algoritmo de Raytracing.
 
-El formato Wavefron OBJ es un formato basado en una tira de caracteres ASCII, el cual es muy usado para guardar, intercambiar y representar modelos en tres dimensiones.
+El formato Wavefront OBJ es un formato basado en una tira de caracteres ASCII, el cual es muy usado para guardar, intercambiar y representar modelos en tres dimensiones.
 El hecho que sea texto plano lo hace muy fácil de comprender y de extender. Por lo general una escena en formato OBJ esta compuesta por dos archivos, un archivo con extensión obj y otro con extensión mtl. En el archivo obj se definen todos los elementos que componen la escena mientras que en el otro se definen los materiales de los elementos.
 En este formato se pueden especificar datos a nivel de vertices, como por ejemplo posición, mapeo de textura, normales, etc. También es posible definir elementos, como por ejemplo, puntos, líneas, polígonos, curvas, curvas en dos dimensiones y superficies. En el archivo de materiales (extensión mtl) es posible definir tantos materiales como se desee y asignar los mismos a los distintos elementos de la escena \cite{OBJSpecification}.
 
@@ -31,43 +39,21 @@ En la propuesta implementada en el proyecto el uso que se le da a este cargador 
 
 \subsubsection{Métodos de aceleración}
 
-La principal desventaja del algoritmo de Raytracing es que posee un elevado tiempo de ejecución. Esto se debe a que para cada rayo trazado se ha de probar si interseca con cada objeto de la escena, tarea que puede tomar hasta 95\% del tiempo de generación de imagen. Por lo tanto, las principales técnicas de aceleración buscan minimizar el tiempo empleado en la búsqueda de intersecciones.
-
-Las técnicas de aceleración que se le pueden aplicar a un algoritmo de Raytracing pueden ser clasificadas en tres grandes ramas. Estas son:
-\begin{itemize}
-    \item aumentar la velocidad de búsqueda de las intersecciones.
-    \item reducir el número de rayos trazados.
-\end{itemize}
-
-El objetivo del primer item puede lograrse procurando que el cálculo de las intersecciones sea lo más rápido posible, o bien utilizando algoritmos que minimicen el número de intersecciones rayo-objeto.
-Para disminuir el tiempo de ejecución de las intersecciones se deben optimizar los algoritmos de intersección, disminuyendo la cantidad de operaciones aritméticas de los mismos. Otra opción es realizar los chequeos de intersección con primitivas simples, lo cual implica algoritmos de intersección más simples.
-
-La otra manera de aumentar la velocidad de búsqueda de intersecciones es utilizar técnicas que minimicen la cantidad de intersecciones rayo-objeto que se verifican por cada rayo primario. Algunas de estas técnicas son la jerarquía de volúmenes envolventes (BVH), la subdivisión espacial uniforme y no uniforme, etc.
-
-Otra opción posible para acelerar el algoritmo de Raytracing es reducir el número de rayos trazados para generar la imagen. Al momento de generarla además de los rayos primarios se trazan rayos generados por reflexión, refracción y sombra. Para disminuir la cantidad de rayos trazados se puede utilizar la técnica de control adaptativo de la profundidad del árbol de rayos. Aplicando esta técnica el árbol de rayos generado a partir de un rayo primario no finalizará en una profundidad constante, sino cuando se determine que el trazado de nuevos rayos no aportarán una cantidad significativa de color al pixel.
-
 En este proyecto se decidió acelerar el algoritmo de Raytracing por medio de disminuir el tiempo de ejecución que toman las intersecciones rayo-objeto, pues estas consumen más del 90\% del tiempo de generación de imagen \cite{TesisEstructuras}. Para esto se tomaron medidas en los caminos posibles para lograr acelerar el algoritmo: implementar un algoritmo de intersección rayo-primitiva eficiente y reducir la cantidad de intersecciones rayo-primitiva que prueban por cada rayo primario.
 
-\paragraph{Intersección rayo-primitiva}
-
-Es importante escoger un buen método para la verificación de intersección entre los rayos y las primitivas de construcción de escenas, dado que este es parte central del Raytracing. El algoritmo de trazado de rayos implementado solo posee un tipo de primitiva, el triángulo, por lo tanto solo se
-debió escoger un método para la intersección rayo-triángulo. Se escogió solo el triángulo como primitiva de construcción de escenas porque es una primitiva sencilla y por lo tanto el algoritmo de su intersección con un rayo también lo es. Como el algoritmo de intersección es sencillo, se puede ejecutar utilizando poca cantidad de operaciones aritméticas, lo cual lo hace eficiente. Además de ser una primitiva sencilla es una primitiva ampliamente soportada por la mayoría de herramientas de modelado tridimensional, como pueden ser \emph{3D Studio Max}, \emph{Maya}, \emph{Blender}, etc. También es una primitiva que permite construir a partir de ella cualquier objeto tridimensional que se quiera modelar.
+Es importante escoger un buen método para la verificación de intersección entre los rayos y las primitivas de construcción de escenas, dado que este es parte central del Raytracing. El algoritmo de trazado de rayos implementado solo posee un tipo de primitiva, el triángulo, por lo tanto solo se debió escoger un método para la intersección rayo-triángulo. Se escogió solo el triángulo como primitiva de construcción de escenas porque es una primitiva sencilla y por lo tanto el algoritmo de su intersección con un rayo también lo es. Como el algoritmo de intersección es sencillo, se puede ejecutar utilizando poca cantidad de operaciones aritméticas, lo cual lo hace eficiente. Además de ser una primitiva sencilla es una primitiva ampliamente soportada por la mayoría de herramientas de modelado tridimensional, como pueden ser \emph{3D Studio Max}, \emph{Maya}, \emph{Blender}, etc. También es una primitiva que permite construir a partir de ella cualquier objeto tridimensional que se quiera modelar.
 
 El método utilizado para verificar la intersección entre un rayo y un triángulo es el de coordenadas baricéntricas. Dicho método verifica que el rayo interseque con el plano que contiene al triángulo y luego mediante un cambio de coordenadas verifica que la intersección se de dentro de los límites del mismo \cite{RealTimeRendering02}. Este método no es el más eficiente que existe pero su consumo de memoria es mínimo, lo cual es importante si se quiere implementar en una GPU.
 
-\paragraph{Aceleración espacial}
-
 A pesar de contar con un algoritmo de intersección eficiente es importante implementar una estrategia para no probar la intersección con todos los objetos de la escena, para cada rayo primario. En la etapa de relevamiento y evaluación de las distintas estrategias se consideraron tres estructuras de aceleración espacial: la subdivisión espacial uniforme, la subdivisión espacial adaptativa (utilizando Kd-trees) y la jerarquía de volúmenes envolventes (BVH).
 
-La estrategia de aceleración espacial que se adopto en el proyecto ``Computación Gráfica sobre GPU'' fue la subdivisión espacial uniforme. El argumento de mayor peso para la elección de esta estructura fue la simplicidad de construcción y recorrida de la misma, lo cual resulta imprescindible para paralelizar los algoritmos usando una GPU.
+La estrategia de aceleración espacial que se adopto en este proyecto fue la subdivisión espacial uniforme. El argumento de mayor peso para la elección de esta estructura fue la simplicidad de construcción y recorrida de la misma, lo cual resulta imprescindible para paralelizar los algoritmos usando una GPU.
 
-\paragraph{Construcción de la grilla}
+\subsubsection{Construcción de la grilla}
 
 Para la construcción de la grilla se adoptaron dos métodos. Esto se hizo así por dos razones, comparar cual resulta más eficiente y validar el resultado del algoritmo más complejo (pero más eficiente) con el resultado del menos eficiente (pero más sencillo de implementar). El algoritmo de construcción se ejecuta exclusivamente en la CPU, aunque se podría acelerar ejecutándolo en la GPU.
 
-\subparagraph{Construcción por fuerza bruta}
-
-Como se muestra en el Algoritmo \ref{alg:SeudoConsGrillaBruto} este método de construcción recorre todos los voxels de la grilla y para cada uno de ellos recorre todos los objetos de la escena para probar si hay intersección voxel-objeto. Este método es ineficiente porque por lo general se recorren muchos voxels innecesarios (que no tienen intersección con el objeto) por cada objeto de la escena.
+El primer algoritmo implementado para generar la subdivisión espacial uniforme fue la construcción por fuerza bruta. Como se muestra en el Algoritmo \ref{alg:SeudoConsGrillaBruto} este método de construcción recorre todos los voxels de la grilla y para cada uno de ellos recorre todos los objetos de la escena para probar si hay intersección voxel-objeto. Este método es ineficiente porque por lo general se recorren muchos voxels innecesarios (que no tienen intersección con el objeto) por cada objeto de la escena.
 
 \begin{algorithm}
     \caption{Seudocódigo del algoritmo menos eficiente de construcción de la grilla uniforme.}
@@ -85,10 +71,7 @@ Como se muestra en el Algoritmo \ref{alg:SeudoConsGrillaBruto} este método de co
     \end{algorithmic}
 \end{algorithm}
 
-
-\subparagraph{Construcción inteligente}
-
-En el Algoritmo \ref{alg:SeudoConsGrillaOptimizado} se describe un algoritmo optimizado, en este método de construcción se recorren todos los objetos de la escena, donde para cada uno ellos se calcula (en coordenadas de grilla) una caja alineada a los ejes que lo envuelve. A partir de la caja se obtienen voxels candidatos a solaparse con el objeto. Para cada voxel candidato se prueba el solapamiento caja-objeto y si da positiva se agrega el objeto al voxel que dio origen a la caja. La optimización introducida con respecto al método mostrado en el Algoritmo \ref{alg:SeudoConsGrillaBruto} permite desechar una cantidad importante de voxels que no tienen intersección con el objeto. Si no consideramos el peor caso de este método (cuando todos los objetos de la escena se solapan con todos los voxels de la grilla), que es muy poco probable, este método siempre supera al anterior en cantidad de pruebas de intersección voxel-objeto.
+En el Algoritmo \ref{alg:SeudoConsGrillaOptimizado} se describe un algoritmo de construcción optimizado, en este método de construcción se recorren todos los objetos de la escena, donde para cada uno ellos se calcula (en coordenadas de grilla) una caja alineada a los ejes que lo envuelve. A partir de la caja se obtienen voxels candidatos a solaparse con el objeto. Para cada voxel candidato se prueba el solapamiento caja-objeto y si da positiva se agrega el objeto al voxel que dio origen a la caja. La optimización introducida con respecto al método mostrado en el Algoritmo \ref{alg:SeudoConsGrillaBruto} permite desechar una cantidad importante de voxels que no tienen intersección con el objeto. Si no consideramos el peor caso de este método (cuando todos los objetos de la escena se solapan con todos los voxels de la grilla), que es muy poco probable, este método siempre supera al anterior en cantidad de pruebas de intersección voxel-objeto.
 
 \begin{algorithm}
     \caption{Seudocódigo del algoritmo eficiente de construcción de la grilla uniforme.}
@@ -108,20 +91,16 @@ En el Algoritmo \ref{alg:SeudoConsGrillaOptimizado} se describe un algoritmo opt
     \end{algorithmic}
 \end{algorithm}
 
-\paragraph{Recorrido de la grilla}
+\subsubsection{Recorrido de la grilla}
 
 El algoritmo para la recorrida de la grilla está basado en el renderizado de una línea en pantalla que se implementa en las tarjetas gráficas, el algoritmo se basa en incrementos y en cada paso para el cálculo del siguiente paso no se realizan más que unas pocas sumas y evaluaciones de condiciones.
 La implementación se realiza en 2 pasos, primero se computa el cálculo del voxel inicial y de los incrementos en cada una de las 3 direcciones para un rayo específico y por otra parte la manera en que se computa cada cambio de voxel.
 
-\subparagraph{Cálculo del voxel inicial y los incrementos}
-
 El voxel inicial se calcula de manera sencilla intersecando el rayo con el cubo que acota toda la escena que se utiliza para generar la grilla, con el punto de intersección se calcula cual es el voxel al que pertenece el punto. Para obtener el incremento se calcula la derivada en cada una de las 3 componentes, con esa derivada y el tamaño de los voxels en x, y, z se obtiene la distancia que debe recorrer el rayo para poder alcanzar el siguiente voxel, esta se calcula para cada una de las 3 componentes y se almacena en una variable, así como también se hace con las derivadas.
 
-\subparagraph{Cálculo del siguiente voxel}
+Como se muestra en el Algoritmo \ref{alg:SeudoSiguinteVoxelGrilla}, la forma en que se calcula el siguiente voxel es en base a la distancia que tiene que recorrer el rayo desde su origen hasta el siguiente punto de intersección. Se tienen tres distancias que debe recorrer el rayo para pasar al siguiente voxel en el eje X, para pasar al siguiente voxel en el eje Y y para pasar al siguiente voxel en el eje Z. La mínima de estas distancias determina cual de los tres incrementos es el que hay que realizar, el voxel que esté más cerca es el siguiente, por lo tanto hay que incrementar 1 en la dirección determinada por dicho mínimo. El Algoritmo  se muestra un seudocódigo para el cálculo del siguiente voxel.
 
-La forma en que se calcula es en base a la distancia que tiene que recorrer el rayo desde su origen hasta el siguiente punto de intersección. Se tienen tres distancias que debe recorrer el rayo para pasar al siguiente voxel en el eje X, para pasar al siguiente voxel en el eje Y y para pasar al siguiente voxel en el eje Z. La mínima de estas distancias determina cual de los tres incrementos es el que hay que realizar, el voxel que esté más cerca es el siguiente, por lo tanto hay que incrementar 1 en la dirección determinada por dicho mínimo. El Algoritmo \ref{alg:SeudoSiguinteVoxelGrilla} se muestra un seudocódigo para el cálculo del siguiente voxel.
-
-\begin{algorithm}
+\begin{algorithm}[H]
     \caption{Seudocódigo del algoritmo para avanzar en los voxels.}
     \label{alg:SeudoSiguinteVoxelGrilla}
     \begin{algorithmic}
@@ -141,7 +120,7 @@ La forma en que se calcula es en base a la distancia que tiene que recorrer el r
     \end{algorithmic}
 \end{algorithm}
 
-\section{Estructura de datos}
+\subsubsection{Estructura de datos}
 
 En el Apéndice \ref{sec:ApendiceEstructurasDatos} se detallan las estructuras de datos utilizadas en los algoritmos de Raytracing (C y CUDA) implementados. En las primeras etapas del proyecto se uso la misma estructura para ambos algoritmos, dado que en ese momento la performance de los mismos no era un objetivo de primera linea. A medida que avanzó el proyecto y la prioridad fue mejorar la eficiencia se creo una estructura por cada algoritmo. La estructura para el algoritmo en CPU se mantuvo igual, mientras que para el algoritmo en GPU se hicieron cambios que afectaron negativamente la legibilidad de código del mismo pero que mejoraron el tiempo de ejecución.
 
@@ -168,43 +147,44 @@ Se puede ver un ejemplo esquemático de la estructura \emph{UniformGrid} en la Fi
 
 \subsubsection{Archivo de configuración}
 
-Ambos algoritmos implementados utilizan un archivo de configuración, el cual debe estar presente para el correcto funcionamiento de los mismos. Se tomo la decisión de utilizar un archivo de configuración ya que para las pruebas de rendimiento es interesante cambiar los valores de los parámetros más importantes de cada algoritmo y no tener que re-compilar el código fuente con cada cambio. En el Algoritmo \ref{alg:EjemploArchivoConfig} se muestra una posible configuración de los algoritmos. Es importante destacar que el archivo de configuración incluye los parámetros de ambas implementaciones ya que, por ejemplo la parte de configuración que tiene relación con la GPU no es usada por el algoritmo para CPU.
+Ambos algoritmos implementados utilizan un archivo de configuración, el cual debe estar presente para el correcto funcionamiento de los mismos. Se tomó la decisión de utilizar un archivo de configuración ya que para las pruebas de rendimiento es interesante cambiar los valores de los parámetros más importantes de cada algoritmo y no tener que re-compilar el código fuente con cada cambio. En el Algoritmo \ref{fig:EjemploArchivoConfig} se muestra una posible configuración de los algoritmos. Es importante destacar que el archivo de configuración incluye los parámetros de ambas implementaciones ya que, por ejemplo la parte de configuración que tiene relación con la GPU no es usada por el algoritmo para CPU.
 
-\begin{algorithm}
-    \caption{Ejemplo de contenido para el archivo de configuración.}
-    \label{alg:EjemploArchivoConfig}
-    \begin{algorithmic}
-        \State $\#=TAMANIO$ $DE$ $LA$ $PARTICION$
-        \State $TAMANIO\_GRILLA.X=64$
-        \State $TAMANIO\_GRILLA.Y=50$
-        \State $TAMANIO\_GRILLA.Z=50$
-        \State $\#=RESOLUCION$ $DE$ $LA$ $IMAGEN$
-        \State $RESOLUCION.X=640$
-        \State $RESOLUCION.Y=480$
-        \State $INFINITO= 34028234660000000$
-        \State $\#=VALOR$ $TOMADO$ $COMO$ $CERO$
-        \State $ZERO=0.000001$
-        \State $\#=VALOR$ $MAXIMO$ $REBOTES$ $RAYO$
-        \State $PROFUNDIDAD\_RECURSION=3$
-        \State $\#=THREADS$ $POR$ $BLOQUE$
-        \State $THREADS.X=8$
-        \State $THREADS.Y=16$
-        \State $ESCENA=../escenas/afrodita.obj$
-    \end{algorithmic}
-\end{algorithm}
+\begin{figure}[H]
+    \begin{center}
+    \begin{boxedverbatim}
+#= tamaño de la partición espacial
+TAMANIO_GRILLA.X=64
+TAMANIO_GRILLA.Y=50
+TAMANIO_GRILLA.Z=50
+#= resolución de la imagen
+RESOLUCION.X=640
+RESOLUCION.Y=480
+INFINITO= 34028234660000000
+#= valor tomado como cero
+ZERO=0.000001
+#= valor máximo rebotes rayo
+PROFUNDIDAD_RECURSION=3
+#= hilos por bloque
+THREADS.X=8
+THREADS.Y=16
+ESCENA=../escenas/afrodita.obj
+    \end{boxedverbatim}
+\end{center}
+\caption{Ejemplo de contenido para el archivo de configuración.}
+\label{fig:EjemploArchivoConfig}
+\end{figure}
+
 
 En el archivo se debe configurar el tamaño de la subdivisión espacial uniforme, se debe indicar el tamaño de la partición en cada eje de coordenadas. Es posible definir también la resolución de la imagen (en pixeles) que genera el algoritmo de raytracing. En este archivo también se definen valores para el cero y para el infinito que usa el algoritmo de raytracing, el ajuste del primer valor permite solucionar problemas de errores numéricos mientras que el segundo se usa en algoritmos que necesitan definir una distancia ``infinita''. Otro parámetro necesario para el algoritmo de raytracing y que es interesante variar para cada escena, es la profundidad máxima considerada por el algoritmo para cada árbol de rayos que genera cada rayo primario (debido a los sucesivos rebotes por los fenómenos de reflexión y refracción). Por último, se debe especificar la dimensión de los bloques de hilos de ejecución, este parámetro es usado solo por el algoritmo para GPU y en las siguientes secciones quedará perfectamente establecido cual es su cometido.
 
 
 \subsection{Implementación para C (CPU)}
 
-El principal objetivo de desarrollar un algoritmo de raytracing que ejecute por completo a nivel de CPU es tener un punto de comparación del rendimiento computacional del algoritmo implementado para GPU. Al implementar la versión en CPU se esta cubriendo una parte de los puntos de comparación, otro punto posible es comparar con algoritmos similares implementados por terceros.
+El principal objetivo de desarrollar un algoritmo de Raytracing que ejecute por completo a nivel de CPU es tener un punto de comparación del rendimiento computacional del algoritmo implementado para GPU. Al implementar la versión en CPU se está cubriendo una parte de los puntos de comparación, otro punto posible es comparar con algoritmos similares implementados por terceros.
 
-Dado que se toma como base de comparación el tiempo de ejecución de este algoritmo, el mismo debe ser lo más eficiente posible de manera de obtener datos de comparación que sean justos. En la implementación para CPU del algoritmo de raytracing se sigue completamente la versión de Whitted, es decir se implemento el algoritmo usando recursión. Teniendo en cuenta que debe que ser lo más eficiente posible, si bien se opto por usar recursión todas las llamadas a procedimientos o subrutinas se hacen usando punteros a memoria de manera de no generar tiempo de copia innecesario.
+Dado que se toma como base de comparación el tiempo de ejecución de este algoritmo, el mismo debe ser lo más eficiente posible de manera de obtener datos de comparación que sean justos. En la implementación para CPU del algoritmo de raytracing se sigue completamente la versión de Whitted, es decir se implementó el algoritmo usando recursión. Teniendo en cuenta que debe que ser lo más eficiente posible, si bien se optó por usar recursión todas las llamadas a procedimientos o subrutinas se hacen usando punteros a memoria de manera de no generar tiempo de copia innecesario.
 
 \subsubsection{Arquitectura}
-
-En la Figura \ref{fig:ArqRayTracingCPU} se muestra un diagrama de arquitectura de la solución implementada. El componente ``Cargador OBJ'' es el encargado de leer el archivo en formato ``OBJ'', el cual especifica la escena y los materiales utilizados en la misma. Este componente no fue implementado en el proyecto sino que fue implementado por un tercero \cite{FuenteCargadorOBJ}.
 
 \begin{figure}[H]
     \centering
@@ -212,6 +192,8 @@ En la Figura \ref{fig:ArqRayTracingCPU} se muestra un diagrama de arquitectura d
     \caption{Arquitectura raytracing implementado en CPU.}
     \label{fig:ArqRayTracingCPU}
 \end{figure}
+
+En la Figura \ref{fig:ArqRayTracingCPU} se muestra un diagrama de arquitectura de la solución implementada. El componente ``Cargador OBJ'' es el encargado de leer el archivo en formato ``OBJ'', el cual especifica la escena y los materiales utilizados en la misma. Este componente no fue implementado en el proyecto sino que fue implementado por un tercero \cite{FuenteCargadorOBJ}.
 
 El componente ``Cargador Escena'' fue implementado en el marco de este proyecto y utiliza el ``Cargador OBJ'' para leer la escena desde archivo. Este componente generado en el proyecto, tiene su propia estructura de datos para el almacenamiento de la escena. Debido a esto se encarga de inicializar su estructura a partir de los datos leídos por el cargador externo al proyecto. Además se encarga de la construcción de la subdivisión espacial uniforme.
 
@@ -222,12 +204,11 @@ El componente ``Raytracing'' es el encargado de renderizar la imagen a través de
 
 \subsection{Implementación para CUDA (GPU)}
 
-
 \subsubsection{Paralelización del algoritmo}
 
-El algoritmo de raytracing tradicional propuesto por Whitted, traza los rayos primarios en forma secuencial. En otras palabras, traza un rayo primario, procesa todo el árbol de rayos generado por los distintos rebotes del rayo en los objetos de la escena y luego, una vez terminado el procesamiento del rayo primario anterior, traza el siguiente. Por consiguiente, el color de los pixeles de la imagen también se determina en forma secuencial.
+El algoritmo de Raytracing tradicional propuesto por Whitted, traza los rayos primarios en forma secuencial. En otras palabras, traza un rayo primario, procesa todo el árbol de rayos generado por los distintos rebotes del rayo en los objetos de la escena y luego, una vez terminado el procesamiento del rayo primario anterior, traza el siguiente. Por consiguiente, el color de los pixeles de la imagen también se determina en forma secuencial.
 
-Para acelerar el algoritmo de raytracing tradicional se usa la idea de trazar los rayos primarios en paralelo. De esta manera todos los árboles de rayos generados por cada uno de los rayos primarios se procesan en paralelo. Por lo tanto, el color de un pixel se calcula al mismo tiempo que el de los demás pixeles de la imagen.
+Para acelerar el algoritmo de Raytracing tradicional se usa la idea de trazar los rayos primarios en paralelo. De esta manera todos los árboles de rayos generados por cada uno de los rayos primarios se procesan en paralelo. Por lo tanto, el color de un pixel se calcula al mismo tiempo que el de los demás pixeles de la imagen.
 
 Para resolver el problema en términos del modelo de programación usado por CUDA se hizo una descomposición en sub-problemas, dividiendo la imagen a renderizar. La imagen se divide usando una grilla uniforme de dos dimensiones, donde cada celda de la grilla tiene la misma cantidad de pixeles. En la Figura \ref{fig:subfigDivisionImagen:a} se muestra una posible división de la imagen. En este ejemplo la imagen se divide en $n \times m$ celdas, quedando así cada celda con $\frac{R_{x}}{n}\times\frac{R_{y}}{m}$ pixeles. En la Figura \ref{fig:subfigDivisionImagen:b} se muestra en detalle la celda definida por los intervalos $[X_{i},X_{i+1}]$ y $[Y_{j},Y_{j+1}]$, la cual contiene una pequeña parte de los pixeles de la imagen.
 
@@ -285,11 +266,11 @@ Los rayos primarios son datos de entrada para el \emph{kernel} encargado de calc
 La forma de invocación al \emph{kernel} principal es según la división en bloques de la imagen que se presentó anteriormente y la cantidad de hilos que ejecutan el procedimiento de calculo de color es igual a la cantidad de pixeles. Cada uno de los rayos lanzados recorrerá la estructura de aceleración espacial, siguiendo los reflejos y refracciones. Al finalizar esta ejecución es que se realiza la copia de los datos generados en la GPU nuevamente a la CPU para ser mostrados en pantalla.
 
 \section{Versiones}
-El desarrollo del raytracing para CUDA fue iterativo-incremental, donde algunas algunas iteraciones fueron más interesantes que otras, desde el punto de vista del rendimiento del algoritmo para renderizar la imagen (tiempo de ejecución). Siguiendo esta linea, en esta sección se detallan las versiones mas destacadas que surgieron a lo largo del proyecto, al culminar alguna de las tantas iteraciones.
+El desarrollo del raytracing para CUDA fue iterativo-incremental, donde algunas algunas iteraciones fueron más interesantes que otras, desde el punto de vista del rendimiento del algoritmo para renderizar la imagen (tiempo de ejecución). Siguiendo esta linea, en esta sección se detallan las versiones más destacadas que surgieron a lo largo del proyecto, al culminar alguna de las tantas iteraciones.
 
 Uno de los objetivos de este proyecto es que el raytracing para CUDA tenga un tiempo de ejecución menor (para la misma escena) al algoritmo implementado en C y a otros algoritmos similares para GPU implementados por terceros. Por lo tanto las versiones que se detallan a continuación se consideran hitos en los cuales se mejoró sustancialmente el tiempo de ejecución.
 
-El primer hito esta marcado por la versión que implementa el raytracing de Whitted completo, el siguiente hito esta marcado por la introducción de mejoras que tienen que ver con la jerarquía de memoria de la GPU. El último hito esta señalado por la mejora del algoritmo de intersección rayo-triángulo.
+El primer hito esta marcado por la versión que implementa el Raytracing de Whitted completo, el siguiente hito esta marcado por la introducción de mejoras que tienen que ver con la jerarquía de memoria de la GPU. El último hito esta señalado por la mejora del algoritmo de intersección rayo-triángulo.
 
 \subsection{Versión 1}
 
