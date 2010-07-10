@@ -6,7 +6,6 @@ Para poder comprender la forma en que se generan las imágenes fotorealistas por 
 Este capítulo intentará interiorizar al lector en los conceptos escenciales tales como: que es una escena y los algoritmos utilizados para generar imágenes. También se mostrarán los modelos para la iluminación que se utilizan, así como la clasificación de los algoritmos en base a estos modelos.
 
 
-
 \subsection{Concepto de escena}
 Una escena es una colección de objetos y fuentes de luz que será vista por medio de una cámara. Cada una de estas partes esta colocada en lo que se llama ``mundo'', que es un espacio resultante de modelar cuerpos tridimensionales en una imagen bidimensional \cite{Hearn88}. Por ejemplo, si se quiere una imagen de una habitación con una mesa en el centro, la escena debe estar compuesta por dos objetos principales que representen la habitación y la mesa, una o más fuentes de luz, y la cámara, que es desde donde se ve la escena.
 
@@ -123,7 +122,6 @@ En el Algoritmo \ref{alg:algoritmoRTracingI} se muestra un pseudocódigo del algo
 La función $verificarSombra$ del Algoritmo \ref{alg:algoritmoRTracingII} se resuelve lanzando un rayo desde el punto de intersección hacia cada uno de los focos de luz para comprobar cuanta luz incide en el objeto. Si todos los rayos intersecan a un objeto antes de llegar al foco de luz entonces el punto está en sombra, caso contrario se tendrá alguna función que calcule cuanto aporta el foco a la iluminación del punto.
 Si el objeto atravesado más cercano tiene reflexión se genera un rayo reflejado con origen en la intersección y cuya dirección es calculada en función del ángulo de incidencia del rayo original sobre la superficie del objeto. Si la superficie del objeto tiene refracción se genera un rayo refractado con origen en la intersección cuya dirección es calculada en base a las densidades de los medios por los que atraviesa el rayo utilizando, por ejemplo, la ley de Snell \cite{LibroCompGrafica}. Los rayos reflejado y refractado se usan para invocar recursivamente. Con el color del objeto, el trazado de los rayos de sombra y las dos invocaciones recursivas, de reflexión y refracción se calcula el color del pixel invocando a la función $calcularColorFinal$. Esta función aplica la ecuación de iluminación del modelo de Whitted.
 
-
 \begin{algorithm}
     \caption{Seudocódigo de la función trazarRayo.}
     \label{alg:algoritmoRTracingII}
@@ -133,7 +131,6 @@ Si el objeto atravesado más cercano tiene reflexión se genera un rayo reflejado 
         \If {$profActual < MAXPROF$}
             \State \Return $colorNulo$;
         \EndIf
-
         \State $objetoMasCercano = \infty;$
         \ForAll{objeto $o$ en la escena}
             \If {$hayInterseccion(o, r)$}
