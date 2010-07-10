@@ -679,6 +679,12 @@ v 0.0000 0.0000 64.0000
 usemtl light_material
 lp -1
 
+#luz puntual numero 2
+#el proximo vertice es la posicion
+v 64.0000 0.0000 0.0000
+usemtl light_material
+lp -1
+
 #Camara
 v 0.0000 0.0000 0.0000
 v 24.0000 -15.0000 20.0000
