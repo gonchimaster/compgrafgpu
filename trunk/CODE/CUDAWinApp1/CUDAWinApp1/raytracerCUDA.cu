@@ -98,7 +98,7 @@ __device__ bool intersecar(Rayo r, float &distancia, float3 & normal, int ind_ob
 		float3 normal_v1 = make_float3(tex1Dfetch(textura_normales, 3 * ind_obj));
 		float3 normal_v2 = make_float3(tex1Dfetch(textura_normales, 3 * ind_obj + 1));
 		float3 normal_v3 = make_float3(tex1Dfetch(textura_normales, 3 * ind_obj + 2));
-		normal = normal_v1 * s + normal_v2 * u + normal_v3 * v;
+		normal = (normal_v1 * s + normal_v2 * u + normal_v3 * v);
 	}
 	return true;
 	/*
@@ -430,10 +430,68 @@ __global__ void hallarColor(float3* retorno){
 					//TODO MAS LUCES
 					//Para todas las luces
 					int ind_luces = 0;
+					int id_material = tex1Dfetch(textura_triangulos, 3 * menor).w;
+					float3 colorDif = make_float3(tex1Dfetch(textura_materiales,4* id_material));
+					float3 colorAmb = make_float3(tex1Dfetch(textura_materiales, 1+4*id_material));
+		
 
 					while((ind_luces<=cant_luces) && sombra<1.0){
+						dirSombra = make_float3(tex1Dfetch(textura_luces, ind_luces*2)) - origen;
+						rayoSombra.dir = dirSombra;
+						rayoSombra.dir = normalize(rayoSombra.dir);
+						origen = origen + rayoSombra.dir * 1000000 * configuracion_gpu.ZERO;
+						rayoSombra.origen = origen;
 
-						dirSombra = make_float3(tex1Dfetch(textura_luces, 0)) - origen;
+						bool salir_sombra = false;
+						float3 entradaSombra= make_float3(0,0,0);
+						float3 increSombra= make_float3(0,0,0);
+						float3 tMinSombra = make_float3(0,0,0);
+						float3 normalS= make_float3(0,0,0);
+						int menorS=0;					
+						
+						calcularInicioGrilla(rayoSombra.dir,rayoSombra.origen, increSombra, tMinSombra);
+
+						entradaSombra = coordMundoACoordGrid(rayoSombra.origen);
+			
+						
+						while (sombra<1.0 && !salir_sombra){
+							int indiceGrillaS = (entradaSombra.z * dimension_grilla.y* dimension_grilla.x) + (entradaSombra.y * dimension_grilla.x) + entradaSombra.x;
+
+							int comienzoListaS = tex1Dfetch(textura_voxels, indiceGrillaS);
+							float distanciaS = configuracion_gpu.INFINITO;						
+							
+							//Interseco con los objetos de la celda de la grilla
+							if(comienzoListaS!=-1){
+								bool mas_sombra = intersecarObjetosGrilla(comienzoListaS, rayoSombra, distanciaS, normalS, menorS, false);
+								if(mas_sombra){
+									//TODO calcular incremento de la sombra
+									sombra=1.0;
+								}
+							}
+							if(sombra<1.0){
+								salir_sombra = !siguienteVoxel(tMinSombra, increSombra.x, increSombra.y, increSombra.z, entradaSombra);
+							}
+						}
+						if( sombra < 1.0 )
+						{
+							float LxN = dot(rayoSombra.dir,normal);
+							if (LxN>0)
+							{
+								float3 luz = make_float3(tex1Dfetch(textura_luces, ind_luces*2+1));
+								color = colorDif * luz * LxN + colorAmb;
+
+							}
+						}
+						else
+						{
+							color = colorAmb;
+						}
+						ind_luces++;
+					}
+
+				/*	while((ind_luces<=cant_luces) && sombra<1.0){
+
+						dirSombra = make_float3(tex1Dfetch(textura_luces, ind_luces*2)) - origen;
 						rayoSombra.dir = dirSombra;
 						rayoSombra.dir = normalize(rayoSombra.dir);
 		
@@ -478,27 +536,32 @@ __global__ void hallarColor(float3* retorno){
 						ind_luces++;
 					}
 					ind_luces = 0;
-					if(sombra<1.0){
+					if(sombra<1.0)
+					{
 						dirSombra = normalize(dirSombra);
 						normal = normalize(normal);
 						
 						float LxN = dot(dirSombra,normal);
-						if (LxN>0){
+						if (LxN>0)
+						{
 							//Lado Atras...
 
 							int id_material = tex1Dfetch(textura_triangulos, 3 * menor).w;
 							color = make_float3(tex1Dfetch(textura_materiales,4* id_material));
-							float3 luz = make_float3(tex1Dfetch(textura_luces, 1));
+							float3 luz = make_float3(tex1Dfetch(textura_luces, ind_luces*2+1));
 							color = color * luz * LxN + make_float3(tex1Dfetch(textura_materiales, 1+4*id_material));
 						}
-						else{
+						else
+						{
 							color = color + make_float3(tex1Dfetch(textura_materiales, 1 + 4 * tex1Dfetch(textura_triangulos, 3 * menor).w));
 						}
+						
 					}
 					else{
 						//Sumar color sombra multiplicado
+						
 						color = color + make_float3(tex1Dfetch(textura_materiales, 1 + 4 * tex1Dfetch(textura_triangulos, 3 * menor).w));
-					}
+					}*/
 					interseque = true;
 				    salirGrilla = true;
 				}
