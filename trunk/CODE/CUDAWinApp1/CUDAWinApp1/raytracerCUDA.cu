@@ -60,7 +60,7 @@ __device__ bool intersecar(Rayo r, float &distancia, float3 & normal, int ind_ob
 	float3 v2 = make_float3(tex1Dfetch(textura_triangulos, 3 * ind_obj + 1));
 	float3 v3 = make_float3(tex1Dfetch(textura_triangulos, 3 * ind_obj + 2));
 			
-	float3 lado1 = v2-v1;
+/*	float3 lado1 = v2-v1;
 	float3 lado2 = v3-v1;
 
 	float3 p= cross(r.dir,lado2);
@@ -100,8 +100,8 @@ __device__ bool intersecar(Rayo r, float &distancia, float3 & normal, int ind_ob
 		float3 normal_v3 = make_float3(tex1Dfetch(textura_normales, 3 * ind_obj + 2));
 		normal = (normal_v1 * s + normal_v2 * u + normal_v3 * v);
 	}
-	return true;
-	/*
+	return true;*/
+	
 
 	float3 primero = v2 - v1;
 	float3 segundo = v3 - v1;
@@ -129,7 +129,7 @@ __device__ bool intersecar(Rayo r, float &distancia, float3 & normal, int ind_ob
 		}
 		return true;
 	}
-	return false;*/
+	return false;
 }
 
 
@@ -433,9 +433,10 @@ __global__ void hallarColor(float3* retorno){
 					int id_material = tex1Dfetch(textura_triangulos, 3 * menor).w;
 					float3 colorDif = make_float3(tex1Dfetch(textura_materiales,4* id_material));
 					float3 colorAmb = make_float3(tex1Dfetch(textura_materiales, 1+4*id_material));
+					color = colorAmb;
 		
 
-					while((ind_luces<=cant_luces) && sombra<1.0){
+					while((ind_luces < cant_luces)){
 						dirSombra = make_float3(tex1Dfetch(textura_luces, ind_luces*2)) - origen;
 						rayoSombra.dir = dirSombra;
 						rayoSombra.dir = normalize(rayoSombra.dir);
@@ -452,9 +453,9 @@ __global__ void hallarColor(float3* retorno){
 						calcularInicioGrilla(rayoSombra.dir,rayoSombra.origen, increSombra, tMinSombra);
 
 						entradaSombra = coordMundoACoordGrid(rayoSombra.origen);
-			
+						sombra = 0.f;
 						
-						while (sombra<1.0 && !salir_sombra){
+						while (sombra<1.0f && !salir_sombra){
 							int indiceGrillaS = (entradaSombra.z * dimension_grilla.y* dimension_grilla.x) + (entradaSombra.y * dimension_grilla.x) + entradaSombra.x;
 
 							int comienzoListaS = tex1Dfetch(textura_voxels, indiceGrillaS);
@@ -478,13 +479,8 @@ __global__ void hallarColor(float3* retorno){
 							if (LxN>0)
 							{
 								float3 luz = make_float3(tex1Dfetch(textura_luces, ind_luces*2+1));
-								color = colorDif * luz * LxN + colorAmb;
-
+								color+= colorDif * luz * LxN;
 							}
-						}
-						else
-						{
-							color = colorAmb;
 						}
 						ind_luces++;
 					}
@@ -676,7 +672,8 @@ extern "C" void UpdateCamera(Escena* es, Configuracion conf){
 extern "C" void initTexture(Escena* es, Configuracion conf){
 	//SE COPIAN A CONSTANTES LOS VALORES
 	CUDA_SAFE_CALL(cudaMemcpyToSymbol(configuracion_gpu,&conf,sizeof(Configuracion)));
-	CUDA_SAFE_CALL(cudaMemcpyToSymbol(cant_luces,&(es->cant_luces),sizeof(float)));
+	float cantLucesCopy = static_cast<float>(es->cant_luces);
+	CUDA_SAFE_CALL(cudaMemcpyToSymbol(cant_luces,&(cantLucesCopy),sizeof(float)));
 	CUDA_SAFE_CALL(cudaMemcpyToSymbol(bounding_box,&(es->grilla.bbEscena),sizeof(BoundingBox)));
 	CUDA_SAFE_CALL(cudaMemcpyToSymbol(dimension_grilla,&(es->grilla.dimension),sizeof(float3)));
 	float3 tam_v = (es->grilla.bbEscena.maximum-es->grilla.bbEscena.minimum)/es->grilla.dimension;
