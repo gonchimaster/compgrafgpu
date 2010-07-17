@@ -1,21 +1,21 @@
 \chapter{Real Time} % 20 páginas mas o menos...
 
 \section{Introducción}
-Esta sección pretende entrar en detalle de los algoritmos y técnicas existentes para la aceleración de la generación de imágenes por computadora. Se verán los métodos que fueron analizados y tenidos en cuenta a la hora de realizar este trabajo, centrándose en dos puntos principales que son: las estructuras de aceleración espacial y la paralelización de procesos. Por un lado se busca reducir la cantidad de cálculos requeridos para la generación de una imagen y por otro lado hacer que los cálculos se realicen en menos tiempo.
+Esta sección pretende entrar en detalle de los algoritmos y técnicas existentes para la aceleración de la generación de imágenes por computadora. Se verán los métodos que fueron analizados durante el desarrollo de este trabajo, centrándose en dos puntos principales que son: las estructuras de aceleración espacial y la paralelización de procesos. Por un lado se busca reducir la cantidad de cálculos requeridos para la generación de una imagen y por otro lado hacer que los cálculos se realicen en menos tiempo.
 
 \section{Métodos de aceleración para raytracing}
 El concepto de traza de rayos tiene muchas aplicaciones en computación gráfica, ejemplo de esto son los algoritmos de raycasting y raytracing de Whitted. Si bien estos algoritmos son diferentes entre si, tienen en común un aspecto: requieren trazar una enorme cantidad de rayos (generalmente millones) y gran parte de su tiempo de ejecución es consumido por la traza de rayos.
 
-A partir del reconocimiento del gran consumo computacional que significa trazar grandes cantidades de rayos, se tornó muy importante encontrar métodos de a\-ce\-le\-ra\-ción para este proceso. Whitted al momento de desarrollar su algoritmo (en el año 1980) pudo apreciar que se gasta mucho tiempo en la traza de rayos. Desde ese momento hasta la actualidad se han propuesto diversas técnicas que buscan optimizar este proceso\cite{wald::PhD}.
+A partir del reconocimiento del gran consumo computacional que significa trazar grandes cantidades de rayos, se tornó muy importante encontrar métodos de a\-ce\-le\-ra\-ción para este proceso. Whitted al momento de desarrollar su algoritmo (en el año 1980) marcó el alto costo en tiempo en la traza de rayos. Desde ese momento hasta la actualidad se han propuesto diversas técnicas que buscan optimizar este proceso\cite{wald::PhD}.
 
 Los métodos de optimización propuestos hasta el momento pueden agruparse en dos categorías principales, según la forma de abordar el problema. A la primer categoría pertenecen las técnicas que apuntan a reducir el número de rayos a trazar. Hay dos caminos para lograr disminuir la cantidad de rayos, una forma es construir la imagen lanzando menos rayos primarios. Un ejemplo de este tipo de técnicas es la llamada \emph{adaptive sampling}. Usando este método, para cada pixel de la imagen, se trazan rayos primarios por cada uno de sus vértices. Si la intensidad de la luz en cada una de las esquinas del pixel varía significativamente con respecto a las otras, entonces el pixel es dividido en cuatro partes iguales. Luego se lanzan rayos primarios por cada nueva parte de la misma forma que se lanzaron en el pixel original. Las partes nuevas, si la intensidad de luz en sus esquinas difieren significativamente, se vuelven a dividir en cuatro y el proceso se repite. Esta subdivisión se repite hasta un nivel arbitrario, el cual debe establecerse buscando una buena relación entre la calidad de la imagen y la aceleración lograda. Cada parte comparte rayos con el nivel superior, lo que implica que no se deben lanzar cuatro rayos por parte en todos los casos. Una vez terminada la subdivisión el color del pixel es interpolado según el color de cada una de sus partes\cite{wald::PhD}.
 
-El otro camino es reducir el número de rayos que deben ser trazados por cada rayo primario, es decir la cantidad de rayos secundarios. Un ejemplo de este tipo de técnicas es la llamada \emph{shadow caching}. La mayoría de los rayos que se tranzan en un algoritmo de raytracing son rayos de sombra, ya que por cada rayo primario se trazan varios rayos de sombra. Para cada rayo de sombra se debe verificar si hay algún objeto en su camino hacia la fuente de luz y alcanza con que interseque con uno para garantizar oclusión. El cache de sombra explota el hecho de que muchos rayos se sombra son similares (sobre todo los que son originados por la misma fuente de luz) y que además intersecan con el mismo objeto. En el cache se guarda para cada luz el último objeto que causo su oclusión. De esta manera, cada vez que se analiza un rayo de sombra se prueba primero si el mismo interseca con el objeto que se encuentra en el cache, para la fuente de luz que lo origino. Cuando hay varias fuentes de luz en la escena y hay un buen nivel de oclusión el cache de sombras reduce de manera importante el tiempo de procesamiento de los rayos de sombra\cite{wald::PhD}.
+El otro camino es reducir el número de rayos que deben ser trazados por cada rayo primario, es decir la cantidad de rayos secundarios. Un ejemplo de este tipo de técnicas es la llamada \emph{shadow caching}. La mayoría de los rayos que se tranzan en un algoritmo de raytracing son rayos de sombra, ya que por cada rayo primario se trazan varios rayos de sombra. Para cada rayo de sombra se debe verificar si hay algún objeto en su camino hacia la fuente de luz y alcanza con que interseque con uno para garantizar oclusión. El caché de sombra explota el hecho de que muchos rayos se sombra son similares (sobre todo los que son originados por la misma fuente de luz) y que además intersecan con el mismo objeto. En el caché se guarda para cada luz el último objeto que causo su oclusión. De esta manera, cada vez que se analiza un rayo de sombra se prueba primero si el mismo interseca con el objeto que se encuentra en el caché, para la fuente de luz que lo origino. Cuando hay varias fuentes de luz en la escena y hay un buen nivel de oclusión el caché de sombras reduce de manera importante el tiempo de procesamiento de los rayos de sombra\cite{wald::PhD}.
 
 A la segunda categoría pertenecen las técnicas que no se preocupan por reducir la cantidad de rayos lanzados para generar la imagen sino que buscan acelerar la intersección de los rayos con la escena. Se puede lograr acelerar el núcleo de los algoritmos de raytracing por varios caminos, eligiendo cuidadosamente las primitivas usadas para la construcción de las escenas y sus algoritmos de intersección, usando volúmenes envolventes que permitan descartar primitivas que no sean alcanzadas por el rayo o utilizando divisiones espaciales (estructuras de aceleración espacial) de la escena que garanticen no recorrer toda su lista de objetos por cada rayo que la atraviesa\cite{wald::PhD}.
 
 \section{Estructuras de aceleración espacial}
-El algoritmo de trazado de rayos es una buena opción para generar imágenes de alta definición pero hay que considerar un inconveniente: es computacionalmente muy costoso. La principal razón de esto es la base del algoritmo, las intersecciones de los rayos con los objetos de la escena. Estas intersecciones son muy costosas de calcular porque para cada rayo y cada objeto de la escena hay que hacer un chequeo de intersección. Si se consideran todos los chequeos necesarios para generar una imagen, estos pueden llegar a tomar el 95\% del tiempo de cálculo \cite{TesisEstructuras}.
+ Si se consideran todos los chequeos necesarios para generar una imagen utilizando el algoritmo de Raytracing, estos pueden llegar a tomar el 95\% del tiempo de cálculo \cite{TesisEstructuras}.
 Se han desarrollado técnicas para optimizar el tiempo que toman las intersecciones rayo-objeto, basadas en tratar de minimizar el número de intersecciones. A continuación se muestran algunas (las más importantes según Thrane y Ole \cite{TesisEstructuras}) de estas técnicas.
 
 \subsection{Subdivisión espacial}
@@ -37,13 +37,12 @@ Cuando las particiones (voxeles) son todas del mismo tamaño la técnica se denomi
 Otro aspecto a tener en cuenta es que los voxeles se procesan en el mismo orden en que son encontrados por el rayo, lo que garantiza que cualquier voxel intersecado por un rayo estará más cerca del origen del mismo que los restantes. Por consiguiente, una vez encontrado un punto de intersección, por lo general no será necesario considerar el contenido de los restantes voxeles. Esto reduce considerablemente el número de objetos que se han de probar para intersección.
 Cuando un rayo atraviesa un voxel, se tiene que averiguar si hay intersección con cada uno de los objetos contenidos en él, y se debe escoger la intersección que se encuentre más cercana al origen del rayo.
 
-\subsubsection{Construcción.}
-Dados los bordes de la escena y la lista de objetos de esta se puede construir la subdivisión espacial uniforme, el único parámetro necesario para su construcción es su resolución a lo largo de los tres ejes imaginarios.
+
+La construcción de la subdivisión espacial uniforme se realiza de la siguiente forma: dados los bordes de la escena y la lista de objetos de esta se puede construir la subdivisión espacial uniforme, el único parámetro necesario para su construcción es su resolución a lo largo de los tres ejes imaginarios.
 
 Según Thrane y Ole no hay una técnica que garantice la mejor resolución o por lo menos no para todos los casos. En el mismo trabajo se sugiere que la resolución sea $3\sqrt[3]{N}$ voxeles a lo largo del eje más corto, donde $N$ es el número de triángulos de la escena. Aunque también se sugiere que puede ajustarse empíricamente para lograr óptimos resultados en las imágenes.
 Una vez que la resolución es determinada, podemos construir una matriz tridimensional de listas de objetos que servirá para manejar los voxeles construidos y su contenido. Luego para cada objeto de la escena, se deben encontrar los voxeles que lo contienen y agregar una referencia al objeto a cada uno de ellos.
 
-\subsubsection{Acceso a los voxeles.}
 La técnica usada para moverse a través de los voxeles de la grilla es equivalente (para tres dimensiones) a la técnica para dibujar una línea en dos dimensiones. Este algoritmo es denominado Digital Differential Algorithm (DDA), fue propuesto por Fujimoto y es usado por Thrane y Ole, con algunas mejoras propuestas por Amanatides y Woo \cite{TesisEstructuras}.
 En el Algoritmo \ref{alg:algoritmoDDA} se muestra un pseudocódigo de la técnica para dos dimensiones para facilitar la comprensión (extenderla a tres dimensiones es simple).
 \begin{algorithm}
@@ -79,8 +78,7 @@ Luego de la inicialización de estas variables se usa un algoritmo (Algoritmo \re
   \label{fig:ExampleDDA}
 \end{figure}
 
-\subsubsection{Paralelismo en GPU.}
-La subdivisión espacial uniforme fue implementada por primera vez sobre una GPU por Purcell y en ese momento se convirtió en la única estructura de aceleración en ser paralelizada sobre GPU \cite{Purcell}.
+La subdivisión espacial uniforme fue implementada por primera vez sobre una GPU por Purcell y se convirtió en la única estructura de aceleración en ser paralelizada sobre GPU hasta ese momento \cite{Purcell}.
 En el trabajo de Thrane y Ole \cite{TesisEstructuras} se resumieron las principales razones por las cuales se considera a esta estructura buena para ser paralelizada sobre una GPU. Estas razones son:
 \begin{itemize}
   \item Cada voxel atravesado por el rayo puede ser localizado y accedido en tiempo constante usando aritmética simple. Esto elimina la necesidad de recorrer árboles (como en otras estructuras de aceleración) y por lo tanto, el manejo de mucha información a nivel de la GPU, lo cual resulta muy costoso.
@@ -91,10 +89,10 @@ En el trabajo de Thrane y Ole \cite{TesisEstructuras} se resumieron las principa
 En la subdivisión espacial se puede dar el caso de que un polígono sea referenciado por más de un voxel. Esto genera que en ocasiones especiales, se haga más de una vez el mismo test de intersección. Para resolver esto se han generado técnicas como la denominada Mailboxing (esta técnica mantiene una tabla donde se asocia cada rayo con el último polígono al cual se le realizó el test de intersección). Al emplear estrategias de la paralelización este tipo de técnicas no pueden utilizarse, lo que implica que el algoritmo paralelo debería hacer chequeos repetidos \cite{TesisEstructuras}.
 
 \subsection{KD-Trees}
-\subsubsection{Conceptos básicos.}
+
 Al igual que la subdivisión espacial uniforme la estructura kd-tree es una instancia particular de la subdivisión espacial. La diferencia que tiene es que representa la escena con una estructura jerárquica basada en un árbol binario. En esta estructura se hace una distinción con respecto al tipo de los nodos, se distinguen los nodos internos de las hojas. Los nodos hoja se corresponden con los voxeles y tienen las referencias a los objetos que se encuentran dentro de los mismos. Los nodos internos se corresponden con la forma en que se divide el espacio. De esta manera, los nodos internos contienen un plano de corte y referencias a cada uno de los dos subárboles (cada hijo del nodo interno es un subárbol), mientras que los nodos hojas contienen listas de objetos.
 
-Esta técnica de división del espacio tiene prácticamente las mismas ventajas que la subdivisión espacial uniforme con respecto a mejorar las intersecciones rayo-objeto. Ambas persiguen el mismo objetivo, que es minimizar la cantidad de intersecciones. Pero esta división intenta mejorar a la uniforme considerando que los objetos no están uniformemente distribuidos en la escena. La Figura \ref{fig:3D-Tree} muestra un ejemplo de división espacial usando un kd-tree. La primera división (rojo) corta la celda raíz (blanco) en dos. Luego, se aplica otra división (verde) a estas celdas. La última división (azul) se aplica a las 4 celdas existentes.
+Esta técnica de división del espacio tiene prácticamente las mismas ventajas que la subdivisión espacial uniforme. Pero esta división intenta mejorar a la uniforme considerando que los objetos no están uniformemente distribuidos en la escena. La Figura \ref{fig:3D-Tree} muestra un ejemplo de división espacial usando un kd-tree. La primera división (rojo) corta la celda raíz (blanco) en dos. Luego, se aplica otra división (verde) a estas celdas. La última división (azul) se aplica a las 4 celdas existentes.
 
 \begin{figure}[H]
   \centering
@@ -103,7 +101,6 @@ Esta técnica de división del espacio tiene prácticamente las mismas ventajas que
   \label{fig:3D-Tree}
 \end{figure}
 
-\subsubsection{Construcción.}
 La construcción de un kd-tree se hace de forma recursiva, siguiendo un enfoque top-down. Dada una caja que contenga completamente a la escena y una lista de objetos contenidos en ella, se escoge un plano de corte perpendicular a uno de los ejes de coordenadas, que divida la caja en dos. Al dividir se generan dos nuevos volúmenes, y cada uno de ellos es representado agregando un hijo al nodo asociado a la caja original. Cada uno de los objetos que contiene la caja original es asignado al nodo hijo que lo contiene. En caso de que un objeto tenga intersección no vacía con el plano de corte, entonces este objeto es asignado a ambos hijos.
 
 Este procedimiento continúa hasta que se alcanza una profundidad definida de antemano o hasta que el número de objetos contenidos en cada voxel sea menor a un número definido anteriormente. Havran \cite{Havran} sugiere que la profundidad máxima sea igual a $16$ y que la cantidad de objetos por voxel sea $2$ para lograr un rendimiento óptimo. Thrane y Ole \cite{TesisEstructuras} analizaron estos valores y concluyeron que $16$ como profundidad máxima no era un buen valor para las escenas realistas. Se concluyó que, como la escena es dividida en dos en cada nivel del árbol entonces, una profundidad más convincente sería una que fuera resultado de una función logarítmica en el número de triángulos de la escena. Esta consideración también fue adoptada por Pharr y Humphreys \cite{PharrHumphreys}, los cuales usaron $8 + 1.3\log(N)$ como profundidad máxima, donde $N$ es el número de triángulos de la escena.
@@ -127,7 +124,6 @@ El paso base de la recursión se da cuando se cumple algún criterio de parada. El
 
 Para construir una estructura kd-tree se invoca el algoritmo de cons\-truc\-ción con un voxel que contenga toda la escena. El algoritmo construye la estructura a partir de este voxel, dividiéndolo hasta que se cumplan los criterios de parada para cada una de las ramas del árbol de recursión.
 
-\subsubsection{Acceso a los voxeles.}
 Dado un nodo $N$ de un kd-tree, el algoritmo para moverse a lo largo del subárbol con raíz $N$ debe seguir los siguientes pasos:
 \begin{itemize}
   \item Si $N$ es un nodo hoja, todos los objetos de $N$ se prueban para ver si tienen intersección con el rayo. En caso de que existan intersecciones, se retorna la más cercana al observador.
@@ -179,7 +175,7 @@ Utilizando el algoritmo para moverse en el árbol, siempre se visitan los voxeles
 \end{algorithm}
 
 
-\subsubsection{Paralelismo en GPU.}
+\subsubsection{Paralelismo en GPU}
 El primer problema que surge al querer paralelizar el algoritmo de atravesado de voxeles en una GPU es que este es recursivo. Esto es un problema porque en la GPU no se cuenta con una pila.
 
 Una solución es considerar a la estructura kd-tree como un caso especial de la estructura de jerarquía de volúmenes envolventes (BVH, Bounding Volume Hierarchy) y usar su algoritmo de recorrida. Esto no es bueno porque se pierde la capacidad de recorrer los voxeles en el orden que son visitados por el rayo, y por lo tanto se pierde la capacidad de detener el algoritmo tan pronto como se encuentre una intersección. Además, como una estructura kd-tree es usualmente más grande que su correspondiente BVH para la misma escena, se estaría creando un BVH ineficiente \cite{TesisEstructuras}. Una posible solución es emplear una estrategia diferente de recorrido de los voxeles. Se puede emplear la estrategia usada por Foley y Sugerman \cite{FoleySugerman}, en la cual se cambia el algoritmo recursivo por uno secuencial. Esta estrategia consiste en mover un intervalo $[t_{min},t_{max}]$ a lo largo del rayo e ir descendiendo desde la raíz del árbol hasta que una hoja que contenga al intervalo sea encontrada. Inicialmente, el intervalo abarca todos los valores de $t$ tal que el punto $o + tv$ esta contenido en la caja del nivel superior del árbol, es decir la caja que contiene a toda la escena ($o$ es el origen del rayo y $v$ es la dirección del rayo). Para cada nivel del árbol que se desciende, se le asigna a $t_{max}$ el mínimo entre $t_{max}$ y $t_{split}$, donde $t_{split}$ es la distancia a lo largo del rayo desde $t_{min}$ hasta el plano de corte del nodo actual. Cuando se llega a un nodo hoja, el intervalo es el rango paramétrico en el cual el rayo se encuentra dentro del voxel determinado por el nodo.
@@ -203,7 +199,6 @@ En el trabajo de Horn et al. \cite{Horn07} se presentan optimizaciones que puede
 \end{itemize}
 
 \subsection{Jerarquía de Volúmenes Envolventes (BVH)}
-\subsubsection{Conceptos básicos.}
 La estructura BVH divide la escena y guarda la información de la división en una jerarquía definida por un árbol. Difiere de las técnicas de subdivisión espacial porque no divide el espacio sino que divide objetos. El volumen envolvente de una pieza de geometría es un objeto geométrico simple que la envuelve, es decir que la contiene en su interior. Claramente, si falla la intersección de un rayo con el volumen envolvente de un objeto, falla la intersección con cualquier cosa que este dentro del mismo y por lo tanto falla la intersección rayo-objeto.
 
 La motivación para usar volúmenes envolventes es que realizar un chequeo de intersección con un objeto simple, como lo es un volumen envolvente, es mucho menos costoso que hacerlo contra el objeto que contiene dentro, que por lo general no es un objeto simple. La aceleración que pueda lograrse mediante esta técnica dependerá de la complejidad de los objetos de la escena y de los volúmenes envolventes que se usen.
@@ -219,7 +214,6 @@ El algoritmo de recorrida de los volúmenes envolventes es realizado usando un si
   \label{fig:BVHExample}
 \end{figure}
 
-\subsubsection{Construcción.}
 Una medida razonable de la calidad de una estructura BVH, es el costo promedio de aplicarle el algoritmo de recorrida, dado un rayo arbitrario. No hay ningún algoritmo conocido que construya estructuras BVH óptimas, tampoco es obvio como evaluar el costo promedio de atravesar con un rayo arbitrario una estructura de este tipo.
 Goldsmith y Salmon proponen una función de costo conocida como la heurística del área de las superficies \cite{GoldsmithSalmon}. Está formalizada usando el área de la superficie del nodo padre y del nodo hijo y sigue la relación de la Ecuación \ref{eqn:AreasSuperficies}.
 \begin{equation} %%% Ecuacion pagina 53!!!
@@ -227,12 +221,8 @@ Goldsmith y Salmon proponen una función de costo conocida como la heurística del
     \label{eqn:AreasSuperficies}
 \end{equation}
 
-Donde:
-\begin{itemize}
-  \item $hit(n)$ es el evento en que el rayo atraviesa el nodo $n$.
-  \item $S_{n}$ es el área de la superficie del nodo $n$.
-  \item $c$ y $p$ son el nodo hijo y padre, respectivamente.
-\end{itemize}
+Donde: $hit(n)$ es el evento en que el rayo atraviesa el nodo $n$, $S_{n}$ es el área de la superficie del nodo $n$ y $c$ y $p$ son el nodo hijo y padre, respectivamente.
+
 La función da un estimativo del costo de la jerarquía cuando se trata de atravesar por un rayo cualquiera.
 
 Como no existe un algoritmo para construir eficientemente una estructura BVH óptima, se han propuesto heurísticas de construcción. Por lo general, estas heurísticas se basan en una de las dos ideas propuestas por Kay y Kajiya \cite{KayKajiya} y Goldsmith y Salmon \cite{GoldsmithSalmon}, las cuales se presentan a continuación.
@@ -264,7 +254,7 @@ Goldsmith y Salmon proponen un enfoque de construcción bottom-up que resulta más
 
 Goldsmith y Salmon advierten que la calidad de la estructura BVH generada por su algoritmo depende fuertemente del orden de los objetos pasados como entrada. Como una solución, recomiendan distribuir aleatoriamente el orden de los objetos antes de construir la estructura.
 
-\subsubsection{Acceso a los volúmenes envolventes.}
+
 La forma estándar de recorrer una estructura BVH es a través de una recursión. Para los nodos internos se debe probar la intersección del rayo contra el volumen envolvente asociado. Si se encuentra intersección, se debe probar la intersección recursivamente contra los nodos hijos. A diferencia de la estructura kd-tree, se deben visitar todos los nodos hijos, dado que estos se pueden solapar y no siguen ningún criterio de ordenación. Si el rayo no atraviesa el volumen envolvente del nodo no es necesario probar los nodos hijos. Para los nodos hoja, solo se debe probar si el rayo tiene intersección con alguno de los objetos de la escena asociados al nodo.
 
 El principal problema que se encuentra cuando se quiere acceder a los volúmenes envolventes para probar su intersección con el rayo, es el orden en el cual los nodos hijos son accedidos. Kay y Kajiya proponen un método por el cual se intenta seleccionar el nodo más cercano al origen del rayo, siguiendo la dirección del mismo. Esta técnica es un poco complicada porque requiere por ejemplo, mantener una cola de prioridad, de donde se extraen los nodos a ser atravesados por el rayo. Thrane y Ole \cite{TesisEstructuras} concluyen que esta técnica no implica una ganancia de rendimiento considerable.
@@ -272,7 +262,7 @@ El principal problema que se encuentra cuando se quiere acceder a los volúmenes 
 \subsubsection{Paralelismo en GPU.}
 Para implementar en una GPU el algoritmo que atraviesa una estructura BVH dado un rayo hay que resolver dos problemas. El primero corresponde a encontrar un método para atravesar la estructura de árbol eficientemente sin contar con una pila. El segundo problema es encontrar una representación adecuada de la estructura BVH para usar sobre la GPU.
 
-La representación de la estructura y el algoritmo que atraviesa el árbol son independientes. La solución propuesta por Thrane y Ole se basa en una cuidadosa elección de los datos que se deben guardar dados los tipos de almacenamiento que provee la GPU. En la GPU se debe guardar el estado del recorrido en vez de guardar el árbol en si mismo. La idea para llevar a cabo esto proviene de observar que los rayos atraviesan los nodos del árbol siempre en \emph{pre-order}. Una recorrida de un árbol es en \emph{pre-order} cuando se recorre primero el nodo raíz, luego el subárbol izquierdo y por último el subárbol derecho, como se muestra en el ejemplo de la Figura \ref{fig:TraversalBVH}.
+La representación de la estructura y el algoritmo que atraviesa el árbol son independientes. La solución propuesta por Thrane y Ole se basa en una cuidadosa elección de los datos que se deben guardar dados los tipos de almacenamiento que provee la GPU. En la GPU se debe guardar el estado del recorrido en vez de guardar el árbol en si mismo. La idea para llevar a cabo esto proviene de observar que los rayos atraviesan los nodos del árbol siempre en \emph{pre-order}. Una recorrida de un árbol es en \emph{pre-order} cuando se recorre primero el nodo raíz, luego el subárbol izquierdo y por último el subárbol derecho, como se muestra en el ejemplo de la Figura \ref{fig:TraversalBVH}.Los nodos del árbol son numerados secuencialmente de acuerdo al orden mencionado anteriormente. Esta numeración coincide con la forma en que son guardados los datos de los nodos en la estructura que maneja la GPU, un array.
 
 \begin{figure}
   \centering
@@ -281,9 +271,7 @@ La representación de la estructura y el algoritmo que atraviesa el árbol son ind
   \label{fig:TraversalBVH}
 \end{figure}
 
-Los nodos del árbol son numerados secuencialmente de acuerdo al orden mencionado anteriormente. Esta numeración coincide con la forma en que son guardados los datos de los nodos en la estructura que maneja la GPU, un array.
-
-Una línea punteada $(a \dashrightarrow b)$ representa la situación en la que el rayo no atraviesa al volumen $a$ y se debe seguir probando con los demás nodos hermanos, en este caso el volumen $b$. Como se muestra en la Figura \ref{fig:TraversalBVH}, cada línea punteada es guardada como un par de índices, donde cada componente del par hace referencia al array. Thrane y Ole \cite{TesisEstructuras} llaman a este puntero índice de escape. En el ejemplo de la Figura \ref{fig:TraversalBVH}, si un rayo no atraviesa el volumen número 1 se debe seguir probando con los volúmenes hermanos del mismo para ver si el rayo atraviesa a alguno de ellos. Para pasar del volumen número 1 a su proximo hermano (volumen número 8) sin tener que recorrer todo el subárbol izquierdo se usa el índice de escape $(1 \dashrightarrow 8)$. A través del índice de escape se navega el árbol de forma eficiente. Se puede ver claramente que todos los nodos hoja tienen un índice de escape relativo igual a $1$. Como consecuencia de esto, no se necesita guardar a la vez el índice de escape y los objetos que contiene el volumen. Notar la convención indirecta en la Figura \ref{fig:TraversalBVH} donde los nodos internos del subárbol derecho tienen índice de escape igual al número total de nodos del árbol. Esto se usa para tener un criterio de parada en el algoritmo de recorrida.
+Una línea punteada $(a \dashrightarrow b)$ representa la situación en la que el rayo no atraviesa al volumen $a$ y se debe seguir probando con los demás nodos hermanos, en este caso el volumen $b$. Como se muestra en la Figura \ref{fig:TraversalBVH}, cada línea punteada es guardada como un par de índices, donde cada componente del par hace referencia al array. Thrane y Ole \cite{TesisEstructuras} llaman a este puntero índice de escape. En el ejemplo de la Figura \ref{fig:TraversalBVH}, si un rayo no atraviesa el volumen número 1 se debe seguir probando con los volúmenes hermanos para ver si el rayo atraviesa a alguno. Para pasar del volumen número 1 a su próximo hermano (volumen número 8) sin tener que recorrer todo el subárbol izquierdo se usa el índice de escape $(1 \dashrightarrow 8)$. A través del índice de escape se navega el árbol de forma eficiente. Se puede ver que todos los nodos hoja tienen un índice de escape relativo igual a $1$. Como consecuencia de esto, no se necesita guardar a la vez el índice de escape y los objetos que contiene el volumen. Notar la convención indirecta en la Figura \ref{fig:TraversalBVH} donde los nodos internos del subárbol derecho tienen índice de escape igual al número total de nodos del árbol. Esto se usa para tener un criterio de parada en el algoritmo de recorrida.
 
 Un algoritmo para atravesar una estructura BVH dado un rayo que siga este enfoque es simple e iterativo, lo cual es muy bueno para ejecutarlo en una GPU. El algoritmo requerido para ejecutar la recorrida de los volúmenes envolventes de una BVH, guardados en la estructura de array, es mostrado en el Algoritmo \ref{alg:TraversalBVH}. La iteración siempre termina con un índice actual mayor al que existía cuando se inició, esto se da como consecuencia de que los índices de escape siempre van en la dirección de aumento.
 
@@ -311,7 +299,7 @@ Un algoritmo para atravesar una estructura BVH dado un rayo que siga este enfoqu
 
 Thrane y Ole \cite{TesisEstructuras} analizan experiencias obtenidas al implementar y usar la subdivisión espacial uniforme en la paralelización del algoritmo de trazado de rayos. La aceleración lograda a través de esta estructura es menor que la obtenida a través de Kd-Tree o BVH, excepto para algunas escenas con objetos simples. Esto permite concluir que la estructura no es buena para escenas donde se dan grandes variaciones en la densidad de los objetos, desde el punto de vista geométrico. También se destaca que el algoritmo para recorrer los voxeles atravesados requiere guardar mayor cantidad de datos para representar el estado del recorrido, en comparación con las estructuras Kd-Tree y BVH. Los autores concluyen que el algoritmo de recorrida de los voxeles se puede paralelizar en una GPU pero que la implementación tendría un bajo rendimiento, en comparación con el obtenido al usar las estructuras Kd-Tree o BVH. Según Thrane y Ole \cite{TesisEstructuras}, para algunos casos de prueba de su trabajo donde la resolución de la grilla es grande el algoritmo de recorrida de los voxeles tiene un tiempo de ejecución mayor al tiempo de la estructura Kd-Tree o al de la BVH.
 
-Por otro lado, Thrane y Ole \cite{TesisEstructuras} implementaron la estructura de a\-ce\-le\-ra\-ción Kd-Tree sobre GPU. Usaron ambas técnicas (\emph{restart} y \emph{backtrack}) y concluyeron que para la mayoría de las escenas, esta estructura mejora en rendimiento a la subdivisión espacial uniforme. También se recalca que las dos técnicas para realizar la recorrida a través de los voxeles sufren de alta complejidad en sus algoritmos (en el contexto de una GPU) y esto no es deseable ya que aumenta el tiempo de ejecución. Aunque también se menciona que el tiempo de ejecución que se agrega por la complejidad puede verse compensado, en cierto grado, por la habilidad de la estructura para adaptarse a los cambios de densidad de objetos en la escena.
+Por otro lado, Thrane y Ole \cite{TesisEstructuras} implementaron la estructura de a\-ce\-le\-ra\-ción Kd-Tree sobre GPU. Usaron las técnicas (\emph{restart} y \emph{backtrack}) y concluyeron que para la mayoría de las escenas, esta estructura mejora en rendimiento a la subdivisión espacial uniforme. También se recalca que las dos técnicas para realizar la recorrida a través de los voxeles sufren de alta complejidad en sus algoritmos (en el contexto de una GPU) y esto no es deseable ya que aumenta el tiempo de ejecución. Aunque también se menciona que el tiempo de ejecución que se agrega por la complejidad puede verse compensado, en cierto grado, por la habilidad de la estructura para adaptarse a los cambios de densidad de objetos en la escena.
 
 En el trabajo de Lauterbach et al. \cite{Lauterbach06} luego de haber usado la estructura Kd-Tree para diversos casos de prueba se llegó a la conclusión de que con esta se obtienen mejores resultados de los que se obtienen utilizando la estructura BVH, para escenas estáticas (las escenas estáticas se caracterizan por componerse de objetos fijos, que no cambian de posición ni de forma en el tiempo). Esta ganancia en rendimiento tiene como costo asociado un mayor consumo de memoria y una mayor complejidad para implementar y optimizar la construcción de la estructura.
 
@@ -323,10 +311,12 @@ Lauterbach et al. \cite{Lauterbach06} luego de haber usado la estructura BVH par
 
 En la Tabla \ref{table:ConclusionesEstructuras} se resumen las principales conclusiones sobre las estructuras de aceleración espacial.
 
+
 \begin{table}[!hbt]
 \begin{center}
-\resizebox{12cm}{!}{
-    \begin{tabular}{|p{4cm}|c|c|c|}
+\resizebox{8cm}{!}{
+    \small {
+    \begin{tabular}{|p{6cm}|c|c|c|}
     \hline
     &SEU & Kd-Tree & BVH\\
     \hline
@@ -345,7 +335,9 @@ En la Tabla \ref{table:ConclusionesEstructuras} se resumen las principales concl
     Adaptación frente a escenas dinámicas & \multirow{2}{*}{Mala} & \multirow{2}{*}{Mala} & \multirow{2}{*}{Buena}\\
     \hline
     \end{tabular}
+    }
 }
+
 \caption{Comparación de las estructuras de aceleración}
 \label{table:ConclusionesEstructuras}
 \end{center}
@@ -354,7 +346,7 @@ En la Tabla \ref{table:ConclusionesEstructuras} se resumen las principales concl
 \section{Interactive raytracing}
 
 \subsection{Estado del Arte}
-El artículo ``State of the art in Interactive Raytracing'' plantea cual es el estado del arte en la generación de imágenes para programas en los que uno de los objetivos es la capacidad de interactuar con los usuarios\cite{Wald:2001:STAR-IRT}. Según lo relevado en ese artículo el algoritmo utilizado para la generación de imágenes se hacen por rasterización, la alternativa a este algoritmo es el algoritmo de Raytracing, este algoritmo típicamente utilizado para generación de imágenes pero no interactivas por el costo computacionalmente alto asociado al mismo tiene algunas ventajas sobre el algoritmo de rasterización. El algoritmo de Raytracing tiene un tiempo que crece logarítmicamente en la cantidad de primitivas a diferencia del algoritmo de Rasterización que crece linealmente en la cantidad de primitivas utilizadas en la escena a renderizar, esto hace que Raytracing sea una alternativa viable para la generación de imágenes a medida que las capacidades de hardware permitan la generación de imágenes de tamaños suficientemente grandes como para que el peso del algoritmo de Raytracing se vea compensado por dicho peso.
+El artículo ``State of the art in Interactive Raytracing''\cite{Wald:2001:STAR-IRT} plantea cual es el estado del arte en la generación de imágenes para programas en los que uno de los objetivos es la capacidad de interactuar con los usuarios. Según lo relevado el algoritmo generalmente utilizado para la generación de imágenes se hacen por rasterización, la alternativa es el algoritmo de Raytracing. El algoritmo de Raytracing tiene un tiempo que crece logarítmicamente en la cantidad de primitivas a diferencia del algoritmo de Rasterización que crece linealmente en la cantidad de primitivas utilizadas en la escena a renderizar, esto hace que Raytracing sea una alternativa viable para la generación de imágenes a medida que las capacidades de hardware permitan la generación de imágenes de tamaños suficientemente grandes como para que el peso del algoritmo de Raytracing se vea compensado por dicho peso.
 Algunas de las ventajas planteadas para el algoritmo de Raytracing sobre Rasterización:
 \begin{itemize}
     \item Flexibilidad: cada rayo puede ser trazado por separado, no comparten información.
@@ -377,7 +369,7 @@ El paper describe la exploración dentro de las técnicas de optimización para los
   \item Permite agregar una gran variedad de objetos básicos y efectos de sombreado programados por el usuario.
 \end{itemize}
 
-Estos ítems permiten: que la implementación sea interactiva, poder generar imágenes para escenas de gran porte y obtener imágenes con las características de realismo clásicas del Raytracing respectivamente.
+Estos ítems permiten: que la implementación sea interactiva, poder generar imágenes para escenas de gran porte y obtener imágenes con las características de realismo clásicas del Raytracing.
 
 Para el trabajo se utilizó como base el algoritmo clásico de Whitted \cite{PaperDel80} modificándolo para obtener mejoras visuales y de performance. Las mejoras que afectan directamente a la velocidad del algoritmo se pueden dividir en dos grandes ramas: 1) Acelerar o eliminar cálculos de verificación de intersección entre rayos y objetos. 2) Paralelización. Utilizan ambas técnicas buscando la combinación de ambas que les brinde un mejor desempeño. Para optimizar en la cantidad de cálculos de intersección se utiliza división espacial de la escena, utilizando no solamente una estructura sino que se combinan una división en grilla de la escena con volúmenes acotantes para los objetos de dicha escena.
 
