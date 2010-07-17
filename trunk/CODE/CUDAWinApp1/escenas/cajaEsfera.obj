@@ -451,13 +451,13 @@ f 104//112 103//112 102//112
 
 #luz puntual numero 1
 #el proximo vertice es la posicion
-#v 0.0000 0.0000 210.0000
-#usemtl light_material
-#lp -1
+v 0.0000 0.0000 210.0000
+usemtl light_material
+lp -1
 
 #luz puntual numero 2
 #el proximo vertice es la posicion
-v 0.0000 -40.0000 210.0000
+v 0.0000 -150.0000 210.0000
 usemtl light_material
 lp -1
 

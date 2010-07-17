@@ -3,20 +3,17 @@
 #=	PARAMETRO=VALOR
 #=	SI NO SE COLOCA UN PARAMETRO TOMARA EL VALOR POR DEFECTO
 
-
-
-
 #=TAMANIO DE LA PARTICION
-TAMANIO_GRILLA.X=1
-TAMANIO_GRILLA.Y=1
-TAMANIO_GRILLA.Z=1
+TAMANIO_GRILLA.X=11
+TAMANIO_GRILLA.Y=11
+TAMANIO_GRILLA.Z=11
 #=RESOLUCION DE LA IMAGEN
-RESOLUCION.X=640
-RESOLUCION.Y=480
+RESOLUCION.X=800
+RESOLUCION.Y=600
 #=VALOR TOMADO COMO EL INFINITO SEGUN EL PROGRAMA
 INFINITO=3.402823466e+38F
 #=VALOR TOMADO COMO EL CERO DE LOS float
-ZERO=0.0000000001
+ZERO=0.00000001
 #=VALOR DE PROFUNDIDAD EN LA RECURSION DE LAS REFLECCIONES ESPECULARES
 PROFUNDIDAD_RECURSION=3
 #=CANTIDAD DE THREADS A LANZAR
@@ -32,7 +29,7 @@ THREADS.Z=1
 #=ESCENA=..\escenas\porqueria.obj
 #=ESCENA=..\escenas\elephal.obj
 #=ESCENA=..\escenas\elephav.obj
-ESCENA=..\escenas\cajasConColores.obj
+#=ESCENA=..\escenas\cajasConColores.obj
 #=ESCENA=..\escenas\bolaPrueba.obj
 #=ESCENA=..\escenas\dosBolasConPiso.obj
 #=ESCENA=..\escenas\bolaCajaDeColores.obj
@@ -42,5 +39,5 @@ ESCENA=..\escenas\cajasConColores.obj
 #=ESCENA=..\escenas\elefantesChicosDistNOUniformeSOLAP.obj
 #=ESCENA=..\escenas\dosElefMediumSobreConos.obj
 #=ESCENA=..\escenas\dosElefChicosSobreConos.obj
-#=ESCENA=..\escenas\escenaAlexandra.obj
+ESCENA=..\escenas\escenaAlexandra.obj
 #=ESCENA=..\escenas\cajaEsfera.obj
