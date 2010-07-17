@@ -54,44 +54,49 @@ float4* d_listaRayos;
 /////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////
 
+#define OLD_ALGORITHM
 
 __device__ bool intersecar(Rayo r, float &distancia, float3 & normal, int ind_obj, bool calc_normal){
 	float3 v1 = make_float3(tex1Dfetch(textura_triangulos, 3 * ind_obj));
 	float3 v2 = make_float3(tex1Dfetch(textura_triangulos, 3 * ind_obj + 1));
 	float3 v3 = make_float3(tex1Dfetch(textura_triangulos, 3 * ind_obj + 2));
-			
+	
+#ifndef OLD_ALGORITHM
 	float3 lado1 = v2-v1;
 	float3 lado2 = v3-v1;
 
 	float3 p= cross(r.dir,lado2);
 	float determinante = dot(lado1, p);
 
-	if(determinante < 0.001)
+	if(determinante > -0.001f && determinante < 0.001f)
 		return false;
 
-	float3 t = r.origen-v1;
+	float inv_det = 1.0f/determinante;
+	float3 t = ( r.origen-v1 );
 	
-	float u = dot(t,p);
-	if(u<0.0f || u>determinante)
+
+
+	float u = dot(t,p)* inv_det;
+	if(u<0.0f || u>1.0f)
 		return false;
 
 	float3 q = cross(t, lado1);
 
-	float v = dot (r.dir, q);
-	if(v<0.0f || u+v>determinante)
+	float v = dot (r.dir, q) * inv_det;
+	if(v<0.0f || u+v>1.0f)
 		return false;
 
-	float dist = dot(lado2, q);
-	float inv_det = 1.0f/determinante;
+	float dist = dot(lado2, q)*inv_det;
+	
 
-	dist*=inv_det;
+	//dist*=inv_det;
 	if(dist>distancia)
 		return false;
 
 	distancia = dist;
 	if(calc_normal){
-		u*=inv_det;
-		v*=inv_det;
+	//	u*=inv_det;
+	//	v*=inv_det;
 
 		float s = 1-u-v;
 
@@ -102,8 +107,9 @@ __device__ bool intersecar(Rayo r, float &distancia, float3 & normal, int ind_ob
 	}
 	return true;
 	
+#else
 
-	/*float3 primero = v2 - v1;
+	float3 primero = v2 - v1;
 	float3 segundo = v3 - v1;
 	normal = normalize(cross(primero,segundo));
 		
@@ -129,7 +135,8 @@ __device__ bool intersecar(Rayo r, float &distancia, float3 & normal, int ind_ob
 		}
 		return true;
 	}
-	return false;*/
+	return false;
+#endif
 }
 
 
