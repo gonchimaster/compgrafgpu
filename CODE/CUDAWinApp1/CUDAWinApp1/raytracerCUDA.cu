@@ -60,13 +60,13 @@ __device__ bool intersecar(Rayo r, float &distancia, float3 & normal, int ind_ob
 	float3 v2 = make_float3(tex1Dfetch(textura_triangulos, 3 * ind_obj + 1));
 	float3 v3 = make_float3(tex1Dfetch(textura_triangulos, 3 * ind_obj + 2));
 			
-/*	float3 lado1 = v2-v1;
+	float3 lado1 = v2-v1;
 	float3 lado2 = v3-v1;
 
 	float3 p= cross(r.dir,lado2);
 	float determinante = dot(lado1, p);
 
-	if(determinante<0.01)
+	if(determinante < 0.001)
 		return false;
 
 	float3 t = r.origen-v1;
@@ -100,16 +100,16 @@ __device__ bool intersecar(Rayo r, float &distancia, float3 & normal, int ind_ob
 		float3 normal_v3 = make_float3(tex1Dfetch(textura_normales, 3 * ind_obj + 2));
 		normal = (normal_v1 * s + normal_v2 * u + normal_v3 * v);
 	}
-	return true;*/
+	return true;
 	
 
-	float3 primero = v2 - v1;
+	/*float3 primero = v2 - v1;
 	float3 segundo = v3 - v1;
 	normal = normalize(cross(primero,segundo));
 		
 	float d = -dot(normal, v1);
 	float t = -( dot(r.origen, normal) + d ) / ( dot(normal,r.dir) );
-	if(t < 0){
+	if(t < 0.001){
 		return false;
 	}
 	float3 I = r.origen + r.dir * t;
@@ -129,7 +129,7 @@ __device__ bool intersecar(Rayo r, float &distancia, float3 & normal, int ind_ob
 		}
 		return true;
 	}
-	return false;
+	return false;*/
 }
 
 
@@ -172,7 +172,13 @@ __device__ float3 coordGridACoordMundo(float3 voxelActual, float3* voxelMundo){
 }
 
 __device__ bool hallarPuntoEntradaGrilla(Rayo r, float3* puntoEntrada){
-	
+	if(r.origen.x >= bounding_box.minimum.x && r.origen.y >= bounding_box.minimum.y &&
+	   r.origen.z >= bounding_box.minimum.z && r.origen.x <= bounding_box.maximum.x &&
+	   r.origen.y <= bounding_box.maximum.y && r.origen.z <= bounding_box.maximum.z){
+		   (*puntoEntrada) = make_float3(r.origen.x, r.origen.y, r.origen.z);
+		   return true;
+	}
+
 	float min= -configuracion_gpu.INFINITO;
 	float max = configuracion_gpu.INFINITO;
 
@@ -262,7 +268,8 @@ __device__ bool intersecarObjetosGrilla(int comienzoLista, Rayo r, float& distan
 		bool choco = intersecar(r, distancia, normalAux, valor, calc_normal);
 		if(choco){
 			indiceObjeto = valor;
-			normal = normalAux;
+			if(calc_normal)
+				normal = normalAux;
 			intersecaron= true;
 		}
 		comienzoLista++;
@@ -376,14 +383,13 @@ __global__ void hallarColor(float3* retorno){
 		// Para la refracción
 		bool adentro = false;
 
-
+		float3 normal = make_float3(0,0,0);
 		while((nivel < configuracion_gpu.profundidad_recursion) && !salir && entra){
 			
 			bool salirGrilla = false;
 			
 			//Extrañamente si no inicializo esto no funciona... NO COMPILA!!! cuack
 			float3 tMin = make_float3(0,0,0);
-			float3 normal = make_float3(0,0,0);
 			float3 incre = make_float3(0,0,0);
 
 			//Calcula los parámetros necesarios para recorrer la grilla
@@ -435,13 +441,10 @@ __global__ void hallarColor(float3* retorno){
 					float3 colorAmb = make_float3(tex1Dfetch(textura_materiales, 1+4*id_material));
 					color = colorAmb;
 		
-
-					while((ind_luces < cant_luces)){
+					while((ind_luces < (int)cant_luces)){
 						dirSombra = make_float3(tex1Dfetch(textura_luces, ind_luces*2)) - origen;
-						rayoSombra.dir = dirSombra;
-						rayoSombra.dir = normalize(rayoSombra.dir);
-						origen = origen + rayoSombra.dir * 1000000 * configuracion_gpu.ZERO;
-						rayoSombra.origen = origen;
+						rayoSombra.dir = normalize(dirSombra);
+						rayoSombra.origen = origen + rayoSombra.dir * 1000000 * configuracion_gpu.ZERO;
 
 						bool salir_sombra = false;
 						float3 entradaSombra= make_float3(0,0,0);
@@ -562,7 +565,7 @@ __global__ void hallarColor(float3* retorno){
 				    salirGrilla = true;
 				}
 	
-				if(!salirGrilla){					
+				if(!salirGrilla){
 					if(!siguienteVoxel(tMin, incre.x, incre.y, incre.z, voxelActual)){
 						salirGrilla = true;
 						salir = true;
@@ -625,7 +628,7 @@ __global__ void hallarColor(float3* retorno){
 			colorAcumulado = make_float3(0.5f,0.5f,1.0f);
 		}
 		int indice = configuracion_gpu.resolucion.x*(blockIdx.y*blockDim.y+threadIdx.y)+(blockIdx.x*blockDim.x+threadIdx.x);
-		retorno[indice] = colorAcumulado;		
+		retorno[indice] = colorAcumulado;
 }
 
 

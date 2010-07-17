@@ -304,6 +304,7 @@ float3 hallarColor(Rayo r, Escena* escena, int nivel){
 				normal = normalize(normal);
 
 				intersecMasCercana = r.origen + (r.dir * distancia);
+
 				V = intersecMasCercana - r.origen;
 				V = normalize(V);
 
