@@ -54,7 +54,7 @@ float4* d_listaRayos;
 /////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////
 
-#define OLD_ALGORITHM
+//#define OLD_ALGORITHM
 
 __device__ bool intersecar(Rayo r, float &distancia, float3 & normal, int ind_obj, bool calc_normal){
 	float3 v1 = make_float3(tex1Dfetch(textura_triangulos, 3 * ind_obj));
@@ -73,8 +73,6 @@ __device__ bool intersecar(Rayo r, float &distancia, float3 & normal, int ind_ob
 
 	float inv_det = 1.0f/determinante;
 	float3 t = ( r.origen-v1 );
-	
-
 
 	float u = dot(t,p)* inv_det;
 	if(u<0.0f || u>1.0f)
@@ -87,27 +85,22 @@ __device__ bool intersecar(Rayo r, float &distancia, float3 & normal, int ind_ob
 		return false;
 
 	float dist = dot(lado2, q)*inv_det;
+	if(dist < 0)
+		return false;
 	
-
-	//dist*=inv_det;
 	if(dist>distancia)
 		return false;
 
 	distancia = dist;
 	if(calc_normal){
-	//	u*=inv_det;
-	//	v*=inv_det;
-
 		float s = 1-u-v;
-
 		float3 normal_v1 = make_float3(tex1Dfetch(textura_normales, 3 * ind_obj));
 		float3 normal_v2 = make_float3(tex1Dfetch(textura_normales, 3 * ind_obj + 1));
 		float3 normal_v3 = make_float3(tex1Dfetch(textura_normales, 3 * ind_obj + 2));
 		normal = (normal_v1 * s + normal_v2 * u + normal_v3 * v);
 	}
 	return true;
-	
-#else
+#else	
 
 	float3 primero = v2 - v1;
 	float3 segundo = v3 - v1;
@@ -413,7 +406,6 @@ __global__ void hallarColor(float3* retorno){
 				menor= comienzoLista;
 				bool intersecaron = false;
 				distancia = configuracion_gpu.INFINITO;
-				
 				
 				//Interseco con los objetos de la celda de la grilla
 				if(comienzoLista!=-1){

@@ -46,6 +46,8 @@ Para verificar el comportamiento del algoritmo implementado frente a la uniformi
 
 Para verificar el comportamiento del algoritmo implementado frente a la cantidad de objetos de las escenas de entrada se diseñaron varios casos de prueba, los cuales se muestran a continuación.
 
+---------cambiar por 5 escenas con calidades distintas (cubo y esfera).
+
 \begin{enumerate}
     \item \emph{dosElefMediumSobreConos.obj}: escena con 2 elefantes, cada uno sobre un cono. Tiene 20884 triángulos, donde cada elefante tiene 10150 triángulos. Se muestra una imagen generada por el algoritmo implementado en la Figura \ref{fig:RenderdosElefMediumSobreConos} del Apéndice \ref{sec:ApendiceImagenes}.
     \item \emph{dosElefChicosSobreConos.obj}: escena con 9 elefantes no uniformemente distribuidos. Tiene 10338 triángulos. Se muestra una imagen generada por el algoritmo implementado en la Figura \ref{fig:RenderdosElefChicosSobreConos} del Apéndice \ref{sec:ApendiceImagenes}.
@@ -58,13 +60,19 @@ Para la evaluación de la calidad del algoritmo implementado en el marco de este 
 
 Los integrantes del grupo de Computación Gráfica del \emph{Alexandra Institute} de Dinamarca implementaron un algoritmo de Raytracing y se encuentra publicado en su página web \cite{BlogAlexandraInst}. Este algoritmo no permite cambiar la escena que renderiza de forma sencilla, ya que su cargador de escena es distinto al que se usa en este proyecto. Como se dispone de información (cantidad de triángulos de cada uno de los elementos) sobre la escena del algoritmo del \emph{Alexandra Institute}, se decidió replicar manualmente dicha escena en el formato que usa el algoritmo implementado en este proyecto. Esta escena esta formada por un conjunto de 13 cajas y una esfera como se muestra en la Figura \ref{fig:RenderescenaAlexandra} del Apéndice \ref{sec:ApendiceImagenes}. Cada caja tiene 2 triángulos por cara y la esfera tiene 80 caras, por lo tanto la escena completa tiene 236 triángulos. Al renderizar su escena el Raytracing sobre GPU del \emph{Alexandra Institute} logra 13 \emph{frames} por segundo (FPS).
 
+
 \section{Equipos utilizados}
 
 Falta completar...
 
+Las dos nuestras y la del LATU....
+
+
 \section{Pruebas}
 
 Falta completar...
+
+\subsection{Comparación entre C y CUDA}
 
 \subsection{Comparación entre versiones}
 
