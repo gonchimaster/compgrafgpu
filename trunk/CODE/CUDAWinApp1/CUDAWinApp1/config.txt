@@ -7,12 +7,12 @@
 
 
 #=TAMANIO DE LA PARTICION
-TAMANIO_GRILLA.X=19
-TAMANIO_GRILLA.Y=19
-TAMANIO_GRILLA.Z=19
+TAMANIO_GRILLA.X=1
+TAMANIO_GRILLA.Y=1
+TAMANIO_GRILLA.Z=1
 #=RESOLUCION DE LA IMAGEN
-RESOLUCION.X=1024
-RESOLUCION.Y=768
+RESOLUCION.X=640
+RESOLUCION.Y=480
 #=VALOR TOMADO COMO EL INFINITO SEGUN EL PROGRAMA
 INFINITO=3.402823466e+38F
 #=VALOR TOMADO COMO EL CERO DE LOS float
@@ -32,7 +32,7 @@ THREADS.Z=1
 #=ESCENA=..\escenas\porqueria.obj
 #=ESCENA=..\escenas\elephal.obj
 #=ESCENA=..\escenas\elephav.obj
-#=ESCENA=..\escenas\cajasConColores.obj
+ESCENA=..\escenas\cajasConColores.obj
 #=ESCENA=..\escenas\bolaPrueba.obj
 #=ESCENA=..\escenas\dosBolasConPiso.obj
 #=ESCENA=..\escenas\bolaCajaDeColores.obj
@@ -42,4 +42,5 @@ THREADS.Z=1
 #=ESCENA=..\escenas\elefantesChicosDistNOUniformeSOLAP.obj
 #=ESCENA=..\escenas\dosElefMediumSobreConos.obj
 #=ESCENA=..\escenas\dosElefChicosSobreConos.obj
-ESCENA=..\escenas\escenaAlexandra.obj
+#=ESCENA=..\escenas\escenaAlexandra.obj
+#=ESCENA=..\escenas\cajaEsfera.obj
