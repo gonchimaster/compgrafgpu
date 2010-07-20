@@ -426,7 +426,6 @@ __global__ void hallarColor(float3* retorno){
 					//Genero rayo a la luz
 					Rayo rayoSombra;
 					//CALCULO LA SOMBRA
-					//TODO EXTENDER A MAS DE UNA LUZ
 					float sombra = 0.0;
 					float3 origen = rayoactual.origen + (distancia * rayoactual.dir);
 					
@@ -487,79 +486,6 @@ __global__ void hallarColor(float3* retorno){
 						ind_luces++;
 					}
 
-				/*	while((ind_luces<=cant_luces) && sombra<1.0){
-
-						dirSombra = make_float3(tex1Dfetch(textura_luces, ind_luces*2)) - origen;
-						rayoSombra.dir = dirSombra;
-						rayoSombra.dir = normalize(rayoSombra.dir);
-		
-						origen = origen + rayoSombra.dir * 1000000 * configuracion_gpu.ZERO;
-						rayoSombra.origen = origen;
-						
-		
-						bool salir_sombra = false;
-						float3 entradaSombra= make_float3(0,0,0);
-						float3 increSombra= make_float3(0,0,0);
-						float3 tMinSombra = make_float3(0,0,0);
-						float3 normalS= make_float3(0,0,0);
-						int menorS=0;					
-						
-						calcularInicioGrilla(rayoSombra.dir,rayoSombra.origen, increSombra, tMinSombra);
-						
-						entradaSombra = coordMundoACoordGrid(rayoSombra.origen);
-			
-						
-						while (sombra<1.0 && !salir_sombra){
-
-							int indiceGrillaS = (entradaSombra.z * dimension_grilla.y* dimension_grilla.x) + (entradaSombra.y * dimension_grilla.x) + entradaSombra.x;
-
-							int comienzoListaS = tex1Dfetch(textura_voxels, indiceGrillaS);
-							float distanciaS = configuracion_gpu.INFINITO;						
-							
-							//Interseco con los objetos de la celda de la grilla
-							if(comienzoListaS!=-1){
-								//TODO Otro intersecar para la sombra por el tema de optimizar la recorrida de los elementos.
-								bool mas_sombra = intersecarObjetosGrilla(comienzoListaS, rayoSombra, distanciaS, normalS, menorS, false);
-								if(mas_sombra){
-									//TODO calcular incremento de la sombra
-									sombra=1.0;
-								}
-								
-							}
-							if(sombra<1.0){
-								salir_sombra = !siguienteVoxel(tMinSombra, increSombra.x, increSombra.y, increSombra.z, entradaSombra);
-							}
-						}
-						
-						ind_luces++;
-					}
-					ind_luces = 0;
-					if(sombra<1.0)
-					{
-						dirSombra = normalize(dirSombra);
-						normal = normalize(normal);
-						
-						float LxN = dot(dirSombra,normal);
-						if (LxN>0)
-						{
-							//Lado Atras...
-
-							int id_material = tex1Dfetch(textura_triangulos, 3 * menor).w;
-							color = make_float3(tex1Dfetch(textura_materiales,4* id_material));
-							float3 luz = make_float3(tex1Dfetch(textura_luces, ind_luces*2+1));
-							color = color * luz * LxN + make_float3(tex1Dfetch(textura_materiales, 1+4*id_material));
-						}
-						else
-						{
-							color = color + make_float3(tex1Dfetch(textura_materiales, 1 + 4 * tex1Dfetch(textura_triangulos, 3 * menor).w));
-						}
-						
-					}
-					else{
-						//Sumar color sombra multiplicado
-						
-						color = color + make_float3(tex1Dfetch(textura_materiales, 1 + 4 * tex1Dfetch(textura_triangulos, 3 * menor).w));
-					}*/
 					interseque = true;
 				    salirGrilla = true;
 				}
@@ -573,8 +499,6 @@ __global__ void hallarColor(float3* retorno){
 				
 	
 			}//WHILE NOT SALIR DE LA GRILLA
-			
-			
 			
 			if(interseque && nivel<configuracion_gpu.profundidad_recursion){
 				int indice_material = (int)(tex1Dfetch(textura_triangulos, 3 * menor).w);
