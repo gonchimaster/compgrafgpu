@@ -119,8 +119,11 @@ float3 *imagen;
 int CreateAndDisplayImage(void* pParams){
 //TODO	SDL_Surface *image;
 	clock_t t_inicial, t_final;
+	double tiempoTotal = 0;
+	int cantImagenes = 0;
 	char textoVentana [100];
-	sprintf(&(textoVentana[0]), "(-) FPS - %d OBJ - [%d x %d x %d] GRID - [%d x %d] RES", escena2.cant_objetos, 
+	
+	sprintf(&(textoVentana[0]), "%d OBJ - [%d x %d x %d] GRID - [%d x %d] RES", escena2.cant_objetos, 
 			(int)escena2.grilla.dimension.x, (int)escena2.grilla.dimension.y, (int)escena2.grilla.dimension.z,
 			config.resolucion.x, config.resolucion.y);
 
@@ -163,23 +166,12 @@ int CreateAndDisplayImage(void* pParams){
 			UpdateCamera(&escena2, config);
 			printf(" listo!!!\n");
 		}
+
 		raytrace(&escena2, config, imagen);
-
-
-		/////////////////
-		//x = 10 * cos(t);
-		//y = 10 * sin(t);
-		//t = t + 0.1;
-
-		//escena2.luces[0].posicion.x = x;
-		//escena2.luces[0].posicion.y = y;
-		//
-		//printf("llega a modificar la camara\n");
 		UpdateCamera(&escena2, config);
-		/////////////////
 
 		t_final = clock();
-
+		
 		Uint32 color = 0xFFFFFFFF;
 		int i = 0;
 		int j = 0;
@@ -199,11 +191,12 @@ int CreateAndDisplayImage(void* pParams){
 
 		SDL_Flip(screen);
 
-		double secs = (double)(t_final - t_inicial) / CLOCKS_PER_SEC;
+		tiempoTotal = tiempoTotal + ((double)(t_final - t_inicial) / CLOCKS_PER_SEC);
+		cantImagenes++;
 		
-		sprintf(&(textoVentana[0]), "%f FPS - %d OBJ - [%d x %d x %d] GRID - [%d x %d] RES", 1 / secs, escena2.cant_objetos, 
-			(int)escena2.grilla.dimension.x, (int)escena2.grilla.dimension.y, (int)escena2.grilla.dimension.z,
-			config.resolucion.x, config.resolucion.y);
+		sprintf(&(textoVentana[0]), "%d IMG - %.2f SEG - %.2f FPS - %d OBJ - [%d x %d x %d] GRID - [%d x %d] RES", cantImagenes, tiempoTotal,
+			cantImagenes / tiempoTotal, escena2.cant_objetos, (int)escena2.grilla.dimension.x, (int)escena2.grilla.dimension.y,
+			(int)escena2.grilla.dimension.z, config.resolucion.x, config.resolucion.y);
 	}
 	return 1;
 }

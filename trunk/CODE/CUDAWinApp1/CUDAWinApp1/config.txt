@@ -4,12 +4,12 @@
 #=	SI NO SE COLOCA UN PARAMETRO TOMARA EL VALOR POR DEFECTO
 
 #=TAMANIO DE LA PARTICION
-TAMANIO_GRILLA.X=11
-TAMANIO_GRILLA.Y=11
-TAMANIO_GRILLA.Z=11
+TAMANIO_GRILLA.X=100
+TAMANIO_GRILLA.Y=100
+TAMANIO_GRILLA.Z=100
 #=RESOLUCION DE LA IMAGEN
-RESOLUCION.X=800
-RESOLUCION.Y=600
+RESOLUCION.X=640
+RESOLUCION.Y=480
 #=VALOR TOMADO COMO EL INFINITO SEGUN EL PROGRAMA
 INFINITO=3.402823466e+38F
 #=VALOR TOMADO COMO EL CERO DE LOS float
@@ -39,5 +39,12 @@ THREADS.Z=1
 #=ESCENA=..\escenas\elefantesChicosDistNOUniformeSOLAP.obj
 #=ESCENA=..\escenas\dosElefMediumSobreConos.obj
 #=ESCENA=..\escenas\dosElefChicosSobreConos.obj
-ESCENA=..\escenas\escenaAlexandra.obj
-#=ESCENA=..\escenas\cajaEsfera.obj
+#=ESCENA=..\escenas\benchmark\buddhaRT.obj
+ESCENA=..\escenas\benchmark\dragonRT.obj
+#=ESCENA=..\escenas\benchmark\StanfordBunny.obj
+#=ESCENA=..\escenas\benchmark\escenaAlexandra.obj
+#=ESCENA=..\escenas\benchmark\cajaEsfera1.obj
+#=ESCENA=..\escenas\benchmark\cajaEsfera5.obj
+#=ESCENA=..\escenas\benchmark\elefantesChicosDistUniforme.obj
+#=ESCENA=..\escenas\benchmark\elefantesChicosDistNoUniforme.obj
+#=ESCENA=..\escenas\benchmark\elefantesChicosDistNoUniformeSOLAP.obj
