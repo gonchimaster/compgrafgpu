@@ -4,9 +4,9 @@
 #=	SI NO SE COLOCA UN PARAMETRO TOMARA EL VALOR POR DEFECTO
 
 #=TAMANIO DE LA PARTICION
-TAMANIO_GRILLA.X=100
-TAMANIO_GRILLA.Y=100
-TAMANIO_GRILLA.Z=100
+TAMANIO_GRILLA.X=230
+TAMANIO_GRILLA.Y=230
+TAMANIO_GRILLA.Z=230
 #=RESOLUCION DE LA IMAGEN
 RESOLUCION.X=640
 RESOLUCION.Y=480
@@ -39,8 +39,8 @@ THREADS.Z=1
 #=ESCENA=..\escenas\elefantesChicosDistNOUniformeSOLAP.obj
 #=ESCENA=..\escenas\dosElefMediumSobreConos.obj
 #=ESCENA=..\escenas\dosElefChicosSobreConos.obj
-#=ESCENA=..\escenas\benchmark\buddhaRT.obj
-ESCENA=..\escenas\benchmark\dragonRT.obj
+ESCENA=..\escenas\benchmark\buddhaRT.obj
+#=ESCENA=..\escenas\benchmark\dragonRT.obj
 #=ESCENA=..\escenas\benchmark\StanfordBunny.obj
 #=ESCENA=..\escenas\benchmark\escenaAlexandra.obj
 #=ESCENA=..\escenas\benchmark\cajaEsfera1.obj
