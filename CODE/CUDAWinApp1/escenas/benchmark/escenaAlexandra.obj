@@ -675,19 +675,13 @@ f 146//120 136//110 145//119
 
 #luz puntual numero 1
 #el proximo vertice es la posicion
-v 0.0000 0.0000 64.0000
+v -30.0000 30.0000 64.0000
 usemtl light_material
 lp -1
 
-#luz puntual numero 2
-#el proximo vertice es la posicion
-#v 32.0000 0.0000 32.0000
-#usemtl light_material
-#lp -1
-
 #Camara
 v 0.0000 0.0000 0.0000
-v 15.0000 -15.0000 20.0000
+v 92.6650 -36.5380 28.0000
 vn 0.0000 0.0000 1.0000
 #posicion target up
 c -1 -2 -1
@@ -695,7 +689,7 @@ c -1 -2 -1
 #PLANO DE VISTA!!!
 #se utiliza el light quad para levantar el plano de vista.
 #cada uno de los siguientes cuatro vertices son las esquinas del plano de vista.
-v 8.0000 -22.0000 23.0000
-v 8.0000 22.0000 23.0000 
-v 18.0000 -22.0000 -3.0000
+v 27.2430 -28.2610 23.8410
+v 43.5760 0.4210 23.8410 
+v 32.8650 -31.4630 2.7630
 lq -3 -2 -1 -1
