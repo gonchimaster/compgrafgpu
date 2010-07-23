@@ -31,6 +31,7 @@ extern "C" void initLuces(Escena* es, Configuracion conf);
 Configuracion config;
 double t = 0, x, y;
 static bool bindedTextures;
+static bool exited;
 
 SDL_Surface *InitSDL(){
 	SDL_Surface *screen;
@@ -189,14 +190,20 @@ int CreateAndDisplayImage(void* pParams){
 		}
 #endif
 
+		if(!exited ){
 		SDL_Flip(screen);
-
+		}
+		if(!exited ){
 		tiempoTotal = tiempoTotal + ((double)(t_final - t_inicial) / CLOCKS_PER_SEC);
+		}
+		if(!exited ){
 		cantImagenes++;
-		
+		}
+		if(!exited ){
 		sprintf(&(textoVentana[0]), "%d IMG - %.2f SEG - %.2f FPS - %d OBJ - [%d x %d x %d] GRID - [%d x %d] RES", cantImagenes, tiempoTotal,
 			cantImagenes / tiempoTotal, escena2.cant_objetos, (int)escena2.grilla.dimension.x, (int)escena2.grilla.dimension.y,
 			(int)escena2.grilla.dimension.z, config.resolucion.x, config.resolucion.y);
+		}
 	}
 	return 1;
 }
@@ -223,6 +230,7 @@ int main(int argc, char **argv)
 	screen = InitSDL();
 
 	bindedTextures = false;
+	exited = false;
 
 	SDL_Thread *thread;
 	thread = SDL_CreateThread(CreateAndDisplayImage, NULL);
@@ -244,6 +252,7 @@ int main(int argc, char **argv)
 						case SDLK_ESCAPE:
 							SDL_KillThread(thread);
 							salir = 1;
+							exited = true;
 							break;
 						case SDLK_LEFT:
 							escena2.camara.ojo.y -= 1.0f;
@@ -274,6 +283,7 @@ int main(int argc, char **argv)
 				case SDL_QUIT:
 					SDL_KillThread(thread);
 					salir = 1;
+					exited = true;
 					break;				
 			}//end switch
 		}//end while

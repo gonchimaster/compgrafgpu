@@ -1,12 +1,57 @@
-\chapter{Real Time} % 20 páginas mas o menos...
+\chapter{Raytracing en tiempo real} % 20 páginas mas o menos...
 
 \section{Introducción}
-Esta sección pretende entrar en detalle de los algoritmos y técnicas existentes para la aceleración de la generación de imágenes por computadora. Se verán los métodos que fueron analizados durante el desarrollo de este trabajo, centrándose en dos puntos principales que son: las estructuras de aceleración espacial y la paralelización de procesos. Por un lado se busca reducir la cantidad de cálculos requeridos para la generación de una imagen y por otro lado hacer que los cálculos se realicen en menos tiempo.
+Esta sección presenta en detalle de los algoritmos y técnicas existentes para la aceleración de la generación de imágenes por computadora. Se verán los métodos que fueron analizados durante el desarrollo de este trabajo, centrándose en dos puntos principales que son: las estructuras de aceleración espacial y la paralelización de procesos. Por un lado se busca reducir la cantidad de cálculos requeridos para la generación de una imagen y por otro lado hacer que los cálculos se realicen en menos tiempo. Para la paralelización de algoritmos en este proyecto se optó por utilizar una paralelización del algoritmo en la GPU, en este cápitulo se justifica además por que se consideró esta plataforma para el proyecto.
+
+\subsection{Paralelización de algoritmos en GPU}
+
+En noviembre de 2006 NVIDIA lanzó CUDA (Compute Unified Device Architecture), una arquitectura de computación paralela de propósito general que hace uso del núcleo de procesamiento paralelo de las GPU de NVIDIA para resolver una amplia variedad de problemas computacionales de una manera más eficiente que en una CPU. El modelo de programación paralela propuesto por NVIDIA fue totalmente nuevo y la programación sobre el mismo se hace a través de un lenguaje de alto nivel, CUDA permite el uso del lenguaje C para la programación.
+
+\begin{figure}[H]
+    \centering
+        \includegraphics[width=0.8\textwidth]{./Capitulo4/diagramaEjecucionCUDA}
+    \caption{Ejemplo de escalabilidad automática en el número de multiprocesadores.}
+    \label{fig:DiagramaEjecucionCUDA}
+\end{figure}
+
+Una ventaja muy importante del modelo es que cualquier aplicación desarrollada en CUDA puede ejecutarse sobre cualquier número de procesadores, sin necesidad de volver a compilar el código. Esto permite crear aplicaciones capaces de escalar en el número de procesadores, lo cual permite que una aplicación ejecute en cualquier GPU que soporte CUDA.
+
+\begin{figure}[H]
+    \centering
+        \includegraphics[width=0.8\textwidth]{./Capitulo4/modeloKernels}
+    \caption{Ejemplo de ejecución de una aplicación CUDA.}
+    \label{fig:ModeloKernels}
+\end{figure}
+
+El modelo de programación esta basado en tres abstracciones fundamentales, dispone de una jerarquía de grupos de hilos de ejecución, memoria compartida y barreras de sincronización de la ejecución. Estas abstracciones guían al programador a dividir el problema en sub-problemas que pueden ser resueltos en forma paralela e independiente por medio de bloques de hilos de ejecución. A su vez cada sub-problema de divide en piezas más chicas que pueden ser resueltas en paralelo y cooperando entre ellas, usando los hilos de ejecución de cada bloque. Descomponer el problema de esta forma permite la escalabilidad automática en el número de procesadores, ya que cada bloque de hilos puede ser despachado hacia cualquier conjunto de procesadores (multiprocesador) disponible, en cualquier orden, concurrentemente o secuencialmente. De esta manera cualquier aplicación CUDA puede ejecutar sobre cualquier número de multiprocesadores y sólo se necesita conocer este número en tiempo de ejecución. En la Figura \ref{fig:DiagramaEjecucionCUDA} se considera una aplicación CUDA que esta dividida en cuatro bloques y se muestra como se asignan los bloques de hilos de ejecución en dos GPU distintas, donde una tiene dos multiprocesadores y la otra tiene cuatro.
+
+En la extensión del lenguaje C que hace CUDA es posible definir funciones (de la misma forma que en el lenguaje base) que a diferencia de las funciones normales de C, cuando son invocadas ejecutan $N$ veces en paralelo, mediante $N$ hilos de ejecución de CUDA diferentes. Estas funciones propias de CUDA son llamadas \emph{kernels}. Dentro de este tipo especial de funciones se tiene acceso a información propia de CUDA que indica por ejemplo, el identificador del hilo de ejecución o el identificador de bloque que lo contiene. Esta información es de vital importancia ya que es usada para parametrizar la ejecución del \emph{kernel} en función de los hilos de ejecución.
+
+Un \emph{kernel} siempre es invocado desde el \emph{host} (CPU) y ejecuta en el \emph{device} (GPU). La GPU actúa como co-procesador de la CPU y mediante \emph{kernels} la CPU puede asignar trabajo al co-procesador. En la Figura \ref{fig:ModeloKernels} se muestra un ejemplo de una aplicación CUDA que posee un \emph{kernel} ``\emph{kernel A}''. Esta aplicación comienza ejecutando código secuencial en la CPU, en la primer parte secuencial se hace la invocación al \emph{kernel}, el cual ejecuta en la GPU. Una vez terminada la ejecución a nivel de GPU retorna a ejecutar código secuencial en la CPU.
+
+El índice que identifica a un hilo de ejecución es un vector tridimensional, usando el mismo un hilo puede ser identificado usando una, dos o tres componentes del vector. De esta manera los hilos pueden forman un bloque de una, dos o tres dimensiones. Esta forma de agrupar los distintos hilos de un bloque permite invocar \emph{kernels} sobre distintos tipos de dominio (vector, matriz o volumen) de una manera más natural. Los bloques también pueden ser agrupados en una grilla (\emph{grid}) de una o dos dimensiones.
+
+Como se muestra en la Figura \ref{fig:JerarquiaMemoriaCUDA}, cada hilo de CUDA puede acceder a múltiples espacios de memoria durante su ejecución, mientras que los diferentes espacios de memoria forman la jerarquía de memoria de la GPU.
+
+En el primer nivel de la jerarquía (latencia más baja y menor capacidad de almacenamiento) se encuentran los registros, cada uno de ellos tiene 32 bits para almacenar un entero o un punto flotante. Cada hilo de ejecución tiene acceso a una cierta cantidad de registros, donde la cantidad depende del modelo de la GPU, y puede llegar hasta un máximo de 1024 en los modelos más avanzados. Además cada hilo de ejecución tiene su propio espacio privado de memoria local. La memoria local a cada hilo es pequeña y su latencia es relativamente alta (tanto como la memoria global).
+
+\begin{figure}[H]
+    \centering
+        \includegraphics[width=0.8\textwidth]{./Capitulo2/jerarquiaMemoria}
+    \caption{Jerarquía de memoria de la GPU.}
+    \label{fig:JerarquiaMemoriaCUDA}
+\end{figure}
+
+Cada bloque tiene un espacio de memoria compartida entre todos sus hilos, este espacio compartido tiene el mismo tiempo de vida que el bloque, es decir, es válido mientras el bloque se encuentra en ejecución. El espacio de memoria compartida de cada bloque es de 16 KB, posee una latencia baja, similar a la de los registros. Puede ser controlada totalmente por el programador y puede ser usada como un cache para mejorar los tiempos de acceso a la memoria global.
+
+Además todos los hilos de ejecución de la aplicación tienen acceso a un mismo espacio de memoria global. Este espacio es el que tiene la mayor capacidad de almacenamiento dentro de la jerarquía de memoria llegando hasta 4 GB en los modelos \emph{Tesla C1060}. La memoria global ofrece un alto ancho de banda (superior a 100 GB/s en el modelo \emph{Tesla C1060}) pero padece de latencia alta (cientos de ciclos) y no posee cache.
+
+Existen dos espacios más de sólo lectura en la jerarquía que son accesibles por todos los hilos: el espacio de memoria constante y el espacio de memoria de textura. Ambos espacios de sólo lectura tienen tiempo de vida igual al tiempo de ejecución de la aplicación CUDA y cada uno esta optimizado para distintos usos \cite{nVidiaCUDAWebSite}. Ambos espacios de memoria tienen la misma latencia que la memoria global aunque la de textura posee un cache de 8 KB por cada bloque, lo cual mejora el tiempo de acceso a los datos.
+
 
 \section{Métodos de aceleración para raytracing}
-El concepto de traza de rayos tiene muchas aplicaciones en computación gráfica, ejemplo de esto son los algoritmos de raycasting y raytracing de Whitted. Si bien estos algoritmos son diferentes entre si, tienen en común un aspecto: requieren trazar una enorme cantidad de rayos (generalmente millones) y gran parte de su tiempo de ejecución es consumido por la traza de rayos.
 
-A partir del reconocimiento del gran consumo computacional que significa trazar grandes cantidades de rayos, se tornó muy importante encontrar métodos de a\-ce\-le\-ra\-ción para este proceso. Whitted al momento de desarrollar su algoritmo (en el año 1980) marcó el alto costo en tiempo en la traza de rayos. Desde ese momento hasta la actualidad se han propuesto diversas técnicas que buscan optimizar este proceso\cite{wald::PhD}.
+A partir del gran consumo computacional que significa trazar grandes cantidades de rayos, es vital encontrar métodos de a\-ce\-le\-ra\-ción para este proceso. Whitted al momento de desarrollar su algoritmo (en el año 1980) marcó el alto costo en tiempo en el trazado de rayos. Desde ese momento hasta la actualidad se han propuesto diversas técnicas que buscan optimizar este proceso\cite{wald::PhD}.
 
 Los métodos de optimización propuestos hasta el momento pueden agruparse en dos categorías principales, según la forma de abordar el problema. A la primer categoría pertenecen las técnicas que apuntan a reducir el número de rayos a trazar. Hay dos caminos para lograr disminuir la cantidad de rayos, una forma es construir la imagen lanzando menos rayos primarios. Un ejemplo de este tipo de técnicas es la llamada \emph{adaptive sampling}. Usando este método, para cada pixel de la imagen, se trazan rayos primarios por cada uno de sus vértices. Si la intensidad de la luz en cada una de las esquinas del pixel varía significativamente con respecto a las otras, entonces el pixel es dividido en cuatro partes iguales. Luego se lanzan rayos primarios por cada nueva parte de la misma forma que se lanzaron en el pixel original. Las partes nuevas, si la intensidad de luz en sus esquinas difieren significativamente, se vuelven a dividir en cuatro y el proceso se repite. Esta subdivisión se repite hasta un nivel arbitrario, el cual debe establecerse buscando una buena relación entre la calidad de la imagen y la aceleración lograda. Cada parte comparte rayos con el nivel superior, lo que implica que no se deben lanzar cuatro rayos por parte en todos los casos. Una vez terminada la subdivisión el color del pixel es interpolado según el color de cada una de sus partes\cite{wald::PhD}.
 
@@ -359,6 +404,8 @@ Algunas de las ventajas planteadas para el algoritmo de Raytracing sobre Rasteri
 \end{itemize}
 Existen además varias formas de simplificar y acelerar el algoritmo de Raytracing, entre ellas se puede utilizar un algoritmo basado en rasterización, asumiendo que la velocidad de la rasterización es mejor que la de Raytracing se pude utilizar Raytracing solamente para el cálculo de algunos efectos de iluminación y no realizar toda la generación de la imagen con este algoritmo. Por otro lado utilizando coherencia temporal se pueden utilizar imágenes pregeneradas en un paso anterior y regenerando algunos píxeles en lugar de generar toda la imagen. Utilizando como base Raytracing otra de las formas de mejorar el tiempo de procesamiento es tratando de reducir el costo de cálculo de cada uno de los pixels. Otras formas de aceleración es la utilización de algoritmos que permitan bajar los costos computacionales asociados al algoritmo, estos pueden ser utilización de algún tipo de particionamiento espacial, utilización de arquitecturas de memoria de las CPU actuales que puedan ser utilizadas de manera eficiente. Por último la utilización de la capacidad del algoritmo de ser corrido en paralelo, esto requiere una buena optimización de los algoritmos teniendo en cuenta el balanceo de carga y las latencias de sincronización.
 También se realiza un relevamiento de hardware para la implementación de un hardware específico para ejecutar en el Raytracing el cual no se tomo en cuenta para este relevamiento.
+
+
 
 \subsection{En arquitectura multiprocesador de memoria compartida}
 
