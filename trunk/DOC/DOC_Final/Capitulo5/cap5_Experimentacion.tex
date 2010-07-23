@@ -176,7 +176,7 @@ En la Tabla \ref{table:CPTerceros} se muestran algunas características important
     \hline
     DRAGON & 1 & 1 & 100.000 & dragonRT.obj & \ref{fig:CPTerceros:c}\\
     \hline
-    STANFORDBUNNY & 1 & 1 & 69698 & StanfordBunny.obj & \ref{fig:CPTerceros:d}\\
+    BUNNY & 1 & 1 & 69698 & StanfordBunny.obj & \ref{fig:CPTerceros:d}\\
     \hline
     \end{tabular}
     }
@@ -239,11 +239,179 @@ Todos los equipos utilizados para ejecutar los casos de prueba del proyecto usan
 
 \section{Pruebas}
 
-Falta completar...
+Las pruebas realizadas en este proyecto se pueden dividir en dos grandes líneas. La primera es comparar resultados dentro del propio proyecto, por ejemplo la comparación entre los dos algoritmos implementados, uno para CPU y el otro para GPU.
+
+La otra linea de prueba es la comparación con algoritmos similares implementados por terceros. Dentro de esta línea se hicieron comparaciones con implementaciones que pudieron ser ejecutadas en los equipos del proyecto y también con resultados de otras experiencias similares extraídos de artículos científicos.
+
+La mayoría de las pruebas realizadas se hicieron fijando la resolución de la imagen a generar en 640 por 480 pixeles. Las únicas excepciones a esta regla se dan cuando se hacen pruebas de comparación con algoritmos implementados por terceros. Para las pruebas de comparación con el \emph{Alexandra Institute} se uso una resolución de 800 por 600, mientras que para la comparación con los resultados del articulo de Johannes Günther et al. \cite{GuntherPopov} se uso una de 1024 por 1024 pixeles. En el caso del \emph{Alexandra Institute} la resolución quedó determinada su implementación del algoritmo de Raytracing, que no permite variar la misma. En el caso del articulo la resolución quedo determinada por los resultados descritos en él.
+
+El tamaño de la grilla que permite acelerar la generación de la imagen es un parámetro crítico. Por las pruebas realizadas a lo largo de todo el proyecto, una buena elección del tamaño de la grilla puede incrementar notablemente la velocidad de generación de imágenes. Durante la fase de implementación y prueba de los algoritmos implementados se logró llegar a un método empírico para obtener una grilla de buen rendimiento, para una escena dada. Como primer aproximación se toma la medida sugerida por Thrane y Ole \cite{TesisEstructuras}, la cual indica que a resolución sea $3\sqrt[3]{N}$ voxeles a lo largo del eje más corto, donde $N$ es el número de triángulos de la escena. Después varias pruebas realizadas se comprobó que esta división no siempre es la mejor y que una buena resolución para la grilla se encuentra entre $\sqrt[3]{N}$ y $3\sqrt[3]{N}$ a lo largo del eje más corto. Dentro de este intervalo se debe buscar empíricamente la grilla de mejor rendimiento. En todas las pruebas realizadas en esta sección se siguió esta metodología para encontrar el tamaño de grilla óptimo (o grilla optima), así mismo se muestran también otros tamaños de grilla para cada escena.
 
 \subsection{Comparación entre C y CUDA}
 
+La comparación de rendimiento entre el algoritmo para CPU y el algoritmo para GPU se hizo usando los casos de prueba DIST\_I, DIST\_II, DIST\_II y BUNNY. Para esta comparación se usa la versión más eficiente de los algoritmos, la Versión 3, ejecutando en el Equipo 3. En la Tabla \ref{table:CvsCUDACPU} se muestran los resultados obtenidos al ejecutar los casos de prueba sobre CPU, mientras que en la Tabla \ref{table:CvsCUDAGPU} se muestran los resultados obtenidos al ejecutar los mismos casos sobre GPU.
+
+\begin{table}
+\begin{center}
+\resizebox{12cm}{!}{
+    \begin{tabular}{|c|c|c|c|c|c|c|}
+    \hline
+    \multirow{2}{*}{\textbf{Escena}}&\multicolumn{6}{|c|}{\textbf{Tamaño de grilla}}\\
+    \cline{2-7}
+    &10x10x10&22x22x22&50x50x50&65x65x65&100x100x100&200x200x200\\
+    \hline
+    DIST\_I&0.3&0.9&1.4&1.3&1.1&0.3\\
+    \hline
+    DIST\_II&0.3&1.0&1.5&1.4&1.1&0.3\\
+    \hline
+    DIST\_III&0.4&1.3&1.6&1.4&1.1&0.3\\
+    \hline
+    \multirow{2}{*}{}&\multicolumn{6}{|c|}{}\\
+    \cline{2-7}
+    &20x20x20&41x41x41&80x80x80&123x123x123&200x200x200&300x300x300\\
+    \hline
+    BUNNY&1.2&3.0&4.2&4.0&3.2&2.1\\
+    \hline
+    \end{tabular}
+}
+\caption{FPS de DIST\_I, DIST\_II, DIST\_III y BUNNY en el Equipo 3 sobre CPU.}
+\label{table:CvsCUDACPU}
+\end{center}
+\end{table}
+
+Los resultados obtenidos demuestran que el tamaño de la grilla depende exclusivamente de la cantidad de triángulos con que esta construida la escena, ya que en los tres primeros casos (que tienen la misma cantidad de triángulos) el tamaño de grilla donde se logran más FPS es siempre el mismo. Además como lo demuestra el caso BUNNY, al incrementarse la cantidad de primitivas de la escena aumenta la resolución de la grilla optima. Se concluye también que el tamaño de la grilla optima es independiente al \emph{hardware} de ejecución, la grilla que permite más FPS tiene igual resolución en CPU y en GPU.
+
+\begin{table}
+\begin{center}
+\resizebox{12cm}{!}{
+    \begin{tabular}{|c|c|c|c|c|c|c|}
+    \hline
+    \multirow{2}{*}{\textbf{Escena}}&\multicolumn{6}{|c|}{\textbf{Tamaño de grilla}}\\
+    \cline{2-7}
+    &10x10x10&22x22x22&50x50x50&65x65x65&100x100x100&200x200x200\\
+    \hline
+    DIST\_I&10.5&15.4&17.2&14.2&10.7&5.1\\
+    \hline
+    DIST\_II&10.7&16.7&20.1&17.5&12.0&5.1\\
+    \hline
+    DIST\_III&8.9&18.5&21.1&18.2&12.5&5.1\\
+    \hline
+    \multirow{2}{*}{}&\multicolumn{6}{|c|}{}\\
+    \cline{2-7}
+    &20x20x20&41x41x41&80x80x80&123x123x123&200x200x200&300x300x300\\
+    \hline
+    BUNNY&13.9&20.7&23.8&20.8&14.4&10.1\\
+    \hline
+    \end{tabular}
+}
+\caption{FPS de DIST\_I, DIST\_II, DIST\_III y BUNNY en el Equipo 3 sobre GPU.}
+\label{table:CvsCUDAGPU}
+\end{center}
+\end{table}
+
+Los casos de prueba DIST\_I, DIST\_II y DIST\_III fueron pensados para buscar una debilidad de la estructura de aceleración. La debilidad de la estructura de subdivisión espacial uniforme se da cuando los objetos de la escena están distribuidos de forma no uniforme en la misma. Es por esto que se pensaba que con el caso DIST\_III, que tiene todos los objetos concentrados en el centro de la escena, se lograrían menos FPS que con el DIST\_II y con el DIST\_I. De la misma forma se pensaba que con el caso DIST\_II se lograrían menos FPS que con el caso DIST\_I. Los resultados obtenidos reflejan totalmente lo contrario a lo que se pensaba de antemano. La explicación que se encuentra y que es para el caso de este tipo de escenas, es que cuanto mas uniformemente distribuidos en la escena estén los objetos, más sombra arrojan. Como el calculo de sombra es un cálculo computacionalmente costoso, se cree que este costo contrarresta al beneficio que brinda la grilla cuando existe distribución espacial uniforme de los objetos en la escena.
+
+\begin{figure}
+    \centering
+    \subfigure[]{
+        \label{fig:CvsCudaRenderBunny:a} %% label for first subfigure
+        \includegraphics[width=0.3\textwidth]{./Capitulo5/renderBunnyCPU}
+    }
+    \subfigure[]{
+        \label{fig:CvsCudaRenderBunny:b} %% label for second subfigure
+        \includegraphics[width=0.3\textwidth]{./Capitulo5/renderBunnyGPU}
+    }
+    \caption{Render de BUNNY en CPU y en GPU respectivamente.}
+    \label{fig:CvsCudaRenderBunny} %% label for entire figure
+\end{figure}
+
+Los resultados obtenidos con los casos de prueba DIST\_I, DIST\_II, DIST\_III y BUNNY demuestran que el algoritmo para GPU genera imágenes en un tiempo menor que el algoritmo para CPU. En la Tabla \ref{table:CvsCudaAceleracion} se muestra la aceleración lograda por el algoritmo para GPU para cada caso de prueba. En promedio, considerando los cuatro casos de prueba, el algoritmo para GPU es más de once veces más rápido que el algoritmo para CPU. En la Figura \ref{fig:CvsCudaRenderBunny:a} se muestra la imagen generada por el algoritmo implementado en C, mientras que en la Figura \ref{fig:CvsCudaRenderBunny:b} se muestra la imagen generada por el algoritmo implementado en CUDA. Observando estas imágenes el ojo humano no percibe diferencia alguna, entonces el algoritmo para GPU logra una muy buena aceleración con respecto al que ejecuta en CPU y sin perdida en la calidad de imagen.
+
+\begin{table}
+\begin{center}
+\resizebox{10cm}{!}{
+    \small {
+    \begin{tabular}{|c|c|c|c|c|}
+    \hline
+    Escena & Tamaño Grilla & CPU (FPS) & GPU (FPS) & Aceleración\\
+    \hline
+    DIST\_I & 50x50x50 & 1.4 & 17.2 & 12\\
+    \hline
+    DIST\_II & 50x50x50 & 1.5 & 20.1 & 14\\
+    \hline
+    DIST\_III & 50x50x50 & 1.6 & 21.1 & 13\\
+    \hline
+    BUNNY & 80x80x80 & 4.2 & 23.8 & 6\\
+    \hline
+    \end{tabular}
+    }
+}
+\caption{Aceleración lograda por algoritmo para GPU.}
+\label{table:CvsCudaAceleracion}
+\end{center}
+\end{table}
+
 \subsection{Comparación entre versiones}
+
+La comparación de rendimiento entre las diferentes versiones del algoritmo para GPU se hizo usando los casos de prueba PRI\_I a PRI\_V. Esta comparación entre versiones consta de dos partes, en la primera se determina la grilla optima para cada caso de prueba y en la segunda se ejecuta cada caso de prueba en cada una de las versiones del algoritmo utilizando su grilla optima.
+
+Para determinar la grilla optima para cada caso de prueba se usa la Versión 3 del algoritmo para GPU, ejecutando en el Equipo 3. En la Tabla \ref{table:CompVersionesBuscarGrilla} se muestran los resultados obtenidos al ejecutar los casos de prueba sobre GPU. Observando los resultados se puede concluir que la grilla optima para todos los casos de prueba se construye partiendo en dos cada eje.
+
+Los resultados obtenidos en estas primeras pruebas muestran que a medida que aumenta la cantidad de primitivas con que esta construida la escena aumenta el tiempo de generación de imagen, y por lo tanto disminuyen los FPS. Esto se pensaba antes de ejecutar estos casos de prueba y fue corroborado por los mismos. También se pensaba que al aumentar la cantidad de primitivas de la escena aumentaría la cantidad de voxels que debía tener la grilla optima, pero esto no fue validado por los resultados obtenidos. Esto puede deberse a que el incremento de la cantidad de primitivas no es suficientemente grande como para obligar a aumentar la resolución de la grilla.
+
+\begin{table}
+\begin{center}
+\resizebox{12cm}{!}{
+    \begin{tabular}{|c|c|c|c|c|c|c|}
+    \hline
+    \multirow{2}{*}{\textbf{Escena}}&\multicolumn{6}{|c|}{\textbf{Tamaño de grilla}}\\
+    \cline{2-7}
+    & 1x1x1 & 2x2x2 & 4x4x4 & 6x6x6 & 10x10x10 & 15x15x15\\
+    \hline
+    PRI\_I & 18.7 & 36.7 & 32.7 & 29.7 & 27.3 & 24.7\\
+    \hline
+    PRI\_II & 13.9 & 27.6 & 25.4 & 23.3 & 21.5 & 20.1\\
+    \hline
+    PRI\_III & 11.3 & 24.5 & 22.8 & 20.9 & 19.2 & 18.0\\
+    \hline
+    PRI\_IV & 8.4 & 18.5 & 18.0 & 16.5 & 15.9 & 15.1\\
+    \hline
+    PRI\_V & 6.7 & 16.6 & 15.5 & 14.6 & 13.8 & 13.5\\
+    \hline
+    \end{tabular}
+}
+\caption{FPS de PRI\_I,\ldots, PRI\_V en el Equipo 3 sobre GPU.}
+\label{table:CompVersionesBuscarGrilla}
+\end{center}
+\end{table}
+
+Una vez determinada la grilla optima para cada caso de prueba, se ejecuta cada caso utilizando su grilla optima en cada una de las versiones del algoritmo para GPU, en la Tabla \ref{table:CompVersionesFPS} se muestran los resultados obtenidos.
+
+\begin{table}
+\begin{center}
+\resizebox{12cm}{!}{
+    \begin{tabular}{|c|c|c|c|c|}
+    \hline
+    Escena & Tamaño Grilla Optimo & GPU v1 (FPS) & GPU v2 (FPS) & GPU v3 (FPS)\\
+    \hline
+    PRI\_I & 2x2x2 & 5.8 & 26.2 & 36.7\\
+    \hline
+    PRI\_II & 2x2x2 & 5.1 & 20.2 & 27.6\\
+    \hline
+    PRI\_III & 2x2x2 & 4.9 & 18.2 & 24.5\\
+    \hline
+    PRI\_IV & 2x2x2 & 4.3 & 14.1 & 18.5\\
+    \hline
+    PRI\_V & 2x2x2 & 3.9 & 12.6 & 16.6\\
+    \hline
+    \end{tabular}
+}
+\caption{FPS de PRI\_I,\ldots, PRI\_V en el Equipo 3 sobre GPU para cada versión del algoritmo.}
+\label{table:CompVersionesFPS}
+\end{center}
+\end{table}
+
+
 
 \subsection{Comparación entre equipos}
 
