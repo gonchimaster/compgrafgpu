@@ -426,10 +426,14 @@ float3 hallarColor(Rayo r, Escena* escena, int nivel){
 		}
 		else{
 			salir = true;//TODO???
+			colorAcumulado = make_float3(0.5f,0.5f,1.0f);
 		}
 		salir = true;
 	}/*WHILE not PROF && not SALIR*/
 
+	if(!entra){
+		colorAcumulado = make_float3(0.5f,0.5f,1.0f);
+	}
 	return colorAcumulado;
 }
 

@@ -692,7 +692,7 @@ extern "C" void raytrace(Escena *es, Configuracion conf, float3 *imagen){
 	dim3 threads(threads_x, threads_y, 1);
 	
 	hallarColor<<<grid,threads>>>(d_color);
-	cudaThreadSynchronize();
+	//cudaThreadSynchronize();
 	
 	//COPIA DEL RESULTADO A LA IMAGEN.
 	CUDA_SAFE_CALL( cudaMemcpy(imagen, d_color, sizeof(float3) * ancho * alto , cudaMemcpyDeviceToHost));
