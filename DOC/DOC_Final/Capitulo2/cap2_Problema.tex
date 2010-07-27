@@ -22,7 +22,6 @@ La segunda operación por orden de relevancia es la que determina si existe algun
 
 El tercer problema, encontrar todas las intersecciones a lo largo de un rayo, es el menos requerido y solo es requerido para algoritmos de iluminación avanzados. Excepto para estos modelos de iluminación especiales, este problema no es común en los algoritmos trazadores de rayos.
 
-\subsection{Algoritmos}
 
 \section{Modelos computacionales de iluminación}
 En esta sección se abordarán las técnicas más populares para la generación de imágenes fotorealistas. Comenzando por los algoritmos en el que se basan la mayoría de los algoritmos actuales: Raycasting de Appel \cite{Appel1968} y Raytracing de Whitted \cite{PaperDel80}. Hay que tener en cuenta que estos algoritmos no son los algoritmos más rápidos para la generación de imágenes. La técnica más popular para la generación de gráficos tridimensionales por computadora es rasterización que funciona en tiempo real. La técnica es simplemente el proceso de computar la correspondencia entre la geometría de la escena y los pixels de la imagen y no tiene una forma particular de computar el color de esos pixels. Por ejemplo, esta técnica no tiene en cuenta el cálculo de sombras ni las re\-fle\-xio\-nes entre objetos, como si lo hace, por ejemplo Raytracing. Una posible implementación de la rasterización es scan lines.
@@ -31,11 +30,50 @@ En esta sección se abordarán las técnicas más populares para la generación de im
 Fue introducido por Arthur Appel en 1968 \cite{Appel1968} . Es un algoritmo cuyo funcionamiento se basa en lanzar rayos desde el punto de vista del observador hacia un plano de vista que se encuentra entre el observador y la escena. La unidad mínima de visualización en los dispositivos actuales (monitores o dispositivos similares) es el pixel, cada uno de los cuadros de la grilla en la que se basa la vi\-sua\-li\-za\-ción de imágenes. Por esto el algoritmo genera tantos rayos como pixels haya en el dispositivo de visualización a utilizar. También puede ser que se tenga un tamaño de imagen en pixels, en este caso se genera un rayo por cada pixel de la imagen a generar. Las coordenadas de los pixels se mapean a coordenadas del plano de vista, lanzando un rayo desde el punto de vista del observador que pase por la coordenada del plano de vista y calculando el punto de intersección con la escena, en caso de haberlo. Luego de hallado el punto de intersección con la escena se procede a calcular cuánta energía le llega al punto desde las fuentes de luz, sin tener en cuenta los posibles ``rebotes'' de la luz, como tampoco la posibilidad de que un objeto se encuentre interpuesto entre el objeto y la fuente de luz. Este algoritmo permite calcular fácilmente cuales son los objetos visibles además de facilitar la inclusión de objetos geométricos no planares en las escenas. Este último hecho, en el momento que se propuso el algoritmo, fue muy importante porque con los algoritmos que se utilizaban en la generación de gráficos no era posible incluir este tipo de objetos de forma sencilla. Los algoritmos utilizados en esa época eran algoritmos de scan lines se basan en rasterización mientras que en el algoritmo de Raycasting los rayos no van más allá del primer objeto encontrado.
 
 
-\subsection{Raytracing}
+
+\subsection{Clasificación de los algoritmos de generación de imágenes por computadora}
+
+Todos los algoritmos de generación de imágenes, independientemente de la categoría en la que se encuentren, buscan dada una escena, definición matemática o en algún tipo de representación abstracta, generar una imagen en base a eso. En el trabajo se referencia siempre al concepto de  generación de imágenes realistas aunque los mismos algoritmos podrían ser utilizados para generar otro tipo de escenas. No obstante la diferencia de los enfoques de todos los algoritmos, todos buscan de alguna manera modelar la cantidad de energia lumínica, o radiancia, que está presente en cada punto los distintos objetos que forman la escena. De esta manera calcular de que manera se debería ver la imagen según los parámetros de iluminación que se establezcan. Las categorías que se identifican son las siguientes.
+
+\begin{itemize}
+\item El modelo planteado por Whitted y es el modelo más simple de iluminación.
+
+\item El modelo basado en elementos finitos es bastante simple al igual que el modelo de Whitted pero a su vez muy diferente, ya que plantea para calcular la radiancia la división de la escena en pequeñas partes y se utiliza alguna solución numérica para aproximar los valores.
+
+\item Los algoritmos cuyo modelo de iluminación está basado en métodos de Monte Carlo buscan aproximar los valores de radiancia en base a aproximaciones estadísticas basadas en la integración de Monte Carlo. Esta familia de algoritmos encuentra su mayor exponente actualmente en el algoritmo de Photon Mapping.
+\end{itemize}
+
+Por lo tanto los algoritmos de generación de imágenes, que surgen en base al algoritmo original de Raytracing, pueden ser clasificados utilizando distintas estrategias, en este trabajo se presentan agrupados por el modelo para el cálculo de la iluminación utilizado.
+
+\begin{itemize}
+  \item modelo simple de iluminación local diseñado por Whitted.
+  \item modelo de iluminación global.
+      \begin{itemize}
+        \item elementos finitos
+        \item métodos de Monte Carlo.
+      \end{itemize}
+\end{itemize}
+
+De estos modelos se describirá el más representativo para la estrategia. Estas técnicas que se presentan son: Raytracing para el modelo de Whitted, Radiosidad para los algoritmos basados en elementos finitos y Photon Mapping para los basados en métodos de Montecarlo.
+
+\subsubsection{Raytracing}
 El algoritmo de Raytracing propuesto por Turner Whitted en 1980 \cite{PaperDel80} está basado en el algoritmo de Raycasting. Whitted extendió la idea proponiendo hacer la traza de rayos recursiva. Entonces el algoritmo no termina cuando el rayo encuentra un objeto en su trayectoria, sino que en ese momento se hace la invocación recursiva del trazado de rayo, desde el punto de la intersección en caso de ser necesario. Con la posibilidad de la invocación recursiva del algoritmo se añade la capacidad de sombreado realista dado que se puede calcular la interposición de otros objetos de la escena entre el objeto y la luz.
  Al igual que Raycasting es un algoritmo sencillo para la ge\-ne\-ra\-ción de imágenes que tiene un modelo de iluminación propio y muy simple que se basa en emular las características que cumple la luz al llegar a los objetos o al cambiar de un medio de transmisión a otro. Por ejemplo al pasar del aire al agua, ese es el cambio de medio, se genera una desviación de la luz, dando la impresión de que los objetos se deforman. Así mismo introduce también los conceptos reflexión a las imágenes, admitiendo objetos espejados en las escenas obteniendo un grado de realismo visual superior de los generados por Raycasting.
 
-En el algoritmo original, además de considerar las fuentes de luz para obtener sombras en la escena, el algoritmo de trazado de rayos recursivo de Whitted genera rayos de reflexión y de refracción desde el punto de intersección, como se muestra en la Figura~\ref{fig:exampleRT}.
+
+\subsubsection{Radiosidad}
+El algoritmo de radiosidad utiliza los principios de Raytracing para el cálculo de las superficies visibles y sombras, así como las reflexiones y refracciones pero a diferencia del algoritmo de Raytracing básico plantea que para hacer el cálculo de la iluminación es necesario pre calcular los valores de iluminación en cada uno de los parches en los que se divide arbitrariamente la escena, por esta división es que este es un método de elementos finitos. Luego de realizado el cálculo de la radiancia de cada uno de los parches se utiliza un rastreo de la escena para el cálculo de los valores de color de los pixels de la imagen que se quiere generar. Como se pre calculan los valores de la iluminación en toda la escena a menos que se modifique la escena o las luces se pueden utilizar los mismos valores de radiancia pre calculados para generar imágenes desde distintos puntos de vista.
+
+\subsubsection{Photon mapping}
+Este algoritmo fue introducido por Henrik Wan Jensen en el año 1996\cite{Jensen2001}. Este algoritmo que sigue en desarrollo, cuenta con una excelente calidad en las imágenes que genera y es menos costoso, en tiempo de cómputo, que el algoritmo de radiosidad. En lugar de utilizar el modelo de elementos finitos utiliza un modelo basado en métodos de Monte Carlo para el cálculo de la cantidad de energía en cada punto.
+El algoritmo de Photon Mapping tiene dos etapas diferenciadas al igual que el algoritmo de radiosidad, pero tiene una aproximación distinta para el cálculo de la radiancia de los puntos. La primera pasada es similar a la recorrida de la escena por el algoritmo de Raytracing con la diferencia que sigue el sentido inverso. Esta primer pasada se llama emisión de fotones, se generan fotones, cuantos más se generen más fiable será el resultado de la iluminación, que son lanzados desde los emisores de luz hacia la escena en direcciones que sean factibles. Se calcula el lugar en el que el fotón incide en la escena recursivamente de manera análoga al algoritmo de Raytracing. Esto es debido a que en el caso de los objetos reales, estos no absorben toda la luz incidente sino que hay luz que es reflejada y por lo tanto fotones son vueltos a lanzar desde el punto en el que chocaron con un objeto. Para hallar la dirección con la que es emitido el nuevo fotón y la energía que tendrá el mismo se utiliza un modelo para los materiales de los objetos de la escena teniendo que agregar al material de los objetos una función de BRDF (Función de Distribución de Reflectancia Bidireccional). Esta función representa la proporción de radiación reflejada por una determinada superficie en cada dirección del rayo reflejado, proyectada sobre el plano horizontal.
+
+
+\section{Raytracing}
+
+En este algoritmo se profundiza el estudio ya que por su simplicidad y versatilidad se presenta como la mejor alternativa para ser implementada. También se puede ver este algoritmo como el primero de toda la familia de algoritmos actuales, como los que se presentan en la clasificación de algoritmos.
+
+En el algoritmo original de Raytracing, además de considerar las fuentes de luz para obtener sombras en la escena, el algoritmo de trazado de rayos recursivo de Whitted genera rayos de reflexión y de refracción desde el punto de intersección, como se muestra en la Figura~\ref{fig:exampleRT}.
 
 Los rayos de sombra ($L_{i}$), reflexión ($R_{i}$) y refracción ($T_{i}$) son llamados secundarios para diferenciarlos de los primarios que son los que salen desde el punto de vista del observador o cámara.
 
@@ -151,39 +189,6 @@ Si el objeto atravesado más cercano tiene reflexión se genera un rayo reflejado 
         \EndIf
     \end{algorithmic}
 \end{algorithm}
-
-
-\subsubsection{Clasificación de los algoritmos de generación de imágenes por computadora}
-
-Todos los algoritmos de generación de imágenes, independientemente de la categoría en la que se encuentren, buscan dada una escena, definición matemática o en algún tipo de representación abstracta, generar una imagen en base a eso. En el trabajo se referencia siempre al concepto de  generación de imágenes realistas aunque los mismos algoritmos podrían ser utilizados para generar otro tipo de escenas. No obstante la diferencia de los enfoques de todos los algoritmos, todos buscan de alguna manera modelar la cantidad de energia lumínica, o radiancia, que está presente en cada punto los distintos objetos que forman la escena. De esta manera calcular de que manera se debería ver la imagen según los parámetros de iluminación que se establezcan. Las categorías que se identifican son las siguientes.
-
-\begin{itemize}
-\item El modelo planteado por Whitted que fue descripto previamente.
-
-\item El modelo basado en elementos finitos es bastante simple al igual que el modelo de Whitted pero a su vez muy diferente, ya que plantea para calcular la radiancia la división de la escena en pequeñas partes y se utiliza alguna solución numérica para aproximar los valores.
-
-\item Los algoritmos cuyo modelo de iluminación está basado en métodos de Monte Carlo buscan aproximar los valores de radiancia en base a aproximaciones estadísticas basadas en la integración de Monte Carlo. Esta familia de algoritmos encuentra su mayor exponente actualmente en el algoritmo de Photon Mapping.
-\end{itemize}
-
-Por lo tanto los algoritmos de generación de imágenes, que surgen en base al algoritmo original de Raytracing, pueden ser clasificados utilizando distintas estrategias, en este trabajo se presentan agrupados por el modelo para el cálculo de la iluminación utilizado.
-
-\begin{itemize}
-  \item modelo simple de iluminación local diseñado por Whitted.
-  \item modelo de iluminación global.
-      \begin{itemize}
-        \item elementos finitos
-        \item métodos de Monte Carlo.
-      \end{itemize}
-\end{itemize}
-
-De estos modelos se describirá el más representativo para la estrategia. Estas técnicas que se presentan son: Raytracing para el modelo de Whitted, Radiosidad para los algoritmos basados en elementos finitos y Photon Mapping para los basados en métodos de Montecarlo.
-
-\subsection{Radiosidad}
-El algoritmo de radiosidad utiliza los principios de Raytracing para el cálculo de las superficies visibles y sombras, así como las reflexiones y refracciones pero a diferencia del algoritmo de Raytracing básico plantea que para hacer el cálculo de la iluminación es necesario pre calcular los valores de iluminación en cada uno de los parches en los que se divide arbitrariamente la escena, por esta división es que este es un método de elementos finitos. Luego de realizado el cálculo de la radiancia de cada uno de los parches se utiliza un rastreo de la escena para el cálculo de los valores de color de los pixels de la imagen que se quiere generar. Como se pre calculan los valores de la iluminación en toda la escena a menos que se modifique la escena o las luces se pueden utilizar los mismos valores de radiancia pre calculados para generar imágenes desde distintos puntos de vista.
-
-\subsection{Photon mapping}
-Este algoritmo fue introducido por Henrik Wan Jensen en el año 1996\cite{Jensen2001}. Este algoritmo que sigue en desarrollo, cuenta con una excelente calidad en las imágenes que genera y es menos costoso, en tiempo de cómputo, que el algoritmo de radiosidad. En lugar de utilizar el modelo de elementos finitos utiliza un modelo basado en métodos de Monte Carlo para el cálculo de la cantidad de energía en cada punto.
-El algoritmo de Photon Mapping tiene dos etapas diferenciadas al igual que el algoritmo de radiosidad, pero tiene una aproximación distinta para el cálculo de la radiancia de los puntos. La primera pasada es similar a la recorrida de la escena por el algoritmo de Raytracing con la diferencia que sigue el sentido inverso. Esta primer pasada se llama emisión de fotones, se generan fotones, cuantos más se generen más fiable será el resultado de la iluminación, que son lanzados desde los emisores de luz hacia la escena en direcciones que sean factibles. Se calcula el lugar en el que el fotón incide en la escena recursivamente de manera análoga al algoritmo de Raytracing. Esto es debido a que en el caso de los objetos reales, estos no absorben toda la luz incidente sino que hay luz que es reflejada y por lo tanto fotones son vueltos a lanzar desde el punto en el que chocaron con un objeto. Para hallar la dirección con la que es emitido el nuevo fotón y la energía que tendrá el mismo se utiliza un modelo para los materiales de los objetos de la escena teniendo que agregar al material de los objetos una función de BRDF (Función de Distribución de Reflectancia Bidireccional). Esta función representa la proporción de radiación reflejada por una determinada superficie en cada dirección del rayo reflejado, proyectada sobre el plano horizontal.
 
 
 

@@ -2,3 +2,167 @@
 
 Este apéndice contiene la especificación de los algoritmos descriptos en el Capítulo 3 agregando información que puede ser útil para el lector. Los algoritmos y técnicas de este anexo no fueron implementados en el presente trabajo.
 
+\section{Particularidades del KD-Tree}
+
+La dificultad de construir esta estructura dado un volumen a dividir radica en escoger el lugar donde colocar el plano de corte. Thrane y Ole \cite{TesisEstructuras} usan una función de costo para evaluar en donde se coloca el plano. Esta se basa en que la probabilidad de que un rayo atraviese un nodo hijo es proporcional a la proporción entre el área de la superficie del nodo hijo y el área de la superficie del nodo padre. Luego de algunos refinamientos la función pasa a tener en cuenta también, lo que sucede cuando un objeto es cortado por el plano de corte. Esto es importante porque los objetos cortados se propagan a través de los dos volúmenes hijos y por lo tanto se incurre en un alto costo de procesamiento. La forma de escoger una posición para el plano de corte es evaluar la función de costo a lo largo de todos los ejes de las cajas que envuelven a los objetos de la escena. La posición con menos costo según la función es elegida para posicionar el plano. A modo de ejemplo se puede considerar la Figura \ref{fig:exFCKd-tree} donde se muestra el procedimiento para un solo eje, en el procedimiento real se deben considerar también los dos restantes \cite{TesisEstructuras}.
+
+En la Figura \ref{fig:exFCKd-tree} la función de costo es evaluada en los puntos $a, b, \ldots, j$. Estos puntos se corresponden con los puntos iniciales y finales de los intervalos que definen las cajas que envuelven a los objetos de la escena y el eje que será cortado. Vale la pena resaltar el intervalo $[c,f]$, que es generado por un objeto cortado por un plano, y es formado a través de un recorte generado por el voxel actual.
+
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.7\textwidth]{../DOC_Relevamiento/exFCKd-tree}
+  \caption{Ejemplo de búsqueda del plano de corte considerando solo un eje.}
+  \label{fig:exFCKd-tree}
+\end{figure}
+
+En el caso que un objeto no esté completamente contenido en el voxel que se esta analizando para dividir, como sucede en el ejemplo de la Figura \ref{fig:exFCKd-tree}, no se debe usar la caja que lo envuelve totalmente. En este caso se debe cortar el objeto y usar solo la parte de este que queda contenida en el voxel que queremos dividir. De esta forma solo se considera la caja que envuelve totalmente a esta nueva parte. Esta técnica es denominada ``\emph{split clipping}'' \cite{Havran}. Aunque se considere el corte con respecto al voxel para obtener un nuevo volumen envolvente, el objeto que es transferido hacia los hijos del nodo actual es el objeto original y no el corte. Thrane y Ole \cite{TesisEstructuras} usan esta técnica para la construcción de la estructura kd-tree y obtuvieron muy buenos resultados.
+
+En el Algoritmo \ref{alg:ConstruccionKD-Tree} se puede ver un seudocódigo de la construcción de esta estructura. El algoritmo es recursivo, tiene como entrada un voxel y como salida una estructura kd-tree. En cada paso de la recursión se divide al voxel de entrada (nodo padre) en dos sub-voxels (nodos hijos). Para construir una estructura que permita lograr una buena aceleración, el algoritmo busca el mejor plano de corte utilizando el método que ilustra la Figura \ref{fig:exFCKd-tree}. Cada objeto perteneciente a la lista de objetos del nodo padre es agregado a la lista de objetos del nodo hijo que lo contiene total o parcialmente. Luego, para cada nodo hijo se invoca el algoritmo recursivamente.
+
+El paso base de la recursión se da cuando se cumple algún criterio de parada. El algoritmo usa dos criterios de parada; cuando el número de objetos del voxel de entrada es menor a cierto valor predefinido y cuando la profundidad de la recursión alcanza cierto valor predefinido.
+
+Para construir una estructura kd-tree se invoca el algoritmo de cons\-truc\-ción con un voxel que contenga toda la escena. El algoritmo construye la estructura a partir de este voxel, dividiéndolo hasta que se cumplan los criterios de parada para cada una de las ramas del árbol de recursión.
+
+Dado un nodo $N$ de un kd-tree, el algoritmo para moverse a lo largo del subárbol con raíz $N$ debe seguir los siguientes pasos:
+\begin{itemize}
+  \item Si $N$ es un nodo hoja, todos los objetos de $N$ se prueban para ver si tienen intersección con el rayo. En caso de que existan intersecciones, se retorna la más cercana al observador.
+  \item Si $N$ es un nodo interno, es decir un nodo que esta dividido en dos y que tiene dos hijos, se debe determinar cual hijo de $N$ es atravesado primero por el rayo. Luego, se llama de forma recursiva con este nodo. Si esta llamada encuentra intersección, será la más cercana al punto del observador entonces, se retorna. En caso contrario, se debe llamar de forma recursiva con el otro nodo hijo de $N$.
+\end{itemize}
+Utilizando el algoritmo para moverse en el árbol, siempre se visitan los voxeles en el orden en que son visitados por el rayo. Esto permite que se pueda parar el algoritmo de recorrida de voxeles tan pronto como se encuentre la intersección rayo-objeto más cercana al observador.
+
+
+\begin{algorithm}[H] %%% Algoritmo de la página 46!
+    \caption{Construcción de la estructura KD-Tree. Seudocódigo de la función $construir(voxel)$.}
+    \label{alg:ConstruccionKD-Tree}
+    \begin{algorithmic}
+        \If {$numObjetos(voxel) \leq MIN\_OBJETOS$}
+            \State se retorna nueva hoja con su lista de objetos
+        \EndIf
+        \If {$profundidad(arbol) \geq PROFUNDIDAD\_MAX$}
+            \State se retorna nueva hoja con su lista de objetos
+        \EndIf
+        \State $mejorCorte \leftarrow \emptyset$
+        \State $mejorCosto \leftarrow \infty$
+        \ForAll {eje in \{$x, y, z$\}}
+            \State $posiciones \leftarrow []$
+            \ForAll {objeto en voxel}
+                \State recortar objeto segun voxel
+                \State calcular caja envolvente del objeto recortado
+                \State encontrar puntos extremos a y b segun eje
+                \State agregar a y b a la lista posiciones
+            \EndFor
+            \ForAll {punto p en posiciones}
+                \If {$costo(p) < mejorCorte$}
+                    \State $mejorCorte \leftarrow (p,eje)$
+                    \State $mejorCosto \leftarrow costo(p)$
+                \EndIf
+            \EndFor
+        \EndFor
+        \State $(voxelIzq, voxelDer) \leftarrow dividir\ voxel\ segun\ mejorCorte$
+        \ForAll {objeto o en voxel}
+            \If {interseccion(o, voxelIzq)}
+                \State agregar o a voxelIzq
+            \EndIf
+            \If {interseccion(o, voxelDer)}
+                \State agregar o a voxelDer
+            \EndIf
+        \EndFor
+        \State $hijoIzq \leftarrow construir(voxelIzq)$
+        \State $hijoDer \leftarrow construir(voxelDer)$
+        \State se retorna nuevoNodoInterno(hijoIzq, hijoDer, mejorCorte)
+    \end{algorithmic}
+\end{algorithm}
+
+
+\subsubsection{Paralelismo en GPU}
+El primer problema que surge al querer paralelizar el algoritmo de atravesado de voxeles en una GPU es que este es recursivo. Esto es un problema porque en la GPU no se cuenta con una pila.
+
+Una solución es considerar a la estructura kd-tree como un caso especial de la estructura de jerarquía de volúmenes envolventes (BVH, Bounding Volume Hierarchy) y usar su algoritmo de recorrida. Esto no es bueno porque se pierde la capacidad de recorrer los voxeles en el orden que son visitados por el rayo, y por lo tanto se pierde la capacidad de detener el algoritmo tan pronto como se encuentre una intersección. Además, como una estructura kd-tree es usualmente más grande que su correspondiente BVH para la misma escena, se estaría creando un BVH ineficiente \cite{TesisEstructuras}. Una posible solución es emplear una estrategia diferente de recorrido de los voxeles. Se puede emplear la estrategia usada por Foley y Sugerman \cite{FoleySugerman}, en la cual se cambia el algoritmo recursivo por uno secuencial. Esta estrategia consiste en mover un intervalo $[t_{min},t_{max}]$ a lo largo del rayo e ir descendiendo desde la raíz del árbol hasta que una hoja que contenga al intervalo sea encontrada. Inicialmente, el intervalo abarca todos los valores de $t$ tal que el punto $o + tv$ esta contenido en la caja del nivel superior del árbol, es decir la caja que contiene a toda la escena ($o$ es el origen del rayo y $v$ es la dirección del rayo). Para cada nivel del árbol que se desciende, se le asigna a $t_{max}$ el mínimo entre $t_{max}$ y $t_{split}$, donde $t_{split}$ es la distancia a lo largo del rayo desde $t_{min}$ hasta el plano de corte del nodo actual. Cuando se llega a un nodo hoja, el intervalo es el rango paramétrico en el cual el rayo se encuentra dentro del voxel determinado por el nodo.
+
+Si en un nodo hoja se encuentra intersección rayo-objeto, se debe retornar; por como lleva a cabo la recorrida el algoritmo, está garantizado que esta será la intersección más cercana al origen del rayo. En caso contrario, se debe actualizar el intervalo para continuar con la recorrida. El nuevo intervalo comienza en el fin del voxel actual y finaliza en el fin de la caja que contiene a la escena completa, como se muestra en el ejemplo de la Figura \ref{fig:TraversalKDTree}. En la parte (a) del ejemplo luego de que fallan todas las intersecciones en un nodo hoja, el nuevo intervalo es construido con el punto de fin del voxel actual y el punto de fin de la caja que envuelve a toda la escena. De esta manera, se llega a la siguiente hoja comenzando nuevamente el algoritmo de recorrida.
+\begin{figure}[H]
+  \centering
+    \includegraphics[width=0.8\textwidth]{../DOC_Relevamiento/traversal_kdtree}
+  \caption{Actualización del intervalo en cada variante del algoritmo de atravesado.}
+  \label{fig:TraversalKDTree}
+\end{figure}
+
+Foley y Sugerman presentan su algoritmo en dos variantes \emph{restart} y \emph{backtrack}. La variante \emph{restart} usa el enfoque de Glassner, en el cual se comienza desde la raíz del árbol cada vez que se avanza un voxel en la recorrida de los mismos \cite{Glassner84}. Esta técnica, en general, presenta un tiempo de  ejecución alto y en este sentido es peor que el algoritmo recursivo.
+Para remediar esto la técnica de \emph{backtrack} modifica la de \emph{restart} permitiendo moverse hacia arriba en el árbol en vez de moverse hacia la raíz cada vez. Cuando en un nodo hoja fallan todos los intentos por encontrar una intersección, hay que moverse hacia arriba en la estructura de árbol hasta que se encuentre un voxel ancestro que tenga intersección con el nuevo intervalo. En la Figura \ref{fig:TraversalKDTree} parte (b) se muestra dicho ancestro marcado en color en la estructura de más a la derecha. Foley y Sugerman reportan una pequeña mejora utilizando esta técnica pero también afirman que se incurre en un grado más alto de complejidad en la implementación.
+
+En el trabajo de Horn et al. \cite{Horn07} se presentan optimizaciones que pueden realizarse sobre el algoritmo \emph{restart}. Los autores señalan que en las pruebas realizadas, las optimizaciones propuestas permitieron llegar a un algoritmo de Raytracing con la capacidad de generar de 12 a 18 frames por segundo. Dado esto las consideran como buenas optimizaciones. Se llevaron a cabo tres optimizaciones sobre el algoritmo de Foley y Sugerman en su versión \emph{restart}:
+\begin{itemize}
+  \item Paquetes de rayos: esta optimización se basa en la idea de paquetes de rayos para CPUs, descrita por Wald \cite{Wald2001}. Wald buscó la manera de sacar provecho de las instrucciones SIMD de las CPUs modernas agrupando los rayos en paquetes. El tamaño de los paquetes queda determinado por la cantidad de datos que tengan como entrada las instrucciones. La mejora que introduce esta optimización es que todos los rayos de un mismo paquete se trazan en paralelo. Esta misma idea se puede llevar a una GPU, donde la cantidad de rayos por paquete dependerá de las características de la misma.
+  \item \emph{Push-Down}: esta optimización busca no recomenzar siempre desde la raíz del árbol. Por ejemplo, a menudo un rayo atraviesa el volumen que contiene a la escena y solo pasa a través de un subárbol de la estructura kd-tree. Si se arranca el algoritmo siempre desde la raíz se esta analizando muchas veces un subárbol que ya se sabe que no es atravesado por el rayo. Esta técnica permite recomenzar el algoritmo desde el subárbol más profundo que encierra al rayo, y de esta manera no se vuelven a analizar subárboles que no lo contienen.
+  \item \emph{Short-Stack}: Horn et al. \cite{Horn07} observaron que era posible usar una pila que guarde los últimos N nodos visitados (tamaño fijo) y pasarse al algoritmo sin pila cuando esta se desborda. Dado esto, introdujeron como forma de optimizar el algoritmo una pequeña pila de tamaño fijo, cuya manipulación puede tomar dos caminos. Cuando se introduce un nuevo nodo y la pila esta llena, se descarta el nodo que se encuentra más alejado del tope. Cuando se saca un nodo de la pila vacía el algoritmo no termina, vuelve a comenzar desde la raíz del árbol. Esta pila es como un \emph{caché} de nodos y puede ser usado para disminuir la frecuencia de recomienzos a costa de sacrificar el tiempo de procesamiento de un rayo.
+\end{itemize}
+
+
+\section{Particularidades del BVH}
+
+Antes de presentar las ideas para construir una estructura BVH es importante considerar que en la práctica, los volúmenes más usados para construir una BVH son los volúmenes envolventes alineados a los ejes de coordenadas (AABB). Los AABB pierden rendimiento porque no se ajustan perfectamente a los objetos, pero lo ganan por el lado de permitir un chequeo de intersección simple y rápido. También son muy buenas estructuras en términos de simplicidad de implementación \cite{TesisEstructuras}. Los dos enfoques de construcción que se presentan a continuación utilizan este tipo de volumen envolvente.
+
+Kay y Kajiya sugieren un enfoque recursivo top-down. Esta idea se muestra aplicada al algoritmo de construcción en el Algoritmo \ref{alg:ConstruccionBVH}. Para construir una estructura BVH el algoritmo necesita como entrada la lista de objetos que conforman la escena. La salida del algoritmo es una jerarquía de volúmenes envolventes alineados con los ejes, como la que se muestra en la Figura \ref{fig:BVHExample}. Si la escena tiene un solo objeto, la estructura se construye con un solo volumen envolvente. En caso contrario, se busca el mejor eje de corte y la mejor posición de corte. Se pueden usar diversas estrategias para encontrar el plano de corte, una de ellas es usar la función de costo que se muestra en la Ecuación \ref{eqn:AreasSuperficies}. Se puede adoptar otra estrategia como cortar siempre por el punto medio o como dejar la misma cantidad de objetos de cada lado del plano. Por último, se construyen los subárboles izquierdo y derecho de forma recursiva, así como también se construye el volumen envolvente que contiene a todos los objetos.
+
+\begin{algorithm} %%% Algoritmo de la página 54!!!
+    \caption{Construcción de la estructura BVH según Kay y Kajiya \cite{KayKajiya}. Seudocódigo de la función $consArbol(objetos)$}
+    \label{alg:ConstruccionBVH}
+    \begin{algorithmic}
+        \State BVNODE res
+        \If {cantidad(objetos) == 1}
+            \State $res.hijoIzq \leftarrow arbolVacio$
+            \State $res.hijoDer \leftarrow arbolVacio$
+            \State $res.volEnvolvente \leftarrow volumen\ que\ contiene\ a\ todo\ o \in objetos$
+        \Else
+            \State Calcular el mejor eje de corte y por donde se debe cortar
+            \State $res.hijoIzq \leftarrow consArbol(objetos\ del\ lado\ izquierdo\ del\ corte)$
+            \State $res.hijoDer \leftarrow consArbol(objetos\ del\ lado\ derecho\ del\ corte)$
+            \State $res.volEnvolvente \leftarrow volumen\ que\ contiene\ a\ todo\ o \in objetos$
+        \EndIf
+        \State se retorna res
+    \end{algorithmic}
+\end{algorithm}
+
+Goldsmith y Salmon proponen un enfoque de construcción bottom-up que resulta más complicado. El algoritmo comienza asignando el primer objeto de la escena como la raíz del árbol. Para cada objeto adicional en la escena, se busca la mejor posición en el árbol mediante la evaluación de una función de costo (por ejemplo, usando la Ecuación \ref{eqn:AreasSuperficies}). La posición se busca mediante un recorrido recursivo descendente en el árbol, siguiendo el camino que resulte menos costoso según la función. Finalmente, el objeto es insertado de alguna manera: como una nueva hoja o se reemplaza una hoja existente por un nodo interno que contiene al nodo hoja viejo y al nuevo objeto como hijos. Como resultado de este enfoque un nodo interno puede tener un número arbitrario de hijos, contrariamente a lo que pasa con el enfoque de Kay y Kajiya, que produce árboles binarios.
+
+Goldsmith y Salmon advierten que la calidad de la estructura BVH generada por su algoritmo depende fuertemente del orden de los objetos pasados como entrada. Como una solución, recomiendan distribuir aleatoriamente el orden de los objetos antes de construir la estructura.
+
+
+La forma estándar de recorrer una estructura BVH es a través de una recursión. Para los nodos internos se debe probar la intersección del rayo contra el volumen envolvente asociado. Si se encuentra intersección, se debe probar la intersección recursivamente contra los nodos hijos. A diferencia de la estructura kd-tree, se deben visitar todos los nodos hijos, dado que estos se pueden solapar y no siguen ningún criterio de ordenación. Si el rayo no atraviesa el volumen envolvente del nodo no es necesario probar los nodos hijos. Para los nodos hoja, solo se debe probar si el rayo tiene intersección con alguno de los objetos de la escena asociados al nodo.
+
+El principal problema que se encuentra cuando se quiere acceder a los volúmenes envolventes para probar su intersección con el rayo, es el orden en el cual los nodos hijos son accedidos. Kay y Kajiya proponen un método por el cual se intenta seleccionar el nodo más cercano al origen del rayo, siguiendo la dirección del mismo. Esta técnica es un poco complicada porque requiere por ejemplo, mantener una cola de prioridad, de donde se extraen los nodos a ser atravesados por el rayo. Thrane y Ole \cite{TesisEstructuras} concluyen que esta técnica no implica una ganancia de rendimiento considerable.
+
+\subsubsection{Paralelismo en GPU.}
+Para implementar en una GPU el algoritmo que atraviesa una estructura BVH dado un rayo hay que resolver dos problemas. El primero corresponde a encontrar un método para atravesar la estructura de árbol eficientemente sin contar con una pila. El segundo problema es encontrar una representación adecuada de la estructura BVH para usar sobre la GPU.
+
+La representación de la estructura y el algoritmo que atraviesa el árbol son independientes. La solución propuesta por Thrane y Ole se basa en una cuidadosa elección de los datos que se deben guardar dados los tipos de almacenamiento que provee la GPU. En la GPU se debe guardar el estado del recorrido en vez de guardar el árbol en si mismo. La idea para llevar a cabo esto proviene de observar que los rayos atraviesan los nodos del árbol siempre en \emph{pre-order}. Una recorrida de un árbol es en \emph{pre-order} cuando se recorre primero el nodo raíz, luego el subárbol izquierdo y por último el subárbol derecho, como se muestra en el ejemplo de la Figura \ref{fig:TraversalBVH}.Los nodos del árbol son numerados secuencialmente de acuerdo al orden mencionado anteriormente. Esta numeración coincide con la forma en que son guardados los datos de los nodos en la estructura que maneja la GPU, un array.
+
+\begin{figure}
+  \centering
+    \includegraphics[width=0.8\textwidth]{../DOC_Relevamiento/traversalBVH}
+  \caption{Ejemplo de codificación de los datos para atravesar una estructura BVH.}
+  \label{fig:TraversalBVH}
+\end{figure}
+
+Una línea punteada $(a \dashrightarrow b)$ representa la situación en la que el rayo no atraviesa al volumen $a$ y se debe seguir probando con los demás nodos hermanos, en este caso el volumen $b$. Como se muestra en la Figura \ref{fig:TraversalBVH}, cada línea punteada es guardada como un par de índices, donde cada componente del par hace referencia al array. Thrane y Ole \cite{TesisEstructuras} llaman a este puntero índice de escape. En el ejemplo de la Figura \ref{fig:TraversalBVH}, si un rayo no atraviesa el volumen número 1 se debe seguir probando con los volúmenes hermanos para ver si el rayo atraviesa a alguno. Para pasar del volumen número 1 a su próximo hermano (volumen número 8) sin tener que recorrer todo el subárbol izquierdo se usa el índice de escape $(1 \dashrightarrow 8)$. A través del índice de escape se navega el árbol de forma eficiente. Se puede ver que todos los nodos hoja tienen un índice de escape relativo igual a $1$. Como consecuencia de esto, no se necesita guardar a la vez el índice de escape y los objetos que contiene el volumen. Notar la convención indirecta en la Figura \ref{fig:TraversalBVH} donde los nodos internos del subárbol derecho tienen índice de escape igual al número total de nodos del árbol. Esto se usa para tener un criterio de parada en el algoritmo de recorrida.
+
+Un algoritmo para atravesar una estructura BVH dado un rayo que siga este enfoque es simple e iterativo, lo cual es muy bueno para ejecutarlo en una GPU. El algoritmo requerido para ejecutar la recorrida de los volúmenes envolventes de una BVH, guardados en la estructura de array, es mostrado en el Algoritmo \ref{alg:TraversalBVH}. La iteración siempre termina con un índice actual mayor al que existía cuando se inició, esto se da como consecuencia de que los índices de escape siempre van en la dirección de aumento.
+
+\begin{algorithm} %%% Algoritmo de la página 57!!!
+    \caption{Recorrida de los volumenes envolventes para GPU.}
+    \label{alg:TraversalBVH}
+    \begin{algorithmic}
+        \State $S \leftarrow secuencia\ de\ recorrida$
+        \State $r \leftarrow el\ rayo$
+        \State $indiceActual \leftarrow 0$
+        \While {$indiceActual < largo(S)$}
+            \State $nodoActual \leftarrow S[indiceActual]$
+            \If {$hayInterseccion(r, nodoActual)$}
+                \State $indiceActual \leftarrow indiceActual + 1$
+                \State guardar datos interseccion si $nodoActual$ es hoja
+            \Else
+                \State $indiceActual \leftarrow indiceEscape(nodoActual)$
+            \EndIf
+        \EndWhile
+    \end{algorithmic}
+\end{algorithm}
