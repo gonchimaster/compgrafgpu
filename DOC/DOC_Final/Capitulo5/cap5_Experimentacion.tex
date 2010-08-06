@@ -256,9 +256,104 @@ Todos los equipos utilizados para ejecutar los casos de prueba del proyecto usan
 
 Las pruebas realizadas en este proyecto se pueden dividir en dos grandes líneas. La primera es comparar resultados dentro del propio proyecto, por ejemplo la comparación entre los dos algoritmos implementados, uno para CPU y el otro para GPU.La otra línea de prueba es la comparación con algoritmos similares implementados por terceros. En esta clase de pruebas se hicieron comparaciones con implementaciones que pudieron ser ejecutadas en los equipos utilizados en el proyecto y también con resultados de otras experiencias similares extraídos de artículos científicos.
 
-La mayoría de las pruebas realizadas se hicieron fijando la resolución de la imagen a generar en 640 por 480 pixeles. Las únicas excepciones a esta regla se dan cuando se hacen pruebas de comparación con algoritmos implementados por terceros. Para las pruebas de comparación con el \emph{Alexandra Institute} se uso una resolución de 800 por 600, mientras que para la comparación con los resultados del artículo de Günther et al. \cite{GuntherPopov} se uso una resolución de 1024 por 1024 pixeles. En el caso del \emph{Alexandra Institute} la resolución quedó determinada por su implementación del algoritmo de Raytracing, que no permite variar la misma. En el caso del artículo de Günther la resolución quedo determinada por los resultados descritos en él, ya que fueron obtenidos usando una resolución fija (1024 por 1024).
+La mayoría de las pruebas realizadas se hicieron fijando la resolución de la imagen a generar en 640 por 480 pixeles. Las únicas excepciones a esta regla se dan cuando se hacen pruebas de comparación con algoritmos implementados por terceros. Para las pruebas de comparación con el \emph{Alexandra Institute} se uso una resolución de 800 por 600, mientras que para la comparación con los resultados del artículo de Günther et al. \cite{GuntherPopov} se uso una resolución de 1024 por 1024 pixeles. 
+
+////////////////////////RE REDACTAR///////////////////////////
+En el caso del \emph{Alexandra Institute} la resolución quedó determinada su implementación del algoritmo de Raytracing, que no permite variar la misma. En el caso del artículo la resolución quedo determinada por los resultados descritos en él.
 
 Las pruebas realizadas a lo largo del proyecto mostraron que una buena elección del tamaño de la grilla puede incrementar notablemente la velocidad de generación de imágenes, siendo esto un parámetro crítico que se debe definir correctamente. Como primer aproximación se toma la medida sugerida por Thrane y Ole \cite{TesisEstructuras}, la cual indica que la resolución sea $3\sqrt[3]{N}$ voxeles a lo largo del eje más corto, donde $N$ es el número de triángulos de la escena. Después varias pruebas realizadas se comprobó que esta división no siempre es la mejor y que una buena resolución para la grilla se encuentra entre $\sqrt[3]{N}$ y $3\sqrt[3]{N}$ a lo largo del eje más corto. Dentro de este intervalo se debe buscar empíricamente la grilla de mejor rendimiento. En todas las pruebas realizadas en esta sección se siguió esta metodología para encontrar el tamaño de grilla óptimo (o grilla optima), así mismo se muestran también otros tamaños de grilla para cada escena.
+
+\subsection{Comparación entre versiones}
+
+La comparación de rendimiento entre las diferentes versiones del algoritmo para GPU se hizo usando los casos de prueba PRI\_I a PRI\_V. Esta comparación entre versiones consta de dos partes, en la primera se determina la grilla óptima para cada caso de prueba y en la segunda se ejecuta cada caso de prueba en cada una de las versiones del algoritmo utilizando su grilla óptima.
+
+Para determinar la grilla óptima para cada escena de prueba se usa la Versión 3 del algoritmo para GPU, ejecutando en el Equipo GTX260. En la Tabla \ref{table:CompVersionesBuscarGrilla} se muestran los resultados obtenidos al ejecutar los casos de prueba sobre GPU. Observando los resultados se puede concluir que la grilla optima para todos los casos de prueba se construye partiendo en dos cada eje.
+
+Los resultados obtenidos en estas primeras pruebas muestran que a medida que aumenta la cantidad de primitivas con que esta construida la escena aumenta el tiempo de generación de imagen, y por lo tanto disminuyen los FPS. Esto se pensaba antes de ejecutar estos casos de prueba y fue corroborado por los mismos. También se pensaba que al aumentar la cantidad de primitivas de la escena aumentaría la cantidad de voxels que debía tener la grilla optima, pero esto no fue validado por los resultados obtenidos. Esto puede deberse a que el incremento de la cantidad de primitivas no es suficientemente grande como para obligar a aumentar la resolución de la grilla.
+
+\begin{table}
+\begin{center}
+\resizebox{10cm}{!}{
+  \small {
+    \begin{tabular}{|c|c|c|c|c|c|c|}
+    \hline
+    \multirow{2}{*}{\textbf{Escena}}&\multicolumn{6}{|c|}{\textbf{Tamaño de grilla}}\\
+    \cline{2-7}
+    & 1x1x1 & 2x2x2 & 4x4x4 & 6x6x6 & 10x10x10 & 15x15x15\\
+    \hline
+    PRI\_I & 18.7 & 36.7 & 32.7 & 29.7 & 27.3 & 24.7\\
+    \hline
+    PRI\_II & 13.9 & 27.6 & 25.4 & 23.3 & 21.5 & 20.1\\
+    \hline
+    PRI\_III & 11.3 & 24.5 & 22.8 & 20.9 & 19.2 & 18.0\\
+    \hline
+    PRI\_IV & 8.4 & 18.5 & 18.0 & 16.5 & 15.9 & 15.1\\
+    \hline
+    PRI\_V & 6.7 & 16.6 & 15.5 & 14.6 & 13.8 & 13.5\\
+    \hline
+    \end{tabular}
+  }
+}
+\caption{FPS de PRI\_I, PRI\_II, PRI\_III, PRI\_IV, PRI\_V en el Equipo GTX260 sobre GPU.}
+\label{table:CompVersionesBuscarGrilla}
+\end{center}
+\end{table}
+
+Una vez determinada la grilla optima para cada caso de prueba, se ejecuta cada caso utilizando su grilla optima en cada una de las versiones del algoritmo para GPU, en la Tabla \ref{table:CompVersionesFPS} se muestran los resultados obtenidos.
+
+\begin{table}
+\begin{center}
+\resizebox{10cm}{!}{
+  \small {
+    \begin{tabular}{|c|c|c|c|c|}
+    \hline
+    Escena & Tamaño Grilla Óptimo & GPU v1 (FPS) & GPU v2 (FPS) & GPU v3 (FPS)\\
+    \hline
+    PRI\_I & 2x2x2 & 5.8 & 26.2 & 36.7\\
+    \hline
+    PRI\_II & 2x2x2 & 5.1 & 20.2 & 27.6\\
+    \hline
+    PRI\_III & 2x2x2 & 4.9 & 18.2 & 24.5\\
+    \hline
+    PRI\_IV & 2x2x2 & 4.3 & 14.1 & 18.5\\
+    \hline
+    PRI\_V & 2x2x2 & 3.9 & 12.6 & 16.6\\
+    \hline
+    \end{tabular}
+  }
+}
+\caption{FPS de PRI\_I, PRI\_II, PRI\_III, PRI\_IV, PRI\_V en el Equipo GTX260 sobre GPU para cada versión del algoritmo.}
+\label{table:CompVersionesFPS}
+\end{center}
+\end{table}
+
+Los resultados de la Tabla \ref{table:CompVersionesFPS} reflejan la evolución positiva del algoritmo ya que a medida que se fue sofisticando el algoritmo se incrementaron los FPS para todos los casos de prueba.
+
+El incremento del tiempo de generación de imagen es mayor en el primer cambio de versión, esta diferencia está determinada por el uso de la jerarquía de memoria de la GPU. En la Versión 1 todos los accesos a memoria son a memoria global mientras que en la Versión 2 la mayoría de los datos de entrada del algoritmo de Raytracing se encuentran en memoria de textura. Considerando estos casos de prueba, el correcto uso de la jerarquía de memoria permite que el algoritmo pierda menos tiempo accediendo a memoria siendo así (en promedio) tres veces y media más rápido que el algoritmo que no la usa.
+
+En el segundo cambio de versión se mejora el algoritmo de intersección rayo-triángulo, el nuevo test de intersección logra el mismo objetivo que el anterior pero con menos operaciones aritméticas, lo cual implica una disminución del tiempo de generación de la imagen. Considerando los resultados obtenidos esta mejora del algoritmo de Raytracing ayuda a que la Versión 3 genere la imagen un 30\% más rápido que en la Versión 2.
+
+\begin{figure}
+    \centering
+    \subfigure[]{
+        \label{fig:CompVersionesRenders:a} %% label for first subfigure
+        \includegraphics[width=0.3\textwidth]{./Capitulo5/renderPRI5Version1}
+    }
+    \subfigure[]{
+        \label{fig:CompVersionesRenders:b} %% label for second subfigure
+        \includegraphics[width=0.3\textwidth]{./Capitulo5/renderPRI5Version2}
+    }
+    \subfigure[]{
+        \label{fig:CompVersionesRenders:c} %% label for second subfigure
+        \includegraphics[width=0.3\textwidth]{./Capitulo5/renderPRI5Version3}
+    }
+    \caption{Render de PRI\_V en GPU con la Versión 1, 2 y 3 respectivamente.}
+    \label{fig:CompVersionesRenders} %% label for entire figure
+\end{figure}
+
+En la Figura \ref{fig:CompVersionesRenders} se muestran los renders del caso de prueba PRI\_V con cada una de las versiones del algoritmo implementado en CUDA. No se observan diferencias importantes entre las imágenes generadas por las diferentes versiones del algoritmo. El aumento de número de versión del algoritmo implica un aumento en la cantidad de FPS, esta disminución del tiempo de generación de imágenes no implica perdida de calidad de imagen.
+
+
 
 \subsection{Comparación entre C y CUDA}\label{sec:ComparacionCvsCUDA}
 
@@ -266,7 +361,8 @@ La comparación de rendimiento entre el algoritmo para CPU y el algoritmo para GP
 
 \begin{table}
 \begin{center}
-\resizebox{12cm}{!}{
+\resizebox{10cm}{!}{
+  \small {
     \begin{tabular}{|c|c|c|c|c|c|c|}
     \hline
     \multirow{2}{*}{\textbf{Escena}}&\multicolumn{6}{|c|}{\textbf{Tamaño de grilla}}\\
@@ -286,6 +382,7 @@ La comparación de rendimiento entre el algoritmo para CPU y el algoritmo para GP
     BUNNY&1.2&3.0&4.2&4.0&3.2&2.1\\
     \hline
     \end{tabular}
+  }
 }
 \caption{FPS de DIST\_I, DIST\_II, DIST\_III y BUNNY en el Equipo GTX260 sobre CPU.}
 \label{table:CvsCUDACPU}
@@ -296,7 +393,8 @@ Los resultados obtenidos sugieren que el tamaño de la grilla depende exclusivame
 
 \begin{table}
 \begin{center}
-\resizebox{12cm}{!}{
+\resizebox{10cm}{!}{
+  \small {
     \begin{tabular}{|c|c|c|c|c|c|c|}
     \hline
     \multirow{2}{*}{\textbf{Escena}}&\multicolumn{6}{|c|}{\textbf{Tamaño de grilla}}\\
@@ -316,6 +414,7 @@ Los resultados obtenidos sugieren que el tamaño de la grilla depende exclusivame
     BUNNY&13.9&20.7&23.8&20.8&14.4&10.1\\
     \hline
     \end{tabular}
+  }
 }
 \caption{FPS de DIST\_I, DIST\_II, DIST\_III y BUNNY en el Equipo GTX260 sobre GPU.}
 \label{table:CvsCUDAGPU}
@@ -364,7 +463,6 @@ Los resultados obtenidos con los casos de prueba DIST\_I, DIST\_II, DIST\_III y 
 \end{center}
 \end{table}
 
-\subsection{Comparación entre versiones}
 
 La comparación de rendimiento entre las diferentes versiones del algoritmo para GPU se hizo usando los casos de prueba PRI\_I a PRI\_V. Esta comparación entre versiones consta de dos partes, en la primera se determina la grilla optima para cada caso de prueba y en la segunda se ejecuta cada caso de prueba en cada una de las versiones del algoritmo utilizando su grilla optima.
 
@@ -455,11 +553,12 @@ En la Figura \ref{fig:CompVersionesRenders} se muestran los renders del caso de 
 
 La comparación de rendimiento entre los diferentes equipos del proyecto se hizo usando la Versión RT(GPU-JM-IR) del algoritmo implementado para GPU. Los casos de prueba de esta comparación son: DRAGON, BUDDHA y ALEXANDRA. En cada equipo del proyecto, se corren los casos de prueba usando varios tamaños de grilla, de esta forma se puede determinar el tamaño de grilla óptimo para cada caso y equipo. El mejor tiempo de generación de imagen para cada caso y equipo es analizado y comparado con los demás.
 
-En las Tablas \ref{table:EquiposEquipo1}, \ref{table:EquiposEquipo2} y \ref{table:EquiposEquipo3} se muestran los resultados obtenidos para el Equipo 9500M, Equipo 9600M y Equipo GTX260 respectivamente.
+En las Tablas \ref{table:EquiposEquipo1}, \ref{table:EquiposEquipo2} y \ref{table:EquiposEquipo3} se muestran los resultados obtenidos para los equipos 9500M, 9600M y GTX260 respectivamente.
 
 \begin{table}
 \begin{center}
-\resizebox{12cm}{!}{
+\resizebox{10cm}{!}{
+  \small {
     \begin{tabular}{|c|c|c|c|c|c|c|}
     \hline
     \multirow{2}{*}{\textbf{Escena}}&\multicolumn{6}{|c|}{\textbf{Tamaño de grilla}}\\
@@ -477,8 +576,9 @@ En las Tablas \ref{table:EquiposEquipo1}, \ref{table:EquiposEquipo2} y \ref{tabl
     ALEXANDRA & 4.6 & 11.5 & 15.6 & 13.1 & 12.3 & 9.1\\
     \hline
     \end{tabular}
+  }
 }
-\caption{FPS de DRAGON, BUDDHA y ALEXANDRA en el Equipo 9500M sobre GPU.}
+\caption{FPS de DRAGON, BUDDHA y ALEXANDRA en el equipo 9500M sobre GPU.}
 \label{table:EquiposEquipo1}
 \end{center}
 \end{table}
@@ -487,11 +587,12 @@ De los resultados obtenidos se desprende que para los casos de prueba DRAGON, BU
 
 Todas la pruebas realizadas en esta comparación confirmaron que cuanto más procesadores posea la GPU más rápido será la generación de imágenes mediante el algoritmo de Raytracing para CUDA. Los resultados demuestran que la aplicación CUDA implementada puede escalar automáticamente en el número de procesadores de la GPU, esta importante característica surge como consecuencia del modelo de programación de CUDA que permite lograrlo muy fácilmente.
 
-La GPU del Equipo GTX260 tiene un poco más de seis veces más procesadores que la del Equipo 9600M. Si consideramos los resultados de los casos DRAGON, BUDDHA y ALEXANDRA con sus grillas óptimas, se observa que la a\-ce\-le\-ra\-ción en la generación de imagen nunca llega a 6, sino que es aproximadamente 5, 4 y 4 respectivamente. Basado en esta información se puede concluir que la ganancia de FPS no es lineal con respecto al aumento de procesadores. Esto se debe al tiempo empleado para la lectura de datos de entrada, a retrasos por se\-ria\-li\-za\-ción de los accesos a memoria o por sincronizaciones entre hilos al momento de escribir los resultados.
+La GPU del equipo GTX260 tiene un poco más de seis veces más procesadores que la del equipo 9600M. Si consideramos los resultados de los casos DRAGON, BUDDHA y ALEXANDRA con sus grillas óptimas, se observa que la a\-ce\-le\-ra\-ción en la generación de imagen nunca llega a 6, sino que es aproximadamente 5, 4 y 4 respectivamente. Basado en esta información se puede concluir que la ganancia de FPS no es lineal con respecto al aumento de procesadores. Esto se debe al tiempo empleado para la lectura de datos de entrada, a retrasos por se\-ria\-li\-za\-ción de los accesos a memoria o por sincronizaciones entre hilos al momento de escribir los resultados.
 
 \begin{table}
 \begin{center}
-\resizebox{12cm}{!}{
+\resizebox{10cm}{!}{
+  \small {
     \begin{tabular}{|c|c|c|c|c|c|c|}
     \hline
     \multirow{2}{*}{\textbf{Escena}}&\multicolumn{6}{|c|}{\textbf{Tamaño de grilla}}\\
@@ -509,15 +610,17 @@ La GPU del Equipo GTX260 tiene un poco más de seis veces más procesadores que la
     ALEXANDRA & 5.9 & 14.0 & 20.0 & 18.4 & 17.5 & 12.8\\
     \hline
     \end{tabular}
+  }
 }
-\caption{FPS de DRAGON, BUDDHA y ALEXANDRA en el Equipo 9600M sobre GPU.}
+\caption{FPS de DRAGON, BUDDHA y ALEXANDRA en el equipo 9600M sobre GPU.}
 \label{table:EquiposEquipo2}
 \end{center}
 \end{table}
 
 \begin{table}
 \begin{center}
-\resizebox{12cm}{!}{
+\resizebox{10cm}{!}{
+  \small {
     \begin{tabular}{|c|c|c|c|c|c|c|}
     \hline
     \multirow{2}{*}{\textbf{Escena}}&\multicolumn{6}{|c|}{\textbf{Tamaño de grilla}}\\
@@ -535,13 +638,14 @@ La GPU del Equipo GTX260 tiene un poco más de seis veces más procesadores que la
     ALEXANDRA & 28.0 & 49.3 & 71.2 & 67.6 & 62.5 & 49.4\\
     \hline
     \end{tabular}
+  }
 }
-\caption{FPS de DRAGON, BUDDHA y ALEXANDRA en el Equipo GTX260 sobre GPU.}
+\caption{FPS de DRAGON, BUDDHA y ALEXANDRA en el equipo GTX260 sobre GPU.}
 \label{table:EquiposEquipo3}
 \end{center}
 \end{table}
 
-En la Figura \ref{fig:CompEquiposRenders} se muestran renders del caso de prueba BUDDHA con el algoritmo implementado en CUDA. El render de la Figura \ref{fig:CompEquiposRenders:a} fue generado usando el Equipo 9500M, el de la Figura \ref{fig:CompEquiposRenders:b} fue generado usando el Equipo 9600M y el de la Figura \ref{fig:CompEquiposRenders:c} con el Equipo GTX260. No se observan diferencias importantes entre las imágenes generadas por los diferentes equipos utilizados en el proyecto. El aumento del poder de computo de la GPU implica un aumento en la cantidad de FPS, esta disminución del tiempo de generación de imágenes no implica perdida de calidad de las mismas.
+En la Figura \ref{fig:CompEquiposRenders} se muestran renders del caso de prueba BUDDHA con el algoritmo implementado en CUDA. El render de la Figura \ref{fig:CompEquiposRenders:a} fue generado usando el equipo 9500M, el de la Figura \ref{fig:CompEquiposRenders:b} fue generado usando el equipo 9600M y el de la Figura \ref{fig:CompEquiposRenders:c} con el equipo GTX260. No se observan diferencias importantes entre las imágenes generadas por los diferentes equipos utilizados en el proyecto. El aumento del poder de cómputo de la GPU implica un aumento en la cantidad de FPS, esta disminución del tiempo de generación de imágenes no implica perdida de calidad de las mismas.
 
 \begin{figure}
     \centering
@@ -557,23 +661,24 @@ En la Figura \ref{fig:CompEquiposRenders} se muestran renders del caso de prueba
         \label{fig:CompEquiposRenders:c} %% label for second subfigure
         \includegraphics[width=0.3\textwidth]{./Capitulo5/renderBuddhaEquipo3}
     }
-    \caption{Render de BUDDHA en GPU sobre los Equipos 9500M, 9600M y GTX260 respectivamente.}
+    \caption{Render de BUDDHA en GPU sobre los equipos 9500M, 9600M y GTX260 respectivamente.}
     \label{fig:CompEquiposRenders} %% label for entire figure
 \end{figure}
 
-\subsection{Casos más exitosos}
+\subsection{Comparación con otras implementaciones}
 
-Un caso de prueba que permite evaluar un resultado positivo en la implementación del algoritmo de Raytracing en CUDA es la escena BUNNY. En el trabajo de Johannes Günther et al. \cite{GuntherPopov} se hizo una implementación similar a la de este proyecto del algoritmo de Raytracing. En este trabajo se generan renders de una escena que es igual a la escena BUNNY y se presentan resultados de tiempos de generación de imágenes. Debido a que solo se presentan resultados y no se tiene acceso al código fuente, las pruebas con el algoritmo implementado se adaptaron al trabajo de Günther para lograr resultados comparables.
+/////////////////////RE REDACTAR COMPARACIÓN CON GHÜNTER ET AL.///////////////////////////////////
+Un caso de prueba que permite evaluar un resultado positivo en la implementación del algoritmo de Raytracing en CUDA es la escena BUNNY. En el trabajo de Günther et al. \cite{GuntherPopov} se hizo una implementación similar a la de este proyecto del algoritmo de Raytracing. En este trabajo se generan renders de una escena que es igual a la escena BUNNY y se presentan resultados de tiempos de generación de imágenes. Debido a que solo se presentan resultados y no se tiene acceso al código fuente, las pruebas con el algoritmo implementado se adaptaron al trabajo de Günther et al. para lograr resultados comparables.
 
-Se deben considerar algunas excepciones con respecto a la igualdad de las escenas, la escena BUNNY esta construida mediante la observación minuciosa de un render del trabajo de Günther. Por ejemplo, la cantidad de luces es la misma pero la posición de estas no son exactamente las mismas, el material del objeto principal de la escena no pudo ser reproducido con exactitud debido a la falta de información, etc.
+Se deben considerar algunas excepciones con respecto a la igualdad de las escenas, la escena BUNNY esta construida mediante la observación minuciosa de un render del trabajo de Günther et al.. Por ejemplo, la cantidad de luces es la misma pero la posición de estas no son exactamente las mismas, el material del objeto principal de la escena no pudo ser reproducido con exactitud debido a la falta de información, etc.
 
 En el trabajo de Johannes Günther se usa una resolución de 1024 por 1024 pixeles por lo tanto las pruebas de comparación se hacen utilizando la misma resolución.
 
 Günther et al. usan la estructura Kd-Tree como método de a\-ce\-le\-ra\-ción espacial, como se dijo en la sección de relevamiento de estructuras de a\-ce\-le\-ra\-ción, la Kd-Tree es más eficiente que la utilizada en este proyecto. Debido a esto, para la comparación con el algoritmo implementado en este proyecto se usa el tamaño de grilla que permite generar la imagen en el menor tiempo posible, dicho tamaño se definió empíricamente en la sección \ref{sec:ComparacionCvsCUDA}.
 
-La GPU utilizada en el trabajo de Günther es nVidia modelo GeForce 8800 GTX, la cual posee 112 núcleos. En el marco de este proyecto la GPU que más se adapta para este caso es la del Equipo GTX260, ya que si bien posee más cantidad de núcleos de procesamiento esta cantidad se ve compensada por el uso de la estructura Kd-Tree por parte del algoritmo de Günther et al.
+La GPU utilizada en el trabajo de Günther es nVidia modelo GeForce 8800 GTX, la cual posee 112 núcleos. En el marco de este proyecto la GPU que más se adapta para este caso es la del equipo GTX260, ya que si bien posee más cantidad de núcleos de procesamiento esta cantidad se ve compensada por el uso de la estructura Kd-Tree por parte del algoritmo de Günther et al.
 
-En la Figura \ref{fig:ExitosoBunnyRenders:a} se muestra el render extraído del trabajo de Johannes Günther y en la Figura \ref{fig:ExitosoBunnyRenders:b} se muestra el render de la escena BUNNY generado con la Versión RT(GPU-JM-IR) del algoritmo implementado para GPU.
+En la Figura \ref{fig:ExitosoBunnyRenders:a} se muestra el render extraído del trabajo de Günther et al. y en la Figura \ref{fig:ExitosoBunnyRenders:b} se muestra el render de la escena BUNNY generado con la Versión RT(GPU-JM-IR) del algoritmo implementado para GPU.
 
 \begin{figure}
     \centering
@@ -585,7 +690,7 @@ En la Figura \ref{fig:ExitosoBunnyRenders:a} se muestra el render extraído del t
         \label{fig:ExitosoBunnyRenders:b} %% label for second subfigure
         \includegraphics[width=0.45\textwidth]{./Capitulo5/renderGPU3Bunny}
     }
-    \caption{Render de BUNNY en el trabajo de Günther y en este proyecto respectivamente.}
+    \caption{Render de BUNNY en el trabajo de Günther et al. y en este proyecto respectivamente.}
     \label{fig:ExitosoBunnyRenders} %% label for entire figure
 \end{figure}
 
@@ -596,9 +701,9 @@ Otro caso de prueba que permite evaluar un resultado positivo del algoritmo impl
 
 La resolución de la imagen que genera el algoritmo de Raytracing implementado por el \emph{Alexandra Institute} es de 800 por 600 pixeles y no puede ser modificada, por lo tanto se usa esta resolución para las pruebas de comparación. El Raytracing del \emph{Alexandra Institute} no usa estructura de aceleración espacial, mientras que el algoritmo implementado en este proyecto usa un tamaño de grilla de 6 voxels por dimensión. Este tamaño de grilla genera el mejor rendimiento del algoritmo y fue hallado empíricamente en la sección \ref{sec:ComparacionEquipos}.
 
-Debido a que se tiene acceso al ejecutable del algoritmo del \emph{Alexandra Institute} se optó por ejecutar la comparación de rendimiento entre ambos algoritmos en el Equipo 9600M.
+Debido a que se tiene acceso al ejecutable del algoritmo del \emph{Alexandra Institute} se optó por ejecutar la comparación de rendimiento entre ambos algoritmos en el equipo 9600M.
 
-En la Figura \ref{fig:ExitosoAlexRenders:a} se muestra un render generado por la aplicación desarrollada por el \emph{Alexandra Institute} y en la Figura \ref{fig:ExitosoAlexRenders:b} se muestra el render de la escena ALEXANDRA generado con la Versión RT(GPU-JM-IR) del algoritmo implementado para GPU sobre el Equipo 9600M.
+En la Figura \ref{fig:ExitosoAlexRenders:a} se muestra un render generado por la aplicación desarrollada por el \emph{Alexandra Institute} y en la Figura \ref{fig:ExitosoAlexRenders:b} se muestra el render de la escena ALEXANDRA generado con la Versión RT(GPU-JM-IR) del algoritmo implementado para GPU sobre el equipo 9600M.
 
 \begin{figure}
     \centering
@@ -614,6 +719,6 @@ En la Figura \ref{fig:ExitosoAlexRenders:a} se muestra un render generado por la
     \label{fig:ExitosoAlexRenders} %% label for entire figure
 \end{figure}
 
-El rendimiento en FPS del algoritmo implementado en este proyecto bajo las condiciones descritas anteriormente es de $13$ FPS, mientras que el rendimiento del raytracing del \emph{Alexandra Institute} es de $11.7$ FPS. El algoritmo implementado en este proyecto tiene en contra (para su rendimiento) que renderiza escenas genéricas, es decir, no fue concebido para generar imágenes de solo un tipo de escena, lo cual implica que para una misma escena se requiere mayor espacio de almacenamiento y más accesos a memoria. Parte de la escena del algoritmo desarrollado por el instituto de Dinamarca se encuentra en el código fuente del mismo, lo cual brinda mayor eficiencia para el caso puntual. Es posible afirmar que para este caso de prueba ambos algoritmos tienen rendimientos similares, esto demuestra que el algoritmo implementado es competitivo con otros algoritmos de raytracing implementados en CUDA.
+El rendimiento en FPS del algoritmo implementado en este proyecto bajo las condiciones descritas anteriormente es de $13$ FPS, mientras que el rendimiento del raytracing del \emph{Alexandra Institute} es de $11.7$ FPS. Es necesario recalcar que el algoritmo implementado en este proyecto renderiza escenas genéricas, es decir, no fue concebido para generar imágenes de solo un tipo de escena, lo cual implica que para una misma escena se requiere mayor espacio de almacenamiento y más accesos a memoria. Parte de la escena del algoritmo desarrollado por el instituto de Dinamarca se encuentra en el código fuente del mismo, lo cual brinda mayor eficiencia para el caso puntual. Es posible afirmar que para este caso de prueba ambos algoritmos tienen rendimientos similares, esto demuestra que el algoritmo implementado es competitivo con otros algoritmos de raytracing implementados en CUDA.
 
 En las imágenes generadas por ambos algoritmos se pueden apreciar diferencias, como por ejemplo el color de fondo que no pudo ser correctamente reproducido en la escena de prueba ALEXANDRA. Se nota otra diferencia en el brillo especular de la esfera, esto se debe a la reproducción incorrecta del material de la misma. Aunque en el render generado por el algoritmo implementado en este proyecto se aprecia mejor el reflejo de los objetos cercanos a la esfera sobre la superficie de la misma. Otra diferencia que es que el algoritmo del \emph{Alexandra Institute} trata a las luces de la escena como un objeto más de la misma, esto no es considerado por el algoritmo implementado en este proyecto. Se puede concluir que no existen diferencias de calidad significativas entre ambos renders.
