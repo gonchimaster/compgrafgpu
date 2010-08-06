@@ -1,34 +1,54 @@
 \chapter{Experimentación} % 20 páginas mas o menos...
 
-\section{Relevamiento calidad imagen}
+Esta sección detalla las estrategias tomadas para evaluar el trabajo realizado, explicando las pruebas realizadas, así como también los resultados obtenidos en estas pruebas. También se describen otros trabajos y se compara contra estos para evaluar la distancia en cuanto a eficiencia de nuestro algoritmo comparado con otras implementaciones similares.
 
-Para evaluar la corrección de la solución implementada es necesario, además de una evaluación de la velocidad de generación de las imágenes, una medida de la calidad de las mismas. Por eso es que se relevó en el campo de la generación de imágenes cuáles eran los métodos con los que se evaluaba la calidad de los generadores de imágenes más importantes. En esta investigación no se pudieron encontrar estrategias solidas para evaluar la calidad. A continuación se describen a grandes rasgos los algoritmos que existen para la evaluación de calidad de imágenes.
+\section{Estrategias de evaluación de calidad de imagen}
 
-Se realizó una categorización de las medidas de evaluación de calidad, basada en el articulo de Ismail Avcibas y Bülent Sankur \cite{QualityMeasuresCategories} y analizando el resto de la información disponible \cite{HVSQualityAssessment} \cite{IdentifyingComputerGeneratedImages} \cite{SegmentationPerceptualImageQualityAssessment} \cite{StructuralSimilarityPerceptualImageQualityAssessment}. Cabe señalar que si bien el artículo \cite{QualityMeasuresCategories} no es sobre la generación de imágenes, se pueden ver ciertas similitudes en los objetivos de todas y cada una de las medidas de calidad de imágenes.
+Para evaluar la solución implementada es necesario, además de una evaluación de la velocidad de generación de las imágenes, una medida de la calidad de las mismas. Por esta razón se relevaron los métodos con los que se evaluaba la calidad de los generadores de imágenes. Como resultado de esta investigación no se pudieron determinar estrategias solidas para evaluar la calidad de las imágenes generadas.
+Si bien no se encontraron algoritmos que se adaptaran específicamente a las necesidades del trabajo, se presentan a continuación ideas interesantes que podrían servir a la de desarrollar métodos para evaluar la calidad de imágenes generadas por trabajos similares a este.
+
+Se realizó una categorización de las medidas de evaluación de calidad, basada en el artículo de Avcibas y Sankur \cite{QualityMeasuresCategories} y analizando el resto de la información disponible \cite{HVSQualityAssessment} \cite{IdentifyingComputerGeneratedImages} \cite{SegmentationPerceptualImageQualityAssessment} \cite{StructuralSimilarityPerceptualImageQualityAssessment}. Cabe señalar que si bien el trabajo de Avcibas y Sankur \cite{QualityMeasuresCategories} no es sobre generación de imágenes, se pueden establecer ciertas similitudes en los objetivos de todas y cada una de las medidas de calidad de imágenes.
 Las categorías en las que se dividen los algoritmos de evaluación de calidad son:
-Basados en diferencias a nivel de píxeles, basados en correlación, basados en aristas, basados en análisis espectral, basados en contexto y basados en el sistema visual humano (HVS por su sigla en inglés).
+\begin{itemize}
+\item Basados en diferencias a nivel de píxeles.
+\item Basados en correlación.
+\item Basados en aristas.
+\item Basados en análisis espectral.
+\item Basados en contexto.
+\item Basados en el sistema visual humano (HVS por su sigla en inglés).
+\end{itemize}
 
 Las estrategias basadas en diferencias a nivel de píxeles son los más simples, calculan la diferencia entre 2 imágenes tomando como referencia que un pixel en una imagen se corresponde con el mismo pixel de la imagen objetivo y, dependiendo de cuál de los algoritmos se trate, calcula alguna ponderación de los pixeles para retornar un valor que indicará la diferencia que hay entre ambas imágenes, la generada y la imagen objetivo.
-Las estrategias basads en correlación son muy similares a los anteriores pero pueden introducir una nueva variable: los píxeles se pueden mover y no estar en el mismo lugar en ambas imágenes. Este tipo de algoritmos son útiles en muchos casos para el área de procesamiento de imagen, en especial porque una misma imagen puede ser generada vista de distintos ángulos y en el análisis de calidad de las mismas considerar que no tienen diferencias.
+
+Las estrategias basadas en correlación son muy similares a los anteriores pero pueden introducir una nueva variable: los píxeles se pueden mover y no estar en el mismo lugar en ambas imágenes. Este tipo de algoritmos son útiles en muchos casos para el área de procesamiento de imagen, en especial porque una misma imagen puede ser generada vista de distintos ángulos y en el análisis de calidad de las mismas considerar que no tienen diferencias.
+
+/////////////////////////RE REDACTAR ESTE PARRAFO/////////////////////////////////////
 Otra opción se basa en que las imágenes en general presentan en su composición aristas que son los bordes que separan los componentes de la imagen entre  si, estas aristas se pueden utilizar para el análisis de calidad de imagen. Esta técnica se basa en que si dos imágenes son generadas para la misma escena, entonces las imágenes en la imagen ideal que sería el objetivo, entonces también se deben presentar en la imagen generada.
-Las estrategias que se basan en el análisis espectral son particularmente útiles en el análisis de algoritmos de compresión en los que se da este tipo de distorsión. Miden la distorsión en fase y magnitud, esto pertenece al área de tratamiento de señales, base del tratamiento de imágenes, pero tampoco se ve una aplicación directa a este trabajo.
+
+Las estrategias que se basan en el análisis espectral miden la distorsión de la señal en fase y magnitud, esto pertenece al área de tratamiento de señales, base del tratamiento de imágenes. Si bien son particularmente útiles en el análisis de algoritmos de compresión en los que se da este tipo de distorsión no se encontró una aplicación directa a este trabajo.
+
 En el análisis de contexto para medir la calidad de imagen se analiza para cada pixel sus vecinos en una cantidad de niveles arbitraria. Estos píxeles en caso de que difieran de alguna manera (esto varía para cada algoritmo dentro de la familia) modificaran, no solo la calidad de ellos mismos como analizan las estrategias de diferencia por pixel, sino también la calidad de los vecinos, dado que no será lo mismo, por ejemplo, un pixel negro entre píxeles rojos que un pixel negro entre píxeles blancos.
+
 Por último, los métodos basados en el análisis de la percepción humana para brindar una medida de calidad de la imagen generada. Este tipo de estrategias utilizan los modelos que se han generado para la percepción del ojo humano declarando que dos imágenes son iguales si para la percepción del ojo humano no tienen diferencias. Este es un modelo razonable en muchos aspectos, en particular para la industria audiovisual, por ejemplo películas, videojuegos, generación de imágenes fotorealistas, entre otras.
 
 
-Como se puede ver, todas estas estrategias son por ejemplo para comparar imágenes y no lo que realmente interesa en el contexto de este proyecto que es evaluar la calidad de las imágenes generadas por un algoritmo.
-En evaluación de imágenes generadas es que se basa el artículo del año 2007 \cite{IdentifyingComputerGeneratedImages}. Claro que plantea, al contrario de lo que se requiere en este caso, detectar que imágenes son generadas por un algoritmo de generación de imágenes y cuales son imágenes reales tomadas con una cámara. Aunque el objetivo que persigue este artículo es muy similar al que se persigue en el análisis de esta sección, el algoritmo propuesto e implementado no cumple con ser fotorealista dado que el modelo utilizado, Raytracing, no es un modelo tan preciso. Por esto es que no se podrían utilizar los métodos propuestos en el artículo.
+Como se puede ver, todas estas estrategias son para comparar imágenes y no son aplicables directamente en el contexto de este proyecto donde el objetivo es evaluar la calidad de las imágenes generadas por un algoritmo.
+En evaluación de imágenes generadas es que se basa el artículo de Dirik, Bayram, Sencar y Memon \cite{IdentifyingComputerGeneratedImages}. Pero plantea, al contrario de lo que se requiere en este proyecto, detectar que imágenes son generadas por un algoritmo de generación de imágenes y cuales son imágenes reales tomadas con una cámara. Aunque el objetivo que persigue este artículo es muy similar al que se persigue en el análisis de esta sección, el área de trabajo de este proyecto no son las imágenes fotorealistas dado que el modelo abordado, Raytracing, no es un modelo tan preciso. Por esto es que no se podrían utilizar los métodos propuestos en el artículo de Dirik, Bayram, Sencar y Memon.
+
+////////////////NO ENTENDÍ LA CORRECCIÓN////////////////
 Por otro lado los algoritmos basados en las capacidades de percepción del sistema visual humano en general también apuntan a evaluar que imágenes son iguales para el ojo humano. Al igual que en el caso anterior, estas estrategias no aplicarían en el contexto que se requiere. En este caso, por lo tanto, no son aplicables las medidas relevadas para la evaluación de calidad de las imágenes generadas. Si bien se entiende que este podría ser un tema de estudio interesante.
 
 \section{Casos de prueba}
 
 Para probar el rendimiento del algoritmo de generación de imágenes implementado es necesario generar escenas a renderizar. Como se ha mencionado en la descripción del algoritmo una escena se especifica mediante dos archivos que siguen un formato establecido.
 
+Al no disponer de un conjunto estándar de pruebas a realizar sobre el algoritmo, ya que no están establecidas por la diversidad de  pruebas a realizarse, es que se eligieron y diseñaron casos de prueba según criterios justificados que se adapten a los objetivos del trabajo.
+
 Al momento de diseñar los casos de prueba para el algoritmo de Raytracing se busco cubrir los aspectos críticos del algoritmo. Un aspecto importante a tener en cuenta es que el algoritmo de Raytracing implementado usa una grilla uniforme como estructura de aceleración. Como se analizó en la etapa de relevamiento del proyecto este tipo de estructura no es buena cuando la escena tiene una distribución espacial no uniforme de sus elementos. Por ello resulta importante probar el mismo con un conjunto de escenas que mantengan fija la cantidad de objetos, pero que varíen la distribución de ellos.
 
 La cantidad de objetos de la escena es un aspecto que afecta directamente el tiempo de ejecución de un algoritmo de Raytracing. Por este motivo es importante verificar el tiempo de ejecución del algoritmo implementado con escenas que tengan distinta cantidad de objetos pero que mantengan fijas todas las demás propiedades.
 
-La comparación con implementaciones similares es importante para establecer la calidad del algoritmo de Raytracing desarrollado en el marco de este proyecto. Por este motivo se incluyen dentro de los casos de prueba escenas pertenecientes a la comunidad web de Raytracing. Dentro de esta clase de escenas externas al proyecto, hay escenas usadas en todo proyecto de generación de imágenes, por ejemplo ``\emph{stanford bunny}'' y también hay escenas únicas de proyectos particulares.
+La comparación con implementaciones similares es importante para establecer la calidad del algoritmo de Raytracing desarrollado en el marco de este proyecto. Por este motivo se incluyen dentro de los casos de prueba escenas pertenecientes a distintas instituciones que realizan investigación y desarrollo sobre el algoritmo de Raytracing. Dentro de esta clase de escenas externas al proyecto, hay escenas usadas en todo proyecto de generación de imágenes, por ejemplo ``\emph{stanford bunny}'' y también hay escenas únicas de proyectos particulares.
 
 Es importante decir que es difícil encontrar un algoritmo similar al implementado ya que existen numerosas variantes del mismo, se pueden encontrar diversas técnicas de aceleración del algoritmo, entre otros aspectos. Los datos comparables entre las distintas implementaciones son los frames por segundo (FPS), la calidad de la imagen generada, etc.
 
@@ -127,9 +147,9 @@ En la Tabla \ref{table:CPCantPrimitivas} se muestran algunas características imp
 
 
 
-\subsubsection{Comparando con otras implementaciones}
+\subsubsection{Comparación con otras implementaciones}
 
-Para la evaluación de la calidad del algoritmo implementado en el marco de este proyecto, resulta imprescindible la comparación con otros algoritmos de Raytracing similares. Por ello se buscaron algoritmos que se ajustaran al modelo de Whitted, implementados sobre CUDA por la comunidad mundial de Raytracing.
+Para la evaluación de desempeño de los algoritmos implementados en el marco de este proyecto, resulta imprescindible la comparación con otros algoritmos de Raytracing similares. Por ello se buscaron algoritmos que se ajustaran al modelo de Whitted, implementados sobre CUDA por desarrolladores de Raytracing.
 
 \begin{figure}
     \centering
@@ -153,11 +173,11 @@ Para la evaluación de la calidad del algoritmo implementado en el marco de este 
     \label{fig:CPTerceros} %% label for entire figure
 \end{figure}
 
-Los integrantes del grupo de Computación Gráfica del \emph{Alexandra Institute} de Dinamarca implementaron un algoritmo de Raytracing y se encuentra publicado en su página web \cite{BlogAlexandraInst}. Este algoritmo no permite cambiar la escena que renderiza de forma sencilla, ya que su cargador de escena es distinto al que se usa en este proyecto. Como se dispone de información (cantidad de triángulos de cada uno de los elementos) sobre la escena del algoritmo del \emph{Alexandra Institute}, se decidió replicar manualmente dicha escena en el formato que usa el algoritmo implementado en este proyecto. Esta escena esta formada por un conjunto de 13 cajas y una esfera como se muestra en la Figura \ref{fig:CPTerceros:a}. Cada caja tiene 2 triángulos por cara y la esfera tiene 80 caras, por lo tanto la escena completa tiene 236 triángulos.
+Los integrantes del grupo de Computación Gráfica del \emph{Alexandra Institute} de Dinamarca \cite{BlogAlexandraInst} implementaron un algoritmo de Raytracing y se encuentra publicado en su página web. Este algoritmo no permite cambiar la escena que renderiza de forma sencilla, ya que su cargador de escena es distinto al que se usa en este proyecto. Como se dispone de información (cantidad de triángulos de cada uno de los elementos) sobre la escena del algoritmo del \emph{Alexandra Institute}, se decidió replicar manualmente dicha escena en el formato que usa el algoritmo implementado en este proyecto. Esta escena esta formada por un conjunto de 13 cajas y una esfera como se muestra en la Figura \ref{fig:CPTerceros:a}. Cada caja tiene 2 triángulos por cara y la esfera tiene 80 caras, por lo tanto la escena completa tiene 236 triángulos.
 
 Las escenas cuyos renders se muestran en las Figuras \ref{fig:CPTerceros:b}, \ref{fig:CPTerceros:c} y \ref{fig:CPTerceros:d}, se encuentran dentro de las escenas clásicas de todo proyecto de ge\-ne\-ra\-ción de imágenes. Contar con estas escenas dentro de los casos de prueba de este proyecto es muy importante porque permite comparar con otros proyectos similares. Además el hecho de que el algoritmo implementado en este proyecto soporte este tipo de casos de prueba, que por lo general se componen de una cantidad importante (100.000) de primitivas, es importante.
 
-En la Tabla \ref{table:CPTerceros} se muestran algunas características importantes de estos casos de prueba, en especial en la primer columna se muestra una referencia que será usada de aquí en más.
+En la Tabla \ref{table:CPTerceros} se muestran algunas características destacables de estos casos de prueba, en especial en la primer columna se muestra una referencia que será usada de aquí en más.
 
 \begin{table}[!hbt]
 \begin{center}
@@ -234,15 +254,15 @@ Todos los equipos utilizados para ejecutar los casos de prueba del proyecto usan
 \end{table}
 
 
-\section{Pruebas}
+\section{Experimentos}
 
-Las pruebas realizadas en este proyecto se pueden dividir en dos grandes líneas. La primera es comparar resultados dentro del propio proyecto, por ejemplo la comparación entre los dos algoritmos implementados, uno para CPU y el otro para GPU.
+Las pruebas realizadas en este proyecto se pueden dividir en dos grandes líneas. La primera es comparar resultados dentro del propio proyecto, por ejemplo la comparación entre los dos algoritmos implementados, uno para CPU y el otro para GPU.La otra línea de prueba es la comparación con algoritmos similares implementados por terceros. En esta clase de pruebas se hicieron comparaciones con implementaciones que pudieron ser ejecutadas en los equipos utilizados en el proyecto y también con resultados de otras experiencias similares extraídos de artículos científicos.
 
-La otra linea de prueba es la comparación con algoritmos similares implementados por terceros. Dentro de esta línea se hicieron comparaciones con implementaciones que pudieron ser ejecutadas en los equipos del proyecto y también con resultados de otras experiencias similares extraídos de artículos científicos.
+La mayoría de las pruebas realizadas se hicieron fijando la resolución de la imagen a generar en 640 por 480 pixeles. Las únicas excepciones a esta regla se dan cuando se hacen pruebas de comparación con algoritmos implementados por terceros. Para las pruebas de comparación con el \emph{Alexandra Institute} se uso una resolución de 800 por 600, mientras que para la comparación con los resultados del artículo de Günther et al. \cite{GuntherPopov} se uso una resolución de 1024 por 1024 pixeles. 
+////////////////////////RE REDACTAR///////////////////////////
+En el caso del \emph{Alexandra Institute} la resolución quedó determinada su implementación del algoritmo de Raytracing, que no permite variar la misma. En el caso del artículo la resolución quedo determinada por los resultados descritos en él.
 
-La mayoría de las pruebas realizadas se hicieron fijando la resolución de la imagen a generar en 640 por 480 pixeles. Las únicas excepciones a esta regla se dan cuando se hacen pruebas de comparación con algoritmos implementados por terceros. Para las pruebas de comparación con el \emph{Alexandra Institute} se uso una resolución de 800 por 600, mientras que para la comparación con los resultados del articulo de Johannes Günther et al. \cite{GuntherPopov} se uso una de 1024 por 1024 pixeles. En el caso del \emph{Alexandra Institute} la resolución quedó determinada su implementación del algoritmo de Raytracing, que no permite variar la misma. En el caso del articulo la resolución quedo determinada por los resultados descritos en él.
-
-El tamaño de la grilla que permite acelerar la generación de la imagen es un parámetro crítico. Por las pruebas realizadas a lo largo de todo el proyecto, una buena elección del tamaño de la grilla puede incrementar notablemente la velocidad de generación de imágenes. Durante la fase de implementación y prueba de los algoritmos implementados se logró llegar a un método empírico para obtener una grilla de buen rendimiento, para una escena dada. Como primer aproximación se toma la medida sugerida por Thrane y Ole \cite{TesisEstructuras}, la cual indica que a resolución sea $3\sqrt[3]{N}$ voxeles a lo largo del eje más corto, donde $N$ es el número de triángulos de la escena. Después varias pruebas realizadas se comprobó que esta división no siempre es la mejor y que una buena resolución para la grilla se encuentra entre $\sqrt[3]{N}$ y $3\sqrt[3]{N}$ a lo largo del eje más corto. Dentro de este intervalo se debe buscar empíricamente la grilla de mejor rendimiento. En todas las pruebas realizadas en esta sección se siguió esta metodología para encontrar el tamaño de grilla óptimo (o grilla optima), así mismo se muestran también otros tamaños de grilla para cada escena.
+ Las pruebas realizadas a lo largo del proyecto mostraron que una buena elección del tamaño de la grilla puede incrementar notablemente la velocidad de generación de imágenes, siendo esto un parámetro crítico que se debe definir correctamente. Como primer aproximación se toma la medida sugerida por Thrane y Ole \cite{TesisEstructuras}, la cual indica que la resolución sea $3\sqrt[3]{N}$ voxeles a lo largo del eje más corto, donde $N$ es el número de triángulos de la escena. Después varias pruebas realizadas se comprobó que esta división no siempre es la mejor y que una buena resolución para la grilla se encuentra entre $\sqrt[3]{N}$ y $3\sqrt[3]{N}$ a lo largo del eje más corto. Dentro de este intervalo se debe buscar empíricamente la grilla de mejor rendimiento. En todas las pruebas realizadas en esta sección se siguió esta metodología para encontrar el tamaño de grilla óptimo (o grilla optima), así mismo se muestran también otros tamaños de grilla para cada escena.
 
 \subsection{Comparación entre C y CUDA}\label{sec:ComparacionCvsCUDA}
 
@@ -276,7 +296,7 @@ La comparación de rendimiento entre el algoritmo para CPU y el algoritmo para GP
 \end{center}
 \end{table}
 
-Los resultados obtenidos demuestran que el tamaño de la grilla depende exclusivamente de la cantidad de triángulos con que esta construida la escena, ya que en los tres primeros casos (que tienen la misma cantidad de triángulos) el tamaño de grilla donde se logran más FPS es siempre el mismo. Además como lo demuestra el caso BUNNY, al incrementarse la cantidad de primitivas de la escena aumenta la resolución de la grilla optima. Se concluye también que el tamaño de la grilla optima es independiente al \emph{hardware} de ejecución, la grilla que permite más FPS tiene igual resolución en CPU y en GPU.
+Los resultados obtenidos sugieren que el tamaño de la grilla depende exclusivamente de la cantidad de triángulos con que esta construida la escena, ya que en los tres primeros casos (que tienen la misma cantidad de triángulos) el tamaño de grilla donde se logran más FPS es siempre el mismo. Además como lo muestra el caso BUNNY, al incrementarse la cantidad de primitivas de la escena aumenta la resolución de la grilla óptima. Se concluye también que el tamaño de la grilla óptima es independiente al \emph{hardware} de ejecución, la grilla que permite más FPS tiene igual resolución en CPU y en GPU.
 
 \begin{table}
 \begin{center}
@@ -322,7 +342,7 @@ Los casos de prueba DIST\_I, DIST\_II y DIST\_III fueron pensados para buscar un
     \label{fig:CvsCudaRenderBunny} %% label for entire figure
 \end{figure}
 
-Los resultados obtenidos con los casos de prueba DIST\_I, DIST\_II, DIST\_III y BUNNY demuestran que el algoritmo para GPU genera imágenes en un tiempo menor que el algoritmo para CPU. En la Tabla \ref{table:CvsCudaAceleracion} se muestra la aceleración lograda por el algoritmo para GPU para cada caso de prueba. En promedio, considerando los cuatro casos de prueba, el algoritmo para GPU es más de once veces más rápido que el algoritmo para CPU. En la Figura \ref{fig:CvsCudaRenderBunny:a} se muestra la imagen generada por el algoritmo implementado en C, mientras que en la Figura \ref{fig:CvsCudaRenderBunny:b} se muestra la imagen generada por el algoritmo implementado en CUDA. Observando estas imágenes el ojo humano no percibe diferencia alguna, entonces el algoritmo para GPU logra una muy buena aceleración con respecto al que ejecuta en CPU y sin perdida en la calidad de imagen.
+Los resultados obtenidos con los casos de prueba DIST\_I, DIST\_II, DIST\_III y BUNNY demuestran que el algoritmo para GPU genera imágenes en un tiempo menor que el algoritmo para CPU. En la Tabla \ref{table:CvsCudaAceleracion} se muestra la aceleración lograda por el algoritmo para GPU para cada caso de prueba. En promedio, considerando los cuatro casos de prueba, el algoritmo para GPU es más de 11 veces más rápido que el algoritmo para CPU. En la Figura \ref{fig:CvsCudaRenderBunny:a} se muestra la imagen generada por el algoritmo implementado en C, mientras que en la Figura \ref{fig:CvsCudaRenderBunny:b} se muestra la imagen generada por el algoritmo implementado en CUDA. Observando estas imágenes el ojo humano no percibe diferencia alguna, entonces el algoritmo para GPU logra una muy buena aceleración con respecto al que ejecuta en CPU y sin pérdida en la calidad de imagen.
 
 \begin{table}
 \begin{center}
