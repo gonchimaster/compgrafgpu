@@ -43,7 +43,7 @@ El algoritmo de Raytracing de Whitted requiere como entrada una escena, la cual 
 
 En la Figura \ref{fig:ArqRayTracingGPU} se muestra un diagrama de arquitectura de la solución implementada. Los componentes involucrados en la etapa de preprocesamiento son: ``\emph{OBJ Loader}'', ``Cargador Escena'' y ``Grilla Uniforme''. El componente ``\emph{OBJ Loader}'' es el encargado de leer el archivo, el cual especifica la escena y los materiales utilizados en la misma. El componente ``Cargador Escena'' fue implementado en el marco de este proyecto y utiliza el ``\emph{OBJ Loader}'' para leer la escena desde archivo. Este componente generado en el proyecto, tiene su propia estructura de datos para el almacenamiento de la escena. Debido a esto se encarga de inicializar su estructura a partir de los datos leídos por el cargador externo al proyecto. Además se encarga de la construcción de la subdivisión espacial uniforme. La división espacial se genera utilizando el componente ``Grilla Uniforme'', esta parte del sistema construye la grilla a partir de la lista de objetos que contiene el encargado de inicializar la estructura de datos de la escena. Por último, el componente ``Raytracing'' es el encargado de calcular los rayos primarios utilizado la GPU.
 
-En la segunda etapa del proceso de generación de imagen se calcula el color de cada pixel de la imagen mediante el algoritmo de Raytracing. Esta etapa se realiza enteramente a nivel de GPU. Mirando a nivel de la arquitectura, el componente ``Raytracing'' es el encargado de renderizar la imagen. Dentro de este se implementaron los algoritmos que hacen al núcleo del raytracing, como por ejemplo el algoritmo de recorrida de un rayo dentro de la subdivisión espacial uniforme, el algoritmo de intersección rayo-triángulo, etc.
+En la segunda etapa del proceso de generación de imagen se calcula el color de cada pixel mediante el algoritmo de Raytracing. Esta etapa se realiza enteramente a nivel de GPU. Hablando en términos de la arquitectura, el componente ``Raytracing'' es el encargado de renderizar la imagen. Dentro de este se implementaron los algoritmos que hacen al núcleo del raytracing, como por ejemplo el algoritmo de recorrida de un rayo dentro de la subdivisión espacial uniforme, el algoritmo de intersección rayo-triángulo, etc.
 
 En la última etapa se presenta en pantalla la imagen que surge como resultado de la etapa anterior. Desde el punto de vista de la arquitectura, el componente ``Raytracing'' es el encargado de mostrar la imagen generada utilizando la librería externa SDL (Simple Directmedia Layer) \cite{SDLLibrarySite}.
 
@@ -62,8 +62,6 @@ Los datos de la escena son cargados en memoria mediante un cargador implementado
 El \emph{OBJ Loader} tiene su propia estructura de datos para almacenar la escena en memoria, pero en la propuesta implementada en este proyecto son utilizadas temporalmente. Después de cargar la escena con el \emph{OBJ Loader}, esta se almacena en una estructura definida especialmente para el contexto de este proyecto. De esta manera se desacopla el resto del algoritmo de la etapa de carga, lo cual permite cambiar la herramienta de cargar la escena fácilmente.
 
 \subsubsection{Archivo de configuración}
-
-En la etapa de preprocesamiento se usan parámetros como la resolución de la grilla de aceleración. Este valor así como también otros parámetros del algoritmo de raytracing se definen mediante el uso de un archivo de configuración. Se tomó la decisión de utilizar un archivo de configuración ya que para las pruebas de rendimiento es interesante cambiar los valores de los parámetros más importantes de cada algoritmo y no tener que re-compilar el código fuente con cada cambio. La Figura \ref{fig:EjemploArchivoConfig} se muestra una posible configuración del algoritmo.
 
 \begin{figure}[H]
     \begin{center}
@@ -90,6 +88,7 @@ ESCENA=../escenas/afrodita.obj
 \label{fig:EjemploArchivoConfig}
 \end{figure}
 
+En la etapa de preprocesamiento se usan parámetros como la resolución de la grilla de aceleración. Este valor así como también otros parámetros del algoritmo de raytracing se definen mediante el uso de un archivo de configuración. Se tomó la decisión de utilizar un archivo de configuración ya que para las pruebas de rendimiento es interesante cambiar los valores de los parámetros más importantes de cada algoritmo y no tener que re-compilar el código fuente con cada cambio. La Figura \ref{fig:EjemploArchivoConfig} se muestra una posible configuración del algoritmo.
 
 En el archivo se debe configurar el tamaño de la subdivisión espacial uniforme, se debe indicar el tamaño de la partición en cada eje de coordenadas. Es posible definir también la resolución de la imagen (en pixeles) que genera el algoritmo de raytracing. En este archivo también se definen valores para el cero y para el infinito que usa el algoritmo de raytracing, el ajuste del primer valor permite solucionar problemas de errores numéricos mientras que el segundo se usa en algoritmos que necesitan definir una distancia ``infinita''. Otro parámetro necesario para el algoritmo de raytracing y que es interesante variar para cada escena, es la profundidad máxima considerada por el algoritmo para cada árbol de rayos que genera cada rayo primario (debido a los sucesivos rebotes por los fenómenos de reflexión y refracción). Por último, se debe especificar la dimensión de los bloques de hilos de ejecución.
 
@@ -157,10 +156,8 @@ La implementación se realiza en 2 pasos, primero se computa el cálculo del voxel
 
 El voxel inicial se calcula de manera sencilla intersecando el rayo con el cubo que acota toda la escena que se utiliza para generar la grilla, con el punto de intersección se calcula cual es el voxel al que pertenece el punto. Para obtener el incremento se calcula la derivada en cada una de las 3 componentes, con esa derivada y el tamaño de los voxels en x, y, z se obtiene la distancia que debe recorrer el rayo para poder alcanzar el siguiente voxel, esta se calcula para cada una de las 3 componentes y se almacena en una variable, así como también se hace con las derivadas.
 
-Como se muestra en el Algoritmo \ref{alg:SeudoSiguinteVoxelGrilla}, la forma en que se calcula el siguiente voxel es en base a la distancia que tiene que recorrer el rayo desde su origen hasta el siguiente punto de intersección. Se tienen tres distancias que debe recorrer el rayo para pasar al siguiente voxel en el eje X, para pasar al siguiente voxel en el eje Y y para pasar al siguiente voxel en el eje Z. La mínima de estas distancias determina cual de los tres incrementos es el que hay que realizar, el voxel que esté más cerca es el siguiente, por lo tanto hay que incrementar 1 en la dirección determinada por dicho mínimo. El Algoritmo  se muestra un seudocódigo para el cálculo del siguiente voxel.
-
 \begin{algorithm}[H]
-    \caption{Seudocódigo del algoritmo para avanzar en los voxels.}
+    \caption{Pseudocódigo del algoritmo para avanzar en los voxels.}
     \label{alg:SeudoSiguinteVoxelGrilla}
     \begin{algorithmic}
         \State DM = Minimo(DX, DY, DZ);
@@ -179,6 +176,7 @@ Como se muestra en el Algoritmo \ref{alg:SeudoSiguinteVoxelGrilla}, la forma en 
     \end{algorithmic}
 \end{algorithm}
 
+Como se muestra en el Algoritmo \ref{alg:SeudoSiguinteVoxelGrilla}, la forma en que se calcula el siguiente voxel es en base a la distancia que tiene que recorrer el rayo desde su origen hasta el siguiente punto de intersección. Se tienen tres distancias que debe recorrer el rayo para pasar al siguiente voxel en el eje X, para pasar al siguiente voxel en el eje Y y para pasar al siguiente voxel en el eje Z. La mínima de estas distancias determina cual de los tres incrementos es el que hay que realizar, el voxel que esté más cerca es el siguiente, por lo tanto hay que incrementar 1 en la dirección determinada por dicho mínimo.
 
 \subsection{Estructura de datos}
 Durante el proyecto se desarrollaron diferentes estructuras de datos para trabajar en GPU, las cuales se muestran en detalle en el Apéndice \ref{sec:ApendiceEstructurasDatos}.
@@ -246,18 +244,18 @@ Considerando la arquitectura del sistema, el núcleo principal del Raytracing par
 
 Para lograr que el algoritmo tenga un buen rendimiento es necesario utilizar adecuadamente la jerarquía de memoria de la GPU. Los datos más utilizados por el algoritmo, como por ejemplo la lista de objetos de la escena o los voxeles de la subdivisión espacial, deben estar almacenados en un tipo de memoria que tenga tiempo de lectura bajo y puede ser de solo lectura, ya que esta información es frecuentemente accedida y nunca debe ser actualizada. Es por ello que la lista de triángulos y sus normales, las luces, los voxeles de la grilla de subdivisión espacial y la lista de materiales se copian a la memoria de textura de la GPU. Otra información como los datos de la cámara, la cantidad de luces, la dimensión de la grilla se copian a la memoria constante de la GPU, que también es de solo lectura. La lectura en los dos tipos de memoria mencionados es mucho más rápida que una lectura en memoria global.
 
+El uso de la jerarquía de memoria que provee CUDA afecta directamente a la estructura de datos que almacena la escena. Por ejemplo, la lista de triángulos de la escena ocupa una cantidad grande de memoria y al cargarla desde archivo insume un tiempo de ejecución considerable. Toma prácticamente el mismo tiempo transformar toda la lista de triángulos desde el formato en que esta almacenada hacia el formato que requiere CUDA para cargarla en memoria de textura. Es por esto que se decidió almacenarla directamente en el formato que debe tener para copiarla a memoria de la GPU.
+
+A la memoria de textura solo se pueden copiar vectores de dos o cuatro elementos, debido a esto cada vértice de triángulo se almacena como un vector de cuatro componentes, desperdiciando una componente (4 bytes) por cada vértice. En algunos casos se aprovecha la memoria de la cuarta componente, por ejemplo el identificador de material se guarda en la cuarta componente del primer vértice de cada triángulo. De todas formas para usar la jerarquía de memoria y mejorar el tiempo de ejecución del algoritmo se pierde la generalidad en las estructuras de datos y la legibilidad del código fuente.
+
+Una vez copiados todos los datos de entrada del algoritmo de raytracing a la GPU, se procede a la invocación del \emph{kernel} encargado de calcular los rayos primarios. Como se muestra en la Figura \ref{fig:DiagramaRTGPU}, los datos necesarios para calcular los rayos primarios son: el plano de vista, la cámara y la resolución de la imagen a renderizar. Toda esta información se encuentra en memoria constante y puede ser accedida en cualquier instante del tiempo de vida de la aplicación CUDA. Es importante resaltar que la invocación al \emph{kernel} que calcula rayos se hace desde la CPU y cuando este finaliza su procesamiento retorna nuevamente a la CPU.
+
 \begin{figure}[H]
     \centering
         \includegraphics[width=0.8\textwidth]{./Capitulo4/diagramaRT_GPU}
     \caption{Estructura del algoritmo de raytracing implementado en CUDA.}
     \label{fig:DiagramaRTGPU}
 \end{figure}
-
-El uso de la jerarquía de memoria que provee CUDA afecta directamente a la estructura de datos que almacena la escena. Por ejemplo, la lista de triángulos de la escena ocupa una cantidad grande de memoria y al cargarla desde archivo insume un tiempo de ejecución considerable. Toma prácticamente el mismo tiempo transformar toda la lista de triángulos desde el formato en que esta almacenada hacia el formato que requiere CUDA para cargarla en memoria de textura. Es por esto que se decidió almacenarla directamente en el formato que debe tener para copiarla a memoria de la GPU.
-
-A la memoria de textura solo se pueden copiar vectores de dos o cuatro elementos, debido a esto cada vértice de triángulo se almacena como un vector de cuatro componentes, desperdiciando una componente (4 bytes) por cada vértice. En algunos casos se aprovecha la memoria de la cuarta componente, por ejemplo el identificador de material se guarda en la cuarta componente del primer vértice de cada triángulo. De todas formas para usar la jerarquía de memoria y mejorar el tiempo de ejecución del algoritmo se pierde la generalidad en las estructuras de datos y la legibilidad del código fuente.
-
-Una vez copiados todos los datos de entrada del algoritmo de raytracing a la GPU, se procede a la invocación del \emph{kernel} encargado de calcular los rayos primarios. Como se muestra en la Figura \ref{fig:DiagramaRTGPU}, los datos necesarios para calcular los rayos primarios son: el plano de vista, la cámara y la resolución de la imagen a renderizar. Toda esta información se encuentra en memoria constante y puede ser accedida en cualquier instante del tiempo de vida de la aplicación CUDA. Es importante resaltar que la invocación al \emph{kernel} que calcula rayos se hace desde la CPU y cuando este finaliza su procesamiento retorna nuevamente a la CPU.
 
 Los rayos primarios son datos de entrada para el \emph{kernel} encargado de calcular el color de cada pixel. Inmediatamente después que se tienen calculados los rayos primarios, se invoca el \emph{kernel} (desde la CPU) que genera la imagen. Dentro de este se encuentra implementado el corazón del algoritmo de raytracing. Los datos de entrada necesarios para calcular el color de cada pixel se muestran en la Figura \ref{fig:DiagramaRTGPU} y son leídos desde memoria de textura, cuyo tiempo de vida es igual al de la aplicación CUDA.
 
