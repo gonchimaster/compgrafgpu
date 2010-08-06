@@ -1,10 +1,8 @@
 \chapter{Estructuras de datos}\label{sec:ApendiceEstructurasDatos}
 
-En las próximas dos secciones se presentan las estructuras de datos usadas en ambas implementaciones del algoritmo de raytracing de Whitted. Primero se muestra la estructura usada en la implementación para CPU, y luego se muestra la usada en la versión implementada para CUDA.
+En las próximas dos secciones se presentan las dos versiones de las estructuras de datos usadas durante el desarrollo de este proyecto.
 
-Es importante conocer que en las primeras etapas del proyecto las dos versiones usaban la misma estructura de datos. A medida que el proyecto fue avanzando la estructura para CUDA fue evolucionando hasta llegar a la actual. Por no contar con experiencia en programación sobre CUDA la estructura tuvo que ir evolucionando junto con el aprendizaje de la herramienta.
-
-\section{Algoritmo para CPU}
+\section{Version 1}
 
 \begin{algorithm}[H]
     \caption{Estructura de datos para almacenar la escena. Parte I.}
@@ -81,7 +79,7 @@ Es importante conocer que en las primeras etapas del proyecto las dos versiones 
     \end{algorithmic}
 \end{algorithm}
 
-\section{Algoritmo para GPU}
+\section{Versión 2}
 
 \begin{algorithm}[H]
     \caption{Estructura de datos para almacenar la escena. Parte I.}
