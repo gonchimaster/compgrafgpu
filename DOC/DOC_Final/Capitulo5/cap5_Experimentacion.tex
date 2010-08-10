@@ -22,8 +22,8 @@ Las estrategias basadas en diferencias a nivel de píxeles son los más simples, c
 
 Las estrategias basadas en correlación son muy similares a los anteriores pero pueden introducir una nueva variable: los píxeles se pueden mover y no estar en el mismo lugar en ambas imágenes. Este tipo de algoritmos son útiles en muchos casos para el área de procesamiento de imagen, en especial porque una misma imagen puede ser generada vista de distintos ángulos y en el análisis de calidad de las mismas considerar que no tienen diferencias.
 
-/////////////////////////RE REDACTAR ESTE PARRAFO/////////////////////////////////////
-Otra opción se basa en que las imágenes en general presentan en su composición aristas que son los bordes que separan los componentes de la imagen entre  si, estas aristas se pueden utilizar para el análisis de calidad de imagen. Esta técnica se basa en que si dos imágenes son generadas para la misma escena, entonces las imágenes en la imagen ideal que sería el objetivo, entonces también se deben presentar en la imagen generada.
+
+Otra opción se basa en notar que las imágenes en general en su composición de aristas (bordes que separan los objetos de la imagen), estas pueden ser utilizadas para el análisis de calidad de la imagen. Esta técnica toma como referencia que para dos imágenes generadas por la misma escena, si una es la correcta (imagen objetivo) entonces en la imagen de la cual se quiere saber si es correcta también deben aparecer las mismas aristas.
 
 Las estrategias que se basan en el análisis espectral miden la distorsión de la señal en fase y magnitud, esto pertenece al área de tratamiento de señales, base del tratamiento de imágenes. Si bien son particularmente útiles en el análisis de algoritmos de compresión en los que se da este tipo de distorsión no se encontró una aplicación directa a este trabajo.
 
@@ -33,10 +33,10 @@ Por último, los métodos basados en el análisis de la percepción humana para brin
 
 
 Como se puede ver, todas estas estrategias son para comparar imágenes y no son aplicables directamente en el contexto de este proyecto donde el objetivo es evaluar la calidad de las imágenes generadas por un algoritmo.
+
 En evaluación de imágenes generadas es que se basa el artículo de Dirik, Bayram, Sencar y Memon \cite{IdentifyingComputerGeneratedImages}. Pero plantea, al contrario de lo que se requiere en este proyecto, detectar que imágenes son generadas por un algoritmo de generación de imágenes y cuales son imágenes reales tomadas con una cámara. Aunque el objetivo que persigue este artículo es muy similar al que se persigue en el análisis de esta sección, el área de trabajo de este proyecto no son las imágenes fotorealistas dado que el modelo abordado, Raytracing, no es un modelo tan preciso. Por esto es que no se podrían utilizar los métodos propuestos en el artículo de Dirik, Bayram, Sencar y Memon.
 
-////////////////NO ENTENDÍ LA CORRECCIÓN////////////////
-Por otro lado los algoritmos basados en las capacidades de percepción del sistema visual humano en general también apuntan a evaluar que imágenes son iguales para el ojo humano. Al igual que en el caso anterior, estas estrategias no aplicarían en el contexto que se requiere. En este caso, por lo tanto, no son aplicables las medidas relevadas para la evaluación de calidad de las imágenes generadas. Si bien se entiende que este podría ser un tema de estudio interesante.
+Las dos aproximaciones que se acercan más a los requerimientos de evaluación del proyecto son el planteado por Dirik, Bayram, Sencar y Memon \cite{IdentifyingComputerGeneratedImages} y los basados en las capacidades de percepción del sistema visual humano, que apuntan a evaluar que imágenes son iguales para el ojo humano. En ambos casos las estrategias no permiten evaluar la calidad en la forma que se requiere. 
 
 \section{Casos de prueba}
 
@@ -488,7 +488,7 @@ Los resultados obtenidos en estas primeras pruebas muestran que a medida que aum
     \hline
     \end{tabular}
 }
-\caption{FPS de PRI\_I,\ldots, PRI\_V en el Equipo GTX260 sobre GPU.}
+\caption{FPS de PRI\_I, PRI\_II, PRI\_III, PRI\_IV, PRI\_V en el Equipo GTX260 sobre GPU.}
 \label{table:CompVersionesBuscarGrilla}
 \end{center}
 \end{table}
@@ -514,7 +514,7 @@ Una vez determinada la grilla optima para cada caso de prueba, se ejecuta cada c
     \hline
     \end{tabular}
 }
-\caption{FPS de PRI\_I,\ldots, PRI\_V en el Equipo GTX260 sobre GPU para cada versión del algoritmo.}
+\caption{FPS de PRI\_I, PRI\_II, PRI\_III, PRI\_IV, PRI\_V en el Equipo GTX260 sobre GPU para cada versión del algoritmo.}
 \label{table:CompVersionesFPS}
 \end{center}
 \end{table}
@@ -664,7 +664,7 @@ En la Figura \ref{fig:CompEquiposRenders} se muestran renders del caso de prueba
 
 \subsection{Comparación con otras implementaciones}
 
-En el trabajo de Günther et al. \cite{GuntherPopov} se desarrolló una implementación del algoritmo de Raytracing similar a la de este proyecto. En este trabajo se generan renders de una escena que es igual a la escena BUNNY y se presentan resultados de tiempos de generación de imágenes. 
+En el trabajo de Günther et al. \cite{GuntherPopov} se desarrolló una implementación del algoritmo de Raytracing similar a la de este proyecto. En este trabajo se generan renders de una escena que es igual a la escena BUNNY y se presentan resultados de tiempos de generación de imágenes.
 
 Se deben considerar algunas excepciones con respecto a la igualdad de las escenas, la escena BUNNY esta construida mediante la observación minuciosa de un render del trabajo de Günther et al.. Por ejemplo, la cantidad de luces es la misma pero la posición de estas no son exactamente las mismas, ya que en el artículo no se brinda este tipo de información. El material del objeto principal de la escena no pudo ser reproducido con exactitud debido a que en el trabajo no se brinda esta información.
 
