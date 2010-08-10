@@ -3,16 +3,9 @@
 \section{Introducción}
 Esta sección presenta en detalle de los algoritmos y técnicas existentes para la aceleración de la generación de imágenes por computadora. Se verán los métodos que fueron analizados durante el desarrollo de este trabajo, centrándose en dos puntos principales que son: las estructuras de aceleración espacial y la paralelización de procesos. Por un lado se busca reducir la cantidad de cálculos requeridos para la generación de una imagen y por otro lado hacer que los cálculos se realicen en menos tiempo. Para la paralelización de algoritmos en este proyecto se optó por utilizar una paralelización del algoritmo en la GPU, en este cápitulo se justifica además por que se consideró esta plataforma para el proyecto.
 
-\subsection{Paralelización de algoritmos en GPU}
+\section{Paralelización de algoritmos en GPU}
 
 En noviembre de 2006 NVIDIA lanzó CUDA (Compute Unified Device Architecture), una arquitectura de computación paralela de propósito general que hace uso del núcleo de procesamiento paralelo de las GPU de NVIDIA para resolver una amplia variedad de problemas computacionales de una manera más eficiente que en una CPU. El modelo de programación paralela propuesto por NVIDIA fue totalmente nuevo y la programación sobre el mismo se hace a través de un lenguaje de alto nivel, CUDA permite el uso del lenguaje C para la programación.
-
-\begin{figure}[H]
-    \centering
-        \includegraphics[width=0.8\textwidth]{./Capitulo4/diagramaEjecucionCUDA}
-    \caption{Ejemplo de escalabilidad automática en el número de multiprocesadores.}
-    \label{fig:DiagramaEjecucionCUDA}
-\end{figure}
 
 Una ventaja muy importante del modelo es que cualquier aplicación desarrollada en CUDA puede ejecutarse sobre cualquier número de procesadores, sin necesidad de volver a compilar el código. Esto permite crear aplicaciones capaces de escalar en el número de procesadores, lo cual permite que una aplicación ejecute en cualquier GPU que soporte CUDA.
 
@@ -24,6 +17,13 @@ Una ventaja muy importante del modelo es que cualquier aplicación desarrollada e
 \end{figure}
 
 El modelo de programación esta basado en tres abstracciones fundamentales, dispone de una jerarquía de grupos de hilos de ejecución, memoria compartida y barreras de sincronización de la ejecución. Estas abstracciones guían al programador a dividir el problema en sub-problemas que pueden ser resueltos en forma paralela e independiente por medio de bloques de hilos de ejecución. A su vez cada sub-problema de divide en piezas más chicas que pueden ser resueltas en paralelo y cooperando entre ellas, usando los hilos de ejecución de cada bloque. Descomponer el problema de esta forma permite la escalabilidad automática en el número de procesadores, ya que cada bloque de hilos puede ser despachado hacia cualquier conjunto de procesadores (multiprocesador) disponible, en cualquier orden, concurrentemente o secuencialmente. De esta manera cualquier aplicación CUDA puede ejecutar sobre cualquier número de multiprocesadores y sólo se necesita conocer este número en tiempo de ejecución. En la Figura \ref{fig:DiagramaEjecucionCUDA} se considera una aplicación CUDA que esta dividida en cuatro bloques y se muestra como se asignan los bloques de hilos de ejecución en dos GPU distintas, donde una tiene dos multiprocesadores y la otra tiene cuatro.
+
+\begin{figure}[H]
+    \centering
+        \includegraphics[width=0.8\textwidth]{./Capitulo4/diagramaEjecucionCUDA}
+    \caption{Ejemplo de escalabilidad automática en el número de multiprocesadores.}
+    \label{fig:DiagramaEjecucionCUDA}
+\end{figure}
 
 En la extensión del lenguaje C que hace CUDA es posible definir funciones (de la misma forma que en el lenguaje base) que a diferencia de las funciones normales de C, cuando son invocadas ejecutan $N$ veces en paralelo, mediante $N$ hilos de ejecución de CUDA diferentes. Estas funciones propias de CUDA son llamadas \emph{kernels}. Dentro de este tipo especial de funciones se tiene acceso a información propia de CUDA que indica por ejemplo, el identificador del hilo de ejecución o el identificador de bloque que lo contiene. Esta información es de vital importancia ya que es usada para parametrizar la ejecución del \emph{kernel} en función de los hilos de ejecución.
 
@@ -53,9 +53,9 @@ Existen dos espacios más de sólo lectura en la jerarquía que son accesibles por 
 
 A partir del gran consumo computacional que significa trazar grandes cantidades de rayos, es vital encontrar métodos de a\-ce\-le\-ra\-ción para este proceso. Whitted al momento de desarrollar su algoritmo (en el año 1980) marcó el alto costo en tiempo en el trazado de rayos. Desde ese momento hasta la actualidad se han propuesto diversas técnicas que buscan optimizar este proceso\cite{wald::PhD}.
 
-Los métodos de optimización existentes pueden agruparse en dos categorías, según la forma de abordar el problema. A la primer categoría pertenecen las técnicas que apuntan a reducir el número de rayos a trazar. 
+Los métodos de optimización existentes pueden agruparse en dos categorías, según la forma de abordar el problema. A la primer categoría pertenecen las técnicas que apuntan a reducir el número de rayos a trazar.
 
-Para disminuir la cantidad de rayos a su vez existen dos estrategias: 
+Para disminuir la cantidad de rayos a su vez existen dos estrategias:
 \begin{itemize}
 \item Construir la imagen lanzando menos rayos primarios. Un ejemplo de este tipo de técnicas es la llamada \emph{adaptive sampling}. Usando este método, para cada pixel de la imagen, se trazan rayos primarios por cada uno de sus vértices. Si la intensidad de la luz en cada una de las esquinas del pixel varía significativamente con respecto a las otras, entonces el pixel es dividido en cuatro partes iguales. Luego se lanzan rayos primarios por cada nueva parte de la misma forma que se lanzaron en el pixel original. Repitiendo esta división hasta lograr la calidad deseada. Una vez terminada la subdivisión el color del pixel es interpolado según el color de cada una de sus partes\cite{wald::PhD}.
 
