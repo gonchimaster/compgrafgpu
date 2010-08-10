@@ -7,6 +7,8 @@ Esta sección presenta en detalle de los algoritmos y técnicas existentes para la
 
 En noviembre de 2006 NVIDIA lanzó CUDA (Compute Unified Device Architecture), una arquitectura de computación paralela de propósito general que hace uso del núcleo de procesamiento paralelo de las GPU de NVIDIA para resolver una amplia variedad de problemas computacionales de una manera más eficiente que en una CPU. El modelo de programación paralela propuesto por NVIDIA fue totalmente nuevo y la programación sobre el mismo se hace a través de un lenguaje de alto nivel, CUDA permite el uso del lenguaje C para la programación.
 
+%%% Comentario: no se hablo de las GPU aun....
+
 Una ventaja muy importante del modelo es que cualquier aplicación desarrollada en CUDA puede ejecutarse sobre cualquier número de procesadores, sin necesidad de volver a compilar el código. Esto permite crear aplicaciones capaces de escalar en el número de procesadores, lo cual permite que una aplicación ejecute en cualquier GPU que soporte CUDA.
 
 \begin{figure}[H]
@@ -31,9 +33,12 @@ Un \emph{kernel} siempre es invocado desde el \emph{host} (CPU) y ejecuta en el 
 
 El índice que identifica a un hilo de ejecución es un vector tridimensional, usando el mismo un hilo puede ser identificado usando una, dos o tres componentes del vector. De esta manera los hilos pueden forman un bloque de una, dos o tres dimensiones. Esta forma de agrupar los distintos hilos de un bloque permite invocar \emph{kernels} sobre distintos tipos de dominio (vector, matriz o volumen) de una manera más natural. Los bloques también pueden ser agrupados en una grilla (\emph{grid}) de una o dos dimensiones.
 
+%%%%% Comentario: esto en una arquitectura particular...
 Como se muestra en la Figura \ref{fig:JerarquiaMemoriaCUDA}, cada hilo de CUDA puede acceder a múltiples espacios de memoria durante su ejecución, mientras que los diferentes espacios de memoria forman la jerarquía de memoria de la GPU.
 
 En el primer nivel de la jerarquía (latencia más baja y menor capacidad de almacenamiento) se encuentran los registros, cada uno de ellos tiene 32 bits para almacenar un entero o un punto flotante. Cada hilo de ejecución tiene acceso a una cierta cantidad de registros, donde la cantidad depende del modelo de la GPU, y puede llegar hasta un máximo de 1024 en los modelos más avanzados. Además cada hilo de ejecución tiene su propio espacio privado de memoria local. La memoria local a cada hilo es pequeña y su latencia es relativamente alta (tanto como la memoria global).
+
+%%%%%
 
 \begin{figure}[H]
     \centering
@@ -42,16 +47,16 @@ En el primer nivel de la jerarquía (latencia más baja y menor capacidad de almac
     \label{fig:JerarquiaMemoriaCUDA}
 \end{figure}
 
-Cada bloque tiene un espacio de memoria compartida entre todos sus hilos, este espacio compartido tiene el mismo tiempo de vida que el bloque, es decir, es válido mientras el bloque se encuentra en ejecución. El espacio de memoria compartida de cada bloque es de 16 KB, posee una latencia baja, similar a la de los registros. Puede ser controlada totalmente por el programador y puede ser usada como un cache para mejorar los tiempos de acceso a la memoria global.
+Cada bloque tiene un espacio de memoria compartida entre todos sus hilos, este espacio compartido tiene el mismo tiempo de vida que el bloque, es decir, es válido mientras el bloque se encuentra en ejecución. El espacio de memoria compartida de cada bloque es de 16 KB, posee una latencia baja, similar a la de los registros. Puede ser controlada totalmente por el programador y puede ser usada como un caché para mejorar los tiempos de acceso a la memoria global.
 
-Además todos los hilos de ejecución de la aplicación tienen acceso a un mismo espacio de memoria global. Este espacio es el que tiene la mayor capacidad de almacenamiento dentro de la jerarquía de memoria llegando hasta 4 GB en los modelos \emph{Tesla C1060}. La memoria global ofrece un alto ancho de banda (superior a 100 GB/s en el modelo \emph{Tesla C1060}) pero padece de latencia alta (cientos de ciclos) y no posee cache.
+Además todos los hilos de ejecución de la aplicación tienen acceso a un mismo espacio de memoria global. Este espacio es el que tiene la mayor capacidad de almacenamiento dentro de la jerarquía de memoria llegando hasta 4 GB en los modelos \emph{Tesla C1060}. La memoria global ofrece un alto ancho de banda (superior a 100 GB/s en el modelo \emph{Tesla C1060}) pero padece de latencia alta (cientos de ciclos) y no posee caché.
 
-Existen dos espacios más de sólo lectura en la jerarquía que son accesibles por todos los hilos: el espacio de memoria constante y el espacio de memoria de textura. Ambos espacios de sólo lectura tienen tiempo de vida igual al tiempo de ejecución de la aplicación CUDA y cada uno esta optimizado para distintos usos \cite{nVidiaCUDAWebSite}. Ambos espacios de memoria tienen la misma latencia que la memoria global aunque la de textura posee un cache de 8 KB por cada bloque, lo cual mejora el tiempo de acceso a los datos.
+Existen dos espacios más de sólo lectura en la jerarquía que son accesibles por todos los hilos: el espacio de memoria constante y el espacio de memoria de textura. Ambos espacios de sólo lectura tienen tiempo de vida igual al tiempo de ejecución de la aplicación CUDA y cada uno esta optimizado para distintos usos \cite{nVidiaCUDAWebSite}. Ambos espacios de memoria tienen la misma latencia que la memoria global aunque la de textura posee un caché de 8 KB por cada bloque, lo cual mejora el tiempo de acceso a los datos.
 
 
 \section{Métodos de aceleración para raytracing}
 
-A partir del gran consumo computacional que significa trazar grandes cantidades de rayos, es vital encontrar métodos de a\-ce\-le\-ra\-ción para este proceso. Whitted al momento de desarrollar su algoritmo (en el año 1980) marcó el alto costo en tiempo en el trazado de rayos. Desde ese momento hasta la actualidad se han propuesto diversas técnicas que buscan optimizar este proceso\cite{wald::PhD}.
+A partir del gran consumo computacional que significa trazar grandes cantidades de rayos, es vital encontrar métodos de a\-ce\-le\-ra\-ción para este proceso. Whitted al momento de desarrollar su algoritmo (en el año 1980) marcó el alto costo en tiempo en el trazado de rayos, desde ese momento hasta la actualidad se han propuesto diversas técnicas que buscan optimizar este proceso\cite{wald::PhD}.
 
 Los métodos de optimización existentes pueden agruparse en dos categorías, según la forma de abordar el problema. A la primer categoría pertenecen las técnicas que apuntan a reducir el número de rayos a trazar.
 
@@ -66,12 +71,12 @@ A la segunda categoría pertenecen las técnicas que buscan acelerar la intersecci
 
 \section{Estructuras de aceleración espacial}
  Si se consideran todos los chequeos necesarios para generar una imagen utilizando el algoritmo de Raytracing, estos pueden llegar a tomar el 95\% del tiempo de cálculo \cite{TesisEstructuras}.
-Se han desarrollado técnicas para optimizar el tiempo que toman las intersecciones rayo-objeto, basadas en tratar de minimizar el número de intersecciones. A continuación se muestran algunas (las más importantes según Thrane y Ole \cite{TesisEstructuras}) de estas técnicas.
+Se han desarrollado técnicas para optimizar el tiempo que toman las intersecciones rayo-objeto, basadas en tratar de minimizar el número de intersecciones. A continuación se muestran algunas, las más importantes según el trabajo de Thrane y Ole \cite{TesisEstructuras}, de estas técnicas.
 
 \subsection{Subdivisión espacial}
-En el método de subdivisión espacial el volumen de la escena se divide en regiones. A cada región se le asigna una lista con todos los objetos que contiene, total o parcialmente. Estas listas se completan asignando a cada objeto la celda o las celdas que lo contienen. Esta técnica requiere un pre proceso para crear la estructura de datos donde quedará registrada la información relativa al espacio que ocupan los objetos en la escena.
+En el método de subdivisión espacial el volumen de la escena se divide en regiones. A cada región se le asigna una lista con todos los objetos que contiene, total o parcialmente. Estas listas se completan asignando a cada objeto la celda o las celdas que lo contienen. Esta técnica requiere un preproceso para crear la estructura de datos donde quedará registrada la información relativa al espacio que ocupan los objetos en la escena.
 
-El pre proceso consiste en dividir el volumen total de la escena en pequeños volúmenes o voxeles (el término voxel es la extensión a tres dimensiones de su homónimo en dos dimensiones pixel). La forma de definir estos voxeles es lo que marca la diferencia entre las técnicas de subdivisión espacial. Una vez que los voxeles están definidos juegan el mismo papel en todas las técnicas.
+El preproceso consiste en dividir el volumen total de la escena en pequeños volúmenes o voxeles (el término voxel es la extensión a tres dimensiones de su homónimo en dos dimensiones pixel). La forma de definir estos voxeles es lo que marca la diferencia entre las técnicas de subdivisión espacial. Una vez que los voxeles están definidos juegan el mismo papel en todas las técnicas.
 
 La gran ventaja de esta técnica de subdivisión es que solo los objetos asignados a los voxeles atravesados por los rayos deben ser probados para una posible intersección.
 
@@ -90,10 +95,10 @@ Cuando un rayo atraviesa un voxel, se tiene que averiguar si hay intersección co
 
 La construcción de la subdivisión espacial uniforme se realiza de la siguiente forma: dados los bordes de la escena y la lista de objetos de esta se puede construir la subdivisión espacial uniforme, el único parámetro necesario para su construcción es su resolución a lo largo de los tres ejes imaginarios.
 
-Según Thrane y Ole no hay una técnica que garantice la mejor resolución o por lo menos no para todos los casos. En el mismo trabajo se sugiere que la resolución sea $3\sqrt[3]{N}$ voxeles a lo largo del eje más corto, donde $N$ es el número de triángulos de la escena. Aunque también se sugiere que puede ajustarse empíricamente para lograr óptimos resultados en las imágenes.
+Según Thrane y Ole no hay una técnica que garantice la mejor resolución o por lo menos no para todos los casos. En el mismo trabajo se sugiere que la resolución sea $3\sqrt[3]{N}$ voxeles a lo largo del eje más corto, donde $N$ es el número de triángulos de la escena. Aunque también se sugiere que puede ajustarse empíricamente para lograr mejores resultados en imágenes particulares.
 Una vez que la resolución es determinada, podemos construir una matriz tridimensional de listas de objetos que servirá para manejar los voxeles construidos y su contenido. Luego para cada objeto de la escena, se deben encontrar los voxeles que lo contienen y agregar una referencia al objeto a cada uno de ellos.
 
-La técnica usada para moverse a través de los voxeles de la grilla es equivalente (para tres dimensiones) a la técnica para dibujar una línea en dos dimensiones. Este algoritmo es denominado Digital Differential Algorithm (DDA), fue propuesto por Fujimoto y es usado por Thrane y Ole, con algunas mejoras propuestas por Amanatides y Woo \cite{TesisEstructuras}.
+La técnica usada para moverse a través de los voxeles de la grilla es equivalente (para tres dimensiones) a la técnica para dibujar una línea en dos dimensiones, cuyo algoritmo es denominado Digital Differential Algorithm (DDA) \cite{LibroCompGrafica}. Basados en DDA, Fujimoto et al. \cite{Fujimoto} proponen el algoritmo que permite recorrer la grilla y este es usado por Thrane y Ole, con algunas mejoras propuestas por Amanatides y Woo \cite{TesisEstructuras}.
 En el Algoritmo \ref{alg:algoritmoDDA} se muestra un pseudocódigo de la técnica para dos dimensiones para facilitar la comprensión (extenderla a tres dimensiones es simple).
 \begin{algorithm}
     \caption{Recorrida de los voxeles atravesados por un rayo.}
@@ -118,7 +123,7 @@ En el Algoritmo \ref{alg:algoritmoDDA} se muestra un pseudocódigo de la técnica 
 
 Antes de comenzar con el Algoritmo \ref{alg:algoritmoDDA} se debe identificar el voxel inicial, es decir el primer voxel que atraviesa el rayo. Si el origen del rayo se encuentra dentro de un voxel determinado, entonces este es el inicial. En caso contrario, se busca el primer punto de la grilla que interseca con el rayo y se usa este punto para localizar el voxel inicial. Las coordenadas de este se guardan en las variables $X$ e $Y$.
 Además se deben crear las variables $step_{x}$ y $step_{y}$, cuyos valores serán $\pm1$ dependiendo del signo de las componentes $x$ e $y$ del vector dirección del rayo. Estos valores serán usados para incrementar o decrementar las variables $X$ y $Y$, y así ir avanzando a lo largo de la trayectoria del rayo.
-Lo próximo que se necesita es la máxima distancia que se puede avanzar a lo largo de la trayectoria del rayo antes de cruzar un borde vertical o horizontal de un voxel. Estas distancias están representadas por las variables $tmax_{x}$ y $tmax_{y}$ respectivamente (ver Figura \ref{fig:ExampleDDA}). El mínimo entre estas dos variables determina la máxima distancia que se puede avanzar a través de la trayectoria del rayo sin salir de los bordes del voxel actual.
+Lo próximo que se necesita es la máxima distancia que se puede avanzar a lo largo de la trayectoria del rayo antes de cruzar un borde vertical u horizontal de un voxel. Estas distancias están representadas por las variables $tmax_{x}$ y $tmax_{y}$ respectivamente (ver Figura \ref{fig:ExampleDDA}). El mínimo entre estas dos variables determina la máxima distancia que se puede avanzar a través de la trayectoria del rayo sin salir de los bordes del voxel actual.
 Por último se calculan $delta_{x}$ y $delta_{y}$. La primera indica la distancia horizontal (en la trayectoria del rayo) que se debe avanzar para pasar al siguiente voxel. Esta se calcula de la siguiente manera: \[delta_{x} = \frac{voxelsize_{x}}{raydirection_{x}}\] La segunda variable indica la distancia vertical y se calcula de la misma forma.
 Luego de la inicialización de estas variables se usa un algoritmo (Algoritmo \ref{alg:algoritmoDDA}) incremental simple para avanzar a lo largo de los voxeles que el rayo atraviesa.
 \begin{figure}[H]
@@ -128,20 +133,21 @@ Luego de la inicialización de estas variables se usa un algoritmo (Algoritmo \re
   \label{fig:ExampleDDA}
 \end{figure}
 
-La subdivisión espacial uniforme fue implementada por primera vez sobre una GPU por Purcell y se convirtió en la única estructura de aceleración en ser paralelizada sobre GPU hasta ese momento \cite{Purcell}.
-En el trabajo de Thrane y Ole \cite{TesisEstructuras} se resumieron las principales razones por las cuales se considera a esta estructura buena para ser paralelizada sobre una GPU. Estas razones son:
+La subdivisión espacial uniforme fue implementada por primera vez sobre una GPU por Purcell y se convirtió en la única estructura de aceleración en ser paralelizada sobre GPU hasta ese momento (año 2004) \cite{Purcell}.
+En el trabajo de Thrane y Ole se resumieron las principales razones por las cuales se considera a esta estructura buena para ser paralelizada sobre una GPU. Estas razones son:
 \begin{itemize}
   \item Cada voxel atravesado por el rayo puede ser localizado y accedido en tiempo constante usando aritmética simple. Esto elimina la necesidad de recorrer árboles (como en otras estructuras de aceleración) y por lo tanto, el manejo de mucha información a nivel de la GPU, lo cual resulta muy costoso.
   \item El desplazamiento a través de los voxeles atravesados se hace de forma incremental y con sumas sencillas, lo cual elimina la necesidad de una pila y hace posible visitar los voxeles en orden, es decir aumentando la distancia desde el origen del rayo.
   \item Se puede explotar el hecho de que los voxeles se recorren en orden para detener la recorrida cuando se de una intersección en el voxel actual.
   \item El algoritmo de recorrido a través de los voxeles que interseca el rayo esta dado por un vector lo cual es altamente compatible con el conjunto de instrucciones de una GPU.
 \end{itemize}
-En la subdivisión espacial se puede dar el caso de que un polígono sea referenciado por más de un voxel. Esto genera que en ocasiones especiales, se haga más de una vez el mismo test de intersección. Para resolver esto se han generado técnicas como la denominada Mailboxing (esta técnica mantiene una tabla donde se asocia cada rayo con el último polígono al cual se le realizó el test de intersección). Al emplear estrategias de la paralelización este tipo de técnicas no pueden utilizarse, lo que implica que el algoritmo paralelo debería hacer chequeos repetidos \cite{TesisEstructuras}.
+En la subdivisión espacial se puede dar el caso de que un polígono sea referenciado por más de un voxel. Esto genera que en ocasiones especiales, se haga más de una vez el mismo test de intersección. Para resolver esto se han generado técnicas como la denominada Mailboxing, que mantiene una tabla donde se asocia cada rayo con el último polígono al cual se le realizó el test de intersección \cite{AmanatidesWoo}. Al emplear estrategias de la paralelización este tipo de técnicas no pueden utilizarse, lo que implica que el algoritmo paralelo debería hacer chequeos repetidos \cite{TesisEstructuras}.
 
-\subsection{KD-Trees}
+\subsubsection{KD-Trees}
 
-Al igual que la subdivisión espacial uniforme la estructura kd-tree es una instancia particular de la subdivisión espacial. La diferencia que tiene es que representa la escena con una estructura jerárquica basada en un árbol binario. En esta estructura se hace una distinción con respecto al tipo de los nodos, se distinguen los nodos internos de las hojas. Los nodos hoja se corresponden con los voxeles y tienen las referencias a los objetos que se encuentran dentro de los mismos. Los nodos internos se corresponden con la forma en que se divide el espacio. De esta manera, los nodos internos contienen un plano de corte y referencias a cada uno de los dos subárboles (cada hijo del nodo interno es un subárbol), mientras que los nodos hojas contienen listas de objetos.
+Al igual que la subdivisión espacial uniforme la estructura kd-tree es una instancia particular de la subdivisión espacial. La diferencia que tiene es que representa la escena con una estructura jerárquica basada en un árbol binario. En esta estructura se hace una distinción con respecto al tipo de los nodos, se distinguen los nodos internos de las hojas. Los nodos hoja se corresponden con los voxeles y tienen las referencias a los objetos que se encuentran dentro de los mismos. Los nodos internos se corresponden con la forma en que se divide el espacio. De esta manera, los nodos internos contienen un plano de corte y referencias a cada uno de los dos subárboles, mientras que los nodos hojas contienen listas de objetos.
 
+%%%%% Comentario: ver que se hace con la figura porque esta en color...(van a imprimir todo en color?)
 Esta técnica de división del espacio tiene prácticamente las mismas ventajas que la subdivisión espacial uniforme. Pero esta división intenta mejorar a la uniforme considerando que los objetos no están uniformemente distribuidos en la escena. La Figura \ref{fig:3D-Tree} muestra un ejemplo de división espacial usando un kd-tree. La primera división (rojo) corta la celda raíz (blanco) en dos. Luego, se aplica otra división (verde) a estas celdas. La última división (azul) se aplica a las 4 celdas existentes.
 
 \begin{figure}[H]
@@ -151,9 +157,7 @@ Esta técnica de división del espacio tiene prácticamente las mismas ventajas que
   \label{fig:3D-Tree}
 \end{figure}
 
-La construcción de un kd-tree se hace de forma recursiva, siguiendo un enfoque top-down. Dada una caja que contenga completamente a la escena y una lista de objetos contenidos en ella, se escoge un plano de corte perpendicular a uno de los ejes de coordenadas, que divida la caja en dos. Al dividir se generan dos nuevos volúmenes, y cada uno de ellos es representado agregando un hijo al nodo asociado a la caja original. Cada uno de los objetos que contiene la caja original es asignado al nodo hijo que lo contiene. En caso de que un objeto tenga intersección no vacía con el plano de corte, entonces este objeto es asignado a ambos hijos.
-
-Este procedimiento continúa hasta que se alcanza una profundidad definida de antemano o hasta que el número de objetos contenidos en cada voxel sea menor a un número definido anteriormente. Havran \cite{Havran} sugiere que la profundidad máxima sea igual a $16$ y que la cantidad de objetos por voxel sea $2$ para lograr un rendimiento óptimo. Thrane y Ole \cite{TesisEstructuras} analizaron estos valores y concluyeron que $16$ como profundidad máxima no era un buen valor para las escenas realistas. Se concluyó que, como la escena es dividida en dos en cada nivel del árbol entonces, una profundidad más convincente sería una que fuera resultado de una función logarítmica en el número de triángulos de la escena. Esta consideración también fue adoptada por Pharr y Humphreys \cite{PharrHumphreys}, los cuales usaron $8 + 1.3\log(N)$ como profundidad máxima, donde $N$ es el número de triángulos de la escena.
+La construcción de un kd-tree se hace de forma recursiva, siguiendo un enfoque top-down. Dada una caja que contenga completamente a la escena y una lista de objetos contenidos en ella, se escoge un plano de corte perpendicular a uno de los ejes de coordenadas, que divida la caja en dos. Al dividir se generan dos nuevos volúmenes, y cada uno de ellos es representado agregando un hijo al nodo asociado a la caja original. Cada uno de los objetos que contiene la caja original es asignado al nodo hijo que lo contiene. En caso de que un objeto tenga intersección no vacía con el plano de corte, entonces este objeto es asignado a ambos hijos. Este procedimiento continúa hasta que se alcanza una profundidad definida de antemano o hasta que el número de objetos contenidos en cada voxel sea menor a un número definido anteriormente. Havran \cite{Havran} sugiere que la profundidad máxima sea igual a $16$ y que la cantidad de objetos por voxel sea $2$ para lograr un rendimiento óptimo. Thrane y Ole \cite{TesisEstructuras} analizaron estos valores y concluyeron que $16$ como profundidad máxima no era un buen valor para las escenas realistas. Se concluyó que, como la escena es dividida en dos en cada nivel del árbol entonces, una profundidad más convincente sería una que fuera resultado de una función logarítmica en el número de triángulos de la escena. Esta consideración también fue adoptada por Pharr y Humphreys \cite{PharrHumphreys}, los cuales usaron $8 + 1.3\log(N)$ como profundidad máxima, donde $N$ es el número de triángulos de la escena.
 
 
 \subsection{Jerarquía de Volúmenes Envolventes (BVH)}
@@ -183,13 +187,14 @@ Donde: $hit(n)$ es el evento en que el rayo atraviesa el nodo $n$, $S_{n}$ es el
 
 La función da un estimativo del costo de la jerarquía cuando se trata de atravesar por un rayo cualquiera.
 
-Como no existe un algoritmo para construir eficientemente una estructura BVH óptima, se han propuesto heurísticas de construcción. Por lo general, estas heurísticas se basan en una de las dos ideas propuestas por Kay y Kajiya \cite{KayKajiya} y Goldsmith y Salmon \cite{GoldsmithSalmon}, las cuales se presentan a continuación.
+Como no existe un algoritmo para construir eficientemente una estructura BVH óptima, se han propuesto heurísticas de construcción. Por lo general, estas heurísticas se basan en una de las dos ideas propuestas por Kay y Kajiya \cite{KayKajiya} y Goldsmith y Salmon \cite{GoldsmithSalmon}, en estos trabajos se puede profundizar sobre el tema.
 
 
+\subsection{Conclusiones sobre aceleración espacial}
 
-\subsection{Conclusiones}
+%%%% Comentario: hay que arreglarlo todo, darle mas para adelante a la grilla uniforme.
 
-Thrane y Ole \cite{TesisEstructuras} analizan experiencias obtenidas al implementar y usar la subdivisión espacial uniforme en la paralelización del algoritmo de trazado de rayos. La aceleración lograda a través de esta estructura es menor que la obtenida a través de Kd-Tree o BVH, excepto para algunas escenas con objetos simples. Esto permite concluir que la estructura no es buena para escenas donde se dan grandes variaciones en la densidad de los objetos, desde el punto de vista geométrico. También se destaca que el algoritmo para recorrer los voxeles atravesados requiere guardar mayor cantidad de datos para representar el estado del recorrido, en comparación con las estructuras Kd-Tree y BVH. Los autores concluyen que el algoritmo de recorrida de los voxeles se puede paralelizar en una GPU pero que la implementación tendría un bajo rendimiento, en comparación con el obtenido al usar las estructuras Kd-Tree o BVH. Según Thrane y Ole \cite{TesisEstructuras}, para algunos casos de prueba de su trabajo donde la resolución de la grilla es grande el algoritmo de recorrida de los voxeles tiene un tiempo de ejecución mayor al tiempo de la estructura Kd-Tree o al de la BVH.
+En el trabajo de Thrane y Ole se analizan experiencias obtenidas al implementar y usar la subdivisión espacial uniforme en la paralelización del algoritmo de trazado de rayos. La aceleración lograda a través de esta estructura es menor que la obtenida a través de Kd-Tree o BVH, excepto para algunas escenas con objetos simples. Esto permite concluir que la estructura no es buena para escenas donde se dan grandes variaciones en la densidad de los objetos, desde el punto de vista geométrico. También se destaca que el algoritmo para recorrer los voxeles atravesados requiere guardar mayor cantidad de datos para representar el estado del recorrido, en comparación con las estructuras Kd-Tree y BVH. Los autores concluyen que el algoritmo de recorrida de los voxeles se puede paralelizar en una GPU pero que la implementación tendría un bajo rendimiento, en comparación con el obtenido al usar las estructuras Kd-Tree o BVH. Para algunos casos de prueba de su trabajo donde la resolución de la grilla es grande el algoritmo de recorrida de los voxeles tiene un tiempo de ejecución mayor al tiempo de la estructura Kd-Tree o al de la BVH.
 
 Por otro lado, Thrane y Ole \cite{TesisEstructuras} implementaron la estructura de a\-ce\-le\-ra\-ción Kd-Tree sobre GPU. Usaron las técnicas (\emph{restart} y \emph{backtrack}) y concluyeron que para la mayoría de las escenas, esta estructura mejora en rendimiento a la subdivisión espacial uniforme. También se recalca que las dos técnicas para realizar la recorrida a través de los voxeles sufren de alta complejidad en sus algoritmos (en el contexto de una GPU) y esto no es deseable ya que aumenta el tiempo de ejecución. Aunque también se menciona que el tiempo de ejecución que se agrega por la complejidad puede verse compensado, en cierto grado, por la habilidad de la estructura para adaptarse a los cambios de densidad de objetos en la escena.
 
@@ -203,6 +208,7 @@ Lauterbach et al. \cite{Lauterbach06} luego de haber usado la estructura BVH par
 
 En la Tabla \ref{table:ConclusionesEstructuras} se resumen las principales conclusiones sobre las estructuras de aceleración espacial.
 
+%%%%%Comentario: hay que agrandar la tabla un poquito y que quede dentro de la sección....
 
 \begin{table}[!hbt]
 \begin{center}
@@ -236,10 +242,15 @@ En la Tabla \ref{table:ConclusionesEstructuras} se resumen las principales concl
 \end{table}
 
 \section{Interactive Raytracing}
-Se llama Interactive Raytracing a una implementación del algoritmo que permita modificar parámetros de forma tal de poder ver los cambios en tiempos aceptables (segundos), a diferencia del Raytracing en tiempo real esta implementación no serviría para hacer videojuegos o generadores de video en tiempo real, dado que la cantidad de imágenes por segundo no sería suficiente. Real Time Raytracing es una implementación de Raytracing que ejecuta a una velocidad que permitiría la generación de, al menos, 24 cuadros por segundo, para que el ojo humano pueda llegar a verlo como una animación.
-
+Se llama Interactive Raytracing a una implementación del algoritmo que permita modificar parámetros de forma tal de poder ver los cambios en tiempos aceptables (segundos), a diferencia del Raytracing en tiempo real esta implementación no serviría para hacer videojuegos o generadores de video en tiempo real, dado que la cantidad de imágenes por segundo no sería suficiente. 
+%%%% Comentario: quedo desordenado...
+Real Time Raytracing es una implementación de Raytracing que ejecuta a una velocidad que permitiría la generación de, al menos, 24 cuadros por segundo, para que el ojo humano pueda llegar a verlo como una animación.
+%%%%%%
 \subsection{Estado del Arte}
-El artículo de Wald, Slusallek, Benthin y Wagner \cite{Wald:2001:STAR-IRT} plantea cual es el estado del arte en la generación de imágenes para programas en los que uno de los objetivos es la capacidad de interactuar con los usuarios. Según lo relevado el algoritmo generalmente utilizado para la generación de imágenes se hacen por rasterización, la alternativa es el algoritmo de Raytracing.
+
+%%% Comentario: Rast vs RT ya debería estar explicado, aqui solo raytracing interactivo....
+
+El artículo de Wald et al. \cite{Wald:2001:STAR-IRT} plantea cual es el estado del arte en la generación de imágenes para programas en los que uno de los objetivos es la capacidad de interactuar con los usuarios. Según lo relevado el algoritmo generalmente utilizado para la generación de imágenes se hacen por rasterización, la alternativa es el algoritmo de Raytracing.
 
 Algunas de las ventajas planteadas para el algoritmo de Raytracing sobre Rasterización:
 \begin{itemize}
@@ -256,8 +267,9 @@ Algunas de las ventajas planteadas para el algoritmo de Raytracing sobre Rasteri
 
 
 
+%%%% Comentario: que cosa??
 \subsection{En arquitectura multiprocesador de memoria compartida}
-
+%%% Comentario: que paper?
 El paper describe la exploración dentro de las técnicas de optimización para los algoritmos de Raytracing de modo de intentar que se puedan ejecutar de manera interactiva. En esta investigación realizan la implementación de un Raytracer que corre sobre una arquitectura multiprocesador. En la solución desarrollada se logró la interactividad, en parte porque el sistema corre en una máquina de gran poder de cómputo (SGI Origin 2000). Por otra parte es posible aún en estas condiciones lograr que Raytracing sea interactivo por tres características del algoritmo:
 \begin{itemize}
   \item Raytracing escala bien en cientos de procesadores.
