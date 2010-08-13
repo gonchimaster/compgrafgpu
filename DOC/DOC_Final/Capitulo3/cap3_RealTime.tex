@@ -7,45 +7,40 @@ Esta sección presenta en detalle de los algoritmos y técnicas existentes para la
 
 En noviembre de 2006 NVIDIA lanzó CUDA (Compute Unified Device Architecture), una arquitectura de computación paralela de propósito general que hace uso del núcleo de procesamiento paralelo de las GPU de NVIDIA para resolver una amplia variedad de problemas computacionales de una manera más eficiente que en una CPU. El modelo de programación paralela propuesto por NVIDIA fue totalmente nuevo y la programación sobre el mismo se hace a través de un lenguaje de alto nivel, CUDA permite el uso del lenguaje C para la programación.
 
-%%% Comentario: no se hablo de las GPU aun....
-
-Una ventaja muy importante del modelo es que cualquier aplicación desarrollada en CUDA puede ejecutarse sobre cualquier número de procesadores, sin necesidad de volver a compilar el código. Esto permite crear aplicaciones capaces de escalar en el número de procesadores, lo cual permite que una aplicación ejecute en cualquier GPU que soporte CUDA.
+La arquitectura CUDA basa su poder de procesamiento en un conjunto variable (dependiente del modelo de GPU) de multiprocesadores, donde cada uno de ellos procesa parte de la carga de trabajo en paralelo con los demás. Un multiprocesador esta compuesto por 8 procesadores, una unidad de memoria compartida y otras 3 unidades que permiten controlar el funcionamiento del mismo. Cada multiprocesador crea, administra y ejecuta hilos concurrentemente en el hardware sin incrementar el tiempo de ejecución por la planificación (\emph{scheduling}).
 
 \begin{figure}[H]
     \centering
-        \includegraphics[width=0.8\textwidth]{./Capitulo4/modeloKernels}
-    \caption{Ejemplo de ejecución de una aplicación CUDA.}
-    \label{fig:ModeloKernels}
-\end{figure}
-
-El modelo de programación esta basado en tres abstracciones fundamentales, dispone de una jerarquía de grupos de hilos de ejecución, memoria compartida y barreras de sincronización de la ejecución. Estas abstracciones guían al programador a dividir el problema en sub-problemas que pueden ser resueltos en forma paralela e independiente por medio de bloques de hilos de ejecución. A su vez cada sub-problema de divide en piezas más chicas que pueden ser resueltas en paralelo y cooperando entre ellas, usando los hilos de ejecución de cada bloque. Descomponer el problema de esta forma permite la escalabilidad automática en el número de procesadores, ya que cada bloque de hilos puede ser despachado hacia cualquier conjunto de procesadores (multiprocesador) disponible, en cualquier orden, concurrentemente o secuencialmente. De esta manera cualquier aplicación CUDA puede ejecutar sobre cualquier número de multiprocesadores y sólo se necesita conocer este número en tiempo de ejecución. En la Figura \ref{fig:DiagramaEjecucionCUDA} se considera una aplicación CUDA que esta dividida en cuatro bloques y se muestra como se asignan los bloques de hilos de ejecución en dos GPU distintas, donde una tiene dos multiprocesadores y la otra tiene cuatro.
-
-\begin{figure}[H]
-    \centering
-        \includegraphics[width=0.8\textwidth]{./Capitulo4/diagramaEjecucionCUDA}
+        \includegraphics[width=0.7\textwidth]{./Capitulo4/diagramaEjecucionCUDA}
     \caption{Ejemplo de escalabilidad automática en el número de multiprocesadores.}
     \label{fig:DiagramaEjecucionCUDA}
+\end{figure}
+
+El modelo de programación esta basado en tres abstracciones fundamentales, dispone de una jerarquía de grupos de hilos de ejecución, memoria compartida y barreras de sincronización de la ejecución. Estas abstracciones guían al programador a dividir el problema en sub-problemas que pueden ser resueltos en forma paralela e independiente por medio de bloques de hilos de ejecución. A su vez cada sub-problema de divide en piezas más chicas que pueden ser resueltas en paralelo y cooperando entre ellas, usando los hilos de ejecución de cada bloque. Descomponer el problema de esta forma permite la escalabilidad automática en el número de procesadores, ya que cada bloque de hilos puede ser despachado hacia cualquier conjunto de procesadores (multiprocesador) disponible, en cualquier orden, concurrentemente o secuencialmente. De esta manera cualquier aplicación CUDA puede ejecutar sobre cualquier número de multiprocesadores y sólo se necesita conocer este número en tiempo de ejecución, lo que implica que no sea necesaria una nueva compilación. En la Figura \ref{fig:DiagramaEjecucionCUDA} se considera una aplicación CUDA que esta dividida en cuatro bloques y se muestra como se asignan los bloques de hilos de ejecución en dos GPU distintas, donde una tiene dos multiprocesadores y la otra tiene cuatro.
+
+\begin{figure}[H]
+    \centering
+        \includegraphics[width=0.7\textwidth]{./Capitulo4/modeloKernels}
+    \caption{Ejemplo de ejecución de una aplicación CUDA.}
+    \label{fig:ModeloKernels}
 \end{figure}
 
 En la extensión del lenguaje C que hace CUDA es posible definir funciones (de la misma forma que en el lenguaje base) que a diferencia de las funciones normales de C, cuando son invocadas ejecutan $N$ veces en paralelo, mediante $N$ hilos de ejecución de CUDA diferentes. Estas funciones propias de CUDA son llamadas \emph{kernels}. Dentro de este tipo especial de funciones se tiene acceso a información propia de CUDA que indica por ejemplo, el identificador del hilo de ejecución o el identificador de bloque que lo contiene. Esta información es de vital importancia ya que es usada para parametrizar la ejecución del \emph{kernel} en función de los hilos de ejecución.
 
 Un \emph{kernel} siempre es invocado desde el \emph{host} (CPU) y ejecuta en el \emph{device} (GPU). La GPU actúa como co-procesador de la CPU y mediante \emph{kernels} la CPU puede asignar trabajo al co-procesador. En la Figura \ref{fig:ModeloKernels} se muestra un ejemplo de una aplicación CUDA que posee un \emph{kernel} ``\emph{kernel A}''. Esta aplicación comienza ejecutando código secuencial en la CPU, en la primer parte secuencial se hace la invocación al \emph{kernel}, el cual ejecuta en la GPU. Una vez terminada la ejecución a nivel de GPU retorna a ejecutar código secuencial en la CPU.
 
-El índice que identifica a un hilo de ejecución es un vector tridimensional, usando el mismo un hilo puede ser identificado usando una, dos o tres componentes del vector. De esta manera los hilos pueden forman un bloque de una, dos o tres dimensiones. Esta forma de agrupar los distintos hilos de un bloque permite invocar \emph{kernels} sobre distintos tipos de dominio (vector, matriz o volumen) de una manera más natural. Los bloques también pueden ser agrupados en una grilla (\emph{grid}) de una o dos dimensiones.
-
-%%%%% Comentario: esto en una arquitectura particular...
-Como se muestra en la Figura \ref{fig:JerarquiaMemoriaCUDA}, cada hilo de CUDA puede acceder a múltiples espacios de memoria durante su ejecución, mientras que los diferentes espacios de memoria forman la jerarquía de memoria de la GPU.
-
-En el primer nivel de la jerarquía (latencia más baja y menor capacidad de almacenamiento) se encuentran los registros, cada uno de ellos tiene 32 bits para almacenar un entero o un punto flotante. Cada hilo de ejecución tiene acceso a una cierta cantidad de registros, donde la cantidad depende del modelo de la GPU, y puede llegar hasta un máximo de 1024 en los modelos más avanzados. Además cada hilo de ejecución tiene su propio espacio privado de memoria local. La memoria local a cada hilo es pequeña y su latencia es relativamente alta (tanto como la memoria global).
-
-%%%%%
-
 \begin{figure}[H]
     \centering
-        \includegraphics[width=0.8\textwidth]{./Capitulo2/jerarquiaMemoria}
+        \includegraphics[width=0.7\textwidth]{./Capitulo2/jerarquiaMemoria}
     \caption{Jerarquía de memoria de la GPU.}
     \label{fig:JerarquiaMemoriaCUDA}
 \end{figure}
+
+El índice que identifica a un hilo de ejecución es un vector tridimensional, usando el mismo un hilo puede ser identificado usando una, dos o tres componentes del vector. De esta manera los hilos pueden forman un bloque de una, dos o tres dimensiones. Esta forma de agrupar los distintos hilos de un bloque permite invocar \emph{kernels} sobre distintos tipos de dominio (vector, matriz o volumen) de una manera más natural. Los bloques también pueden ser agrupados en una grilla (\emph{grid}) de una o dos dimensiones.
+
+Como se muestra en la Figura \ref{fig:JerarquiaMemoriaCUDA}, cada hilo de CUDA puede acceder a múltiples espacios de memoria durante su ejecución, mientras que los diferentes espacios de memoria forman la jerarquía de memoria de la GPU.
+
+En el primer nivel de la jerarquía, donde se da la latencia más baja y la menor capacidad de almacenamiento, se encuentran los registros. Desde la arquitectura menos avanzada (\emph{Compute Capability 1.0}), cada registro tiene 32 bits para almacenar un entero o un punto flotante. Cada hilo de ejecución tiene acceso a una cierta cantidad de registros, donde la cantidad depende del modelo de la GPU, y puede llegar hasta un máximo de 4096 en los modelos más avanzados (\emph{Compute Capability 2.0}). Además cada hilo de ejecución tiene su propio espacio privado de memoria local. La memoria local a cada hilo es pequeña y su latencia es relativamente alta (tanto como la memoria global).
 
 Cada bloque tiene un espacio de memoria compartida entre todos sus hilos, este espacio compartido tiene el mismo tiempo de vida que el bloque, es decir, es válido mientras el bloque se encuentra en ejecución. El espacio de memoria compartida de cada bloque es de 16 KB, posee una latencia baja, similar a la de los registros. Puede ser controlada totalmente por el programador y puede ser usada como un caché para mejorar los tiempos de acceso a la memoria global.
 
@@ -147,15 +142,7 @@ En la subdivisión espacial se puede dar el caso de que un polígono sea referenci
 
 Al igual que la subdivisión espacial uniforme la estructura kd-tree es una instancia particular de la subdivisión espacial. La diferencia que tiene es que representa la escena con una estructura jerárquica basada en un árbol binario. En esta estructura se hace una distinción con respecto al tipo de los nodos, se distinguen los nodos internos de las hojas. Los nodos hoja se corresponden con los voxeles y tienen las referencias a los objetos que se encuentran dentro de los mismos. Los nodos internos se corresponden con la forma en que se divide el espacio. De esta manera, los nodos internos contienen un plano de corte y referencias a cada uno de los dos subárboles, mientras que los nodos hojas contienen listas de objetos.
 
-%%%%% Comentario: ver que se hace con la figura porque esta en color...(van a imprimir todo en color?)
-Esta técnica de división del espacio tiene prácticamente las mismas ventajas que la subdivisión espacial uniforme. Pero esta división intenta mejorar a la uniforme considerando que los objetos no están uniformemente distribuidos en la escena. La Figura \ref{fig:3D-Tree} muestra un ejemplo de división espacial usando un kd-tree. La primera división (rojo) corta la celda raíz (blanco) en dos. Luego, se aplica otra división (verde) a estas celdas. La última división (azul) se aplica a las 4 celdas existentes.
-
-\begin{figure}[H]
-  \centering
-    \includegraphics[width=0.7\textwidth]{../DOC_Relevamiento/3dtree}
-  \caption{Subdivisión espacial usando una estructura kd-tree tridimensional.}
-  \label{fig:3D-Tree}
-\end{figure}
+Esta técnica de división del espacio tiene prácticamente las mismas ventajas que la subdivisión espacial uniforme. Pero esta división intenta mejorar a la uniforme considerando que los objetos no están uniformemente distribuidos en la escena.
 
 La construcción de un kd-tree se hace de forma recursiva, siguiendo un enfoque top-down. Dada una caja que contenga completamente a la escena y una lista de objetos contenidos en ella, se escoge un plano de corte perpendicular a uno de los ejes de coordenadas, que divida la caja en dos. Al dividir se generan dos nuevos volúmenes, y cada uno de ellos es representado agregando un hijo al nodo asociado a la caja original. Cada uno de los objetos que contiene la caja original es asignado al nodo hijo que lo contiene. En caso de que un objeto tenga intersección no vacía con el plano de corte, entonces este objeto es asignado a ambos hijos. Este procedimiento continúa hasta que se alcanza una profundidad definida de antemano o hasta que el número de objetos contenidos en cada voxel sea menor a un número definido anteriormente. Havran \cite{Havran} sugiere que la profundidad máxima sea igual a $16$ y que la cantidad de objetos por voxel sea $2$ para lograr un rendimiento óptimo. Thrane y Ole \cite{TesisEstructuras} analizaron estos valores y concluyeron que $16$ como profundidad máxima no era un buen valor para las escenas realistas. Se concluyó que, como la escena es dividida en dos en cada nivel del árbol entonces, una profundidad más convincente sería una que fuera resultado de una función logarítmica en el número de triángulos de la escena. Esta consideración también fue adoptada por Pharr y Humphreys \cite{PharrHumphreys}, los cuales usaron $8 + 1.3\log(N)$ como profundidad máxima, donde $N$ es el número de triángulos de la escena.
 
@@ -192,27 +179,15 @@ Como no existe un algoritmo para construir eficientemente una estructura BVH ópt
 
 \subsection{Conclusiones sobre aceleración espacial}
 
-%%%% Comentario: hay que arreglarlo todo, darle mas para adelante a la grilla uniforme.
+En el trabajo de Thrane y Ole se analizan experiencias obtenidas al implementar y usar la subdivisión espacial uniforme en la paralelización del algoritmo de trazado de rayos. Para escenas con objetos simples la a\-ce\-le\-ra\-ción lograda a través de esta estructura es mayor que la obtenida a través de Kd-Tree o BVH. Cuando las escenas poseen objetos complejos la a\-ce\-le\-ra\-ción no es tan buena en comparación con las mismas estructuras. Además se menciona que la estructura no es buena para escenas donde se dan grandes variaciones en la densidad de los objetos, desde el punto de vista geométrico. También se destaca que el algoritmo para recorrer los voxeles es muy simple de implementar y que requiere pocas operaciones aritméticas para avanzar de voxel a voxel. Estas propiedades del algoritmo de recorrida son muy importantes para implementarlo en una GPU, y contrarrestan algunas propiedades negativas que se presentan en el trabajo, como por ejemplo que requiere guardar mayor cantidad de datos para representar el estado del recorrido, en comparación con las estructuras Kd-Tree y BVH. Los autores concluyen que el algoritmo de recorrida de los voxeles se puede paralelizar muy fácilmente en una GPU pero que la implementación tendría un bajo rendimiento para escenas complejas y un buen rendimiento para escenas simples, en comparación con el obtenido al usar las estructuras Kd-Tree o BVH. Además, concluyen que el algoritmo para la construcción de la subdivisión uniforme es más simple que el de las estructuras Kd-Tree o BVH y que puede ser paralelizado en GPU con mayor facilidad.
 
-En el trabajo de Thrane y Ole se analizan experiencias obtenidas al implementar y usar la subdivisión espacial uniforme en la paralelización del algoritmo de trazado de rayos. La aceleración lograda a través de esta estructura es menor que la obtenida a través de Kd-Tree o BVH, excepto para algunas escenas con objetos simples. Esto permite concluir que la estructura no es buena para escenas donde se dan grandes variaciones en la densidad de los objetos, desde el punto de vista geométrico. También se destaca que el algoritmo para recorrer los voxeles atravesados requiere guardar mayor cantidad de datos para representar el estado del recorrido, en comparación con las estructuras Kd-Tree y BVH. Los autores concluyen que el algoritmo de recorrida de los voxeles se puede paralelizar en una GPU pero que la implementación tendría un bajo rendimiento, en comparación con el obtenido al usar las estructuras Kd-Tree o BVH. Para algunos casos de prueba de su trabajo donde la resolución de la grilla es grande el algoritmo de recorrida de los voxeles tiene un tiempo de ejecución mayor al tiempo de la estructura Kd-Tree o al de la BVH.
-
-Por otro lado, Thrane y Ole \cite{TesisEstructuras} implementaron la estructura de a\-ce\-le\-ra\-ción Kd-Tree sobre GPU. Usaron las técnicas (\emph{restart} y \emph{backtrack}) y concluyeron que para la mayoría de las escenas, esta estructura mejora en rendimiento a la subdivisión espacial uniforme. También se recalca que las dos técnicas para realizar la recorrida a través de los voxeles sufren de alta complejidad en sus algoritmos (en el contexto de una GPU) y esto no es deseable ya que aumenta el tiempo de ejecución. Aunque también se menciona que el tiempo de ejecución que se agrega por la complejidad puede verse compensado, en cierto grado, por la habilidad de la estructura para adaptarse a los cambios de densidad de objetos en la escena.
+Por otro lado, Thrane y Ole \cite{TesisEstructuras} implementaron la estructura de a\-ce\-le\-ra\-ción Kd-Tree sobre GPU. Usaron las técnicas (\emph{restart} y \emph{backtrack}) y concluyeron que para la mayoría de las escenas, esta estructura mejora en rendimiento a la subdivisión espacial uniforme. También se recalca que las dos técnicas para realizar la recorrida a través de los voxeles sufren de alta complejidad en sus algoritmos (en el contexto de una GPU) y esto no es deseable ya que aumenta el tiempo de ejecución. Aunque también se menciona que el tiempo de ejecución que se agrega por la complejidad puede verse compensado, en cierto grado, por la habilidad de la estructura para adaptarse a los cambios de densidad de objetos en la escena. Con respecto al algoritmo para la construcción de la estructura, se concluye que dada su condición de recursivo su implementación a nivel de GPU es más compleja, en comparación con la subdivisión uniforme.
 
 En el trabajo de Lauterbach et al. \cite{Lauterbach06} luego de haber usado la estructura Kd-Tree para diversos casos de prueba se llegó a la conclusión de que con esta se obtienen mejores resultados de los que se obtienen utilizando la estructura BVH, para escenas estáticas (las escenas estáticas se caracterizan por componerse de objetos fijos, que no cambian de posición ni de forma en el tiempo). Esta ganancia en rendimiento tiene como costo asociado un mayor consumo de memoria y una mayor complejidad para implementar y optimizar la construcción de la estructura.
 
-Con respecto a la estructura BVH, Thrane y Ole \cite{TesisEstructuras} implementaron sobre una GPU ambas estrategias de construcción, el enfoque top-down y el bottom-up, para comparar resultados. Usaron siempre volúmenes envolventes alineados a los ejes, en ambas construcciones. La estrategia de recorrida a lo largo de los nodos hijos fue siempre de izquierda a derecha. Esto en algunos casos no resultó muy eficiente ya que si el rayo atraviesa todos los volúmenes envolventes y el volumen donde se da la intersección más cercana es el último de una lista de hermanos, se debe revisar todos los demás volúmenes antes de llegar a un resultado. En un caso de este tipo prácticamente se está utilizando fuerza bruta para encontrar la intersección, cosa que se buscaba evitar con la introducción de estructuras de aceleración. Una alternativa es recorrer la lista de hermanos según la dirección del rayo pero los autores optaron por no mejorar este aspecto para mantener la simplicidad en el algoritmo (ya que debe ser implementado en una GPU).
-
-La gran ventaja de la estructura BVH es la simplicidad del algoritmo de recorrida y la gran desventaja es el orden fijo en que se recorren los nodos hermanos \cite{TesisEstructuras}. Además Thrane y Ole \cite{TesisEstructuras} concluyeron que esta estructura es la que tiene mejor rendimiento sobre la GPU, comparando con la subdivisión espacial uniforme y con la BVH. Como un agregado se destaca que la implementación de la construcción y de la recorrida de los volúmenes es más simple que cualquier otra estructura que se quiera implementar sobre una GPU.
-
-Lauterbach et al. \cite{Lauterbach06} luego de haber usado la estructura BVH para diversos casos de prueba concluyó que con esta estructura se obtienen mejores resultados de los que se obtienen utilizando la Kd-tree, para escenas dinámicas (las escenas dinámicas se caracterizan por componerse de objetos que a medida que el tiempo avanza cambian de posición, forma, etc.). Además, los autores señalan que a la jerarquía de volúmenes envolventes es más fácil agregarle la optimización basada en paquetes de rayos que a la Kd-Tree.
-
-En la Tabla \ref{table:ConclusionesEstructuras} se resumen las principales conclusiones sobre las estructuras de aceleración espacial.
-
-%%%%%Comentario: hay que agrandar la tabla un poquito y que quede dentro de la sección....
-
 \begin{table}[!hbt]
 \begin{center}
-\resizebox{8cm}{!}{
+\resizebox{10cm}{!}{
     \small {
     \begin{tabular}{|p{6cm}|c|c|c|}
     \hline
@@ -235,42 +210,34 @@ En la Tabla \ref{table:ConclusionesEstructuras} se resumen las principales concl
     \end{tabular}
     }
 }
-
-\caption{Comparación de las estructuras de aceleración}
+\caption{Comparación de las estructuras de aceleración.}
 \label{table:ConclusionesEstructuras}
 \end{center}
 \end{table}
 
-\section{Interactive Raytracing}
-Se llama Interactive Raytracing a una implementación del algoritmo que permita modificar parámetros de forma tal de poder ver los cambios en tiempos aceptables (segundos), a diferencia del Raytracing en tiempo real esta implementación no serviría para hacer videojuegos o generadores de video en tiempo real, dado que la cantidad de imágenes por segundo no sería suficiente. 
-%%%% Comentario: quedo desordenado...
-Real Time Raytracing es una implementación de Raytracing que ejecuta a una velocidad que permitiría la generación de, al menos, 24 cuadros por segundo, para que el ojo humano pueda llegar a verlo como una animación.
-%%%%%%
+Con respecto a la estructura BVH, Thrane y Ole \cite{TesisEstructuras} implementaron sobre una GPU ambas estrategias de construcción, el enfoque \emph{top-down} y el \emph{bottom-up}, para comparar resultados. Usaron siempre volúmenes envolventes alineados a los ejes, en ambas construcciones. La estrategia de recorrida a lo largo de los nodos hijos fue siempre de izquierda a derecha. Esto en algunos casos no resultó muy eficiente ya que si el rayo atraviesa todos los volúmenes envolventes y el volumen donde se da la intersección más cercana es el último de una lista de hermanos, se debe revisar todos los demás volúmenes antes de llegar a un resultado. En un caso de este tipo prácticamente se está utilizando fuerza bruta para encontrar la intersección, cosa que se buscaba evitar con la introducción de estructuras de aceleración. Una alternativa es recorrer la lista de hermanos según la dirección del rayo pero los autores optaron por no mejorar este aspecto para mantener la simplicidad en el algoritmo (ya que debe ser implementado en una GPU).
+
+La gran ventaja de la estructura BVH es la simplicidad del algoritmo de recorrida y la gran desventaja es el orden fijo en que se recorren los nodos hermanos \cite{TesisEstructuras}. Además Thrane y Ole \cite{TesisEstructuras} concluyeron que para escenas complejas esta estructura es la que tiene mejor rendimiento sobre la GPU, comparando con la subdivisión espacial uniforme y con la Kd-tree. Como un agregado se destaca que la implementación de la construcción es simple, aunque para llevarla a nivel de GPU hay que resolver el problema de la recursión si se elige el enfoque \emph{top-down} o el problema de encontrar un buen orden para la lista de objetos de la escena si se elige el enfoque \emph{bottom-up}. Además, la construcción en cualquiera de los enfoques es computacionalmente mas costosa que la construcción de la grilla uniforme.
+
+Lauterbach et al. \cite{Lauterbach06} luego de haber usado la estructura BVH para diversos casos de prueba concluyó que con esta estructura se obtienen mejores resultados de los que se obtienen utilizando la Kd-tree, para escenas dinámicas (las escenas dinámicas se caracterizan por componerse de objetos que a medida que el tiempo avanza cambian de posición, forma, etc.). Además, los autores señalan que a la jerarquía de volúmenes envolventes es más fácil agregarle la optimización basada en paquetes de rayos que a la Kd-Tree.
+
+En la Tabla \ref{table:ConclusionesEstructuras} se resumen las principales conclusiones sobre las estructuras de aceleración espacial.
+
+
+\section{Raytracing interactivo}
+
+Se llama Raytracing interactivo (RI) a una implementación del algoritmo que permita modificar parámetros que afecten a la imagen generada y que el ojo humano pueda percibir las consecuencias de las modificaciones como una animación, para lograr esto se necesitan por lo menos 24 FPS (\emph{frames} por segundo). A diferencia del Raytracing en tiempo real esta implementación no serviría para hacer videojuegos o generadores de video en tiempo real, dado que la cantidad de imágenes por segundo no sería suficiente.
+
+
 \subsection{Estado del Arte}
 
-%%% Comentario: Rast vs RT ya debería estar explicado, aqui solo raytracing interactivo....
+El artículo de Wald et al. \cite{Wald:2001:STAR-IRT} plantea cual es el estado del arte en la generación de imágenes para programas en los que uno de los objetivos es la capacidad de interactuar con los usuarios. Según lo relevado en este artículo, el algoritmo que generalmente es utilizado para la generación de imágenes es el de Rasterización, pero debido al constante aumento del poder de cómputo del \emph{hardware} el algoritmo de Raytracing surge como una alternativa válida.
 
-El artículo de Wald et al. \cite{Wald:2001:STAR-IRT} plantea cual es el estado del arte en la generación de imágenes para programas en los que uno de los objetivos es la capacidad de interactuar con los usuarios. Según lo relevado el algoritmo generalmente utilizado para la generación de imágenes se hacen por rasterización, la alternativa es el algoritmo de Raytracing.
+Para lograr que el algoritmo de Raytracing sea interactivo se le deben aplicar estrategias de simplificación y aceleración. Existe una estrategia que consiste en utilizar un algoritmo basado en rasterización, asumiendo que la velocidad de la rasterización es mejor que la de Raytracing se pude utilizar Raytracing solamente para el cálculo de algunos efectos de iluminación y no realizar toda la generación de la imagen con este algoritmo. Otra estrategia saca provecho de la coherencia temporal entre las imágenes generadas, esta técnica se basa en extraer información de la imagen generada en el paso anterior para generar solo algunos pixeles de la imagen siguiente. Utilizando como base Raytracing otra de las formas de mejorar el tiempo de procesamiento es tratando de reducir el costo de cálculo de cada uno de los pixels. Otra forma de aceleración es la utilización de algoritmos que permitan bajar los costos computacionales asociados al trazado de rayos, estos pueden ser utilización de algún tipo de particionamiento espacial, utilización de arquitecturas de memoria de las CPU actuales que puedan ser utilizadas de manera eficiente. Por último la utilización de la capacidad del algoritmo de ser ejecutado en paralelo, esto requiere una buena optimización de los algoritmos teniendo en cuenta el balanceo de carga y las latencias de sincronización.
 
-Algunas de las ventajas planteadas para el algoritmo de Raytracing sobre Rasterización:
-\begin{itemize}
-    \item Flexibilidad: cada rayo puede ser trazado por separado, no comparten información.
-    \item Occlusion culling y complejidad logarítmica: la geometría se procesa a demanda por lo cual no hay necesidad de procesar la geometría que no será utilizada, lo cual si es necesario en el algoritmo de Rasterización. El costo computacional crece de manera logarítmica en comparación con el crecimiento lineal del algoritmo de Rasterización.
-    \item Sombreado eficiente: el sombreado se determina solamente luego de que la visibilidad del objeto ha sido comprobada por lo cual no se calcula a menos que este cálculo sea necesario de realizar.
-    \item Efectos de sombreado programables: a diferencia de las limitaciones de la Rasterización con respecto al pipeline de generación de imágenes por el cual se permite el procesado de shaders en un tiempo y forma determinados. La programación de efectos visuales utilizando directamente los shaders en el momento que son necesarios.
-    \item Correctitud: por defecto el algoritmo de Raytracing calcula los resultados de la Refracciones y Reflexiones físicamente correctos. En caso de que no sea necesaria la correctitud se pueden utilizar simplificaciones en los cálculos.
-    \item Escalabilidad en paralelización: el algoritmo es fácilmente paralelizable solamente limitado por el ancho de banda requerido para el pasaje de los datos necesarios para la renderización de la escena.
-    \item Coherencia: existe coherencia entre los rayos que son trazados, se pueden buscar alternativas para agrupar los rayos de manera que tengan algún tipo de coherencia entre ellos.
-\end{itemize}
+\subsection{RI sobre multiprocesadores de memoria compartida}
 
-    Existen además varias formas de simplificar y acelerar el algoritmo de Raytracing, entre ellas se puede utilizar un algoritmo basado en rasterización, asumiendo que la velocidad de la rasterización es mejor que la de Raytracing se pude utilizar Raytracing solamente para el cálculo de algunos efectos de iluminación y no realizar toda la generación de la imagen con este algoritmo. Por otro lado utilizando coherencia temporal se pueden utilizar imágenes pregeneradas en un paso anterior y regenerando algunos píxeles en lugar de generar toda la imagen. Utilizando como base Raytracing otra de las formas de mejorar el tiempo de procesamiento es tratando de reducir el costo de cálculo de cada uno de los pixels. Otras formas de aceleración es la utilización de algoritmos que permitan bajar los costos computacionales asociados al algoritmo, estos pueden ser utilización de algún tipo de particionamiento espacial, utilización de arquitecturas de memoria de las CPU actuales que puedan ser utilizadas de manera eficiente. Por último la utilización de la capacidad del algoritmo de ser ejecutado en paralelo, esto requiere una buena optimización de los algoritmos teniendo en cuenta el balanceo de carga y las latencias de sincronización.
-
-
-
-%%%% Comentario: que cosa??
-\subsection{En arquitectura multiprocesador de memoria compartida}
-%%% Comentario: que paper?
-El paper describe la exploración dentro de las técnicas de optimización para los algoritmos de Raytracing de modo de intentar que se puedan ejecutar de manera interactiva. En esta investigación realizan la implementación de un Raytracer que corre sobre una arquitectura multiprocesador. En la solución desarrollada se logró la interactividad, en parte porque el sistema corre en una máquina de gran poder de cómputo (SGI Origin 2000). Por otra parte es posible aún en estas condiciones lograr que Raytracing sea interactivo por tres características del algoritmo:
+El artículo de Wald et al. describe la exploración dentro de las técnicas de optimización para los algoritmos de Raytracing de modo de intentar que se puedan ejecutar de manera interactiva. En esta investigación realizan la implementación de un Raytracer que corre sobre una arquitectura multiprocesador. En la solución desarrollada se logró la interactividad, en parte porque el sistema corre en una máquina de gran poder de cómputo (SGI Origin 2000). Por otra parte es posible aún en estas condiciones lograr que Raytracing sea interactivo por tres características del algoritmo:
 \begin{itemize}
   \item Raytracing escala bien en cientos de procesadores.
   \item Para escenas estáticas el tiempo de render de los frames (generación de cada cuadro de una animación) el orden del algoritmo es sublineal en la cantidad de objetos básicos en la escena.
