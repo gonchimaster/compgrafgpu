@@ -36,7 +36,7 @@ Como se puede ver, todas estas estrategias son para comparar imágenes y no son a
 
 En evaluación de imágenes generadas es que se basa el artículo de Dirik, Bayram, Sencar y Memon \cite{IdentifyingComputerGeneratedImages}. Pero plantea, al contrario de lo que se requiere en este proyecto, detectar que imágenes son generadas por un algoritmo de generación de imágenes y cuales son imágenes reales tomadas con una cámara. Aunque el objetivo que persigue este artículo es muy similar al que se persigue en el análisis de esta sección, el área de trabajo de este proyecto no son las imágenes fotorealistas dado que el modelo abordado, Raytracing, no es un modelo tan preciso. Por esto es que no se podrían utilizar los métodos propuestos en el artículo de Dirik, Bayram, Sencar y Memon.
 
-Las dos aproximaciones que se acercan más a los requerimientos de evaluación del proyecto son el planteado por Dirik, Bayram, Sencar y Memon \cite{IdentifyingComputerGeneratedImages} y los basados en las capacidades de percepción del sistema visual humano, que apuntan a evaluar que imágenes son iguales para el ojo humano. En ambos casos las estrategias no permiten evaluar la calidad en la forma que se requiere. 
+Las dos aproximaciones que se acercan más a los requerimientos de evaluación del proyecto son el planteado por Dirik, Bayram, Sencar y Memon \cite{IdentifyingComputerGeneratedImages} y los basados en las capacidades de percepción del sistema visual humano, que apuntan a evaluar que imágenes son iguales para el ojo humano. En ambos casos las estrategias no permiten evaluar la calidad en la forma que se requiere.
 
 \section{Casos de prueba}
 
@@ -264,7 +264,7 @@ Las pruebas realizadas a lo largo del proyecto mostraron que una buena elección 
 
 La comparación de rendimiento entre las diferentes versiones del algoritmo para GPU se hizo usando los casos de prueba PRI\_I a PRI\_V. Esta comparación entre versiones consta de dos partes, en la primera se determina la grilla óptima para cada caso de prueba y en la segunda se ejecuta cada caso de prueba en cada una de las versiones del algoritmo utilizando su grilla óptima.
 
-Para determinar la grilla óptima para cada escena de prueba se usa la Versión RT(GPU-JM-IR) del algoritmo para GPU, ejecutando en el Equipo GTX260. En la Tabla \ref{table:CompVersionesBuscarGrilla} se muestran los resultados obtenidos al ejecutar los casos de prueba sobre GPU. Observando los resultados se puede concluir que la grilla optima para todos los casos de prueba se construye partiendo en dos cada eje.
+Para determinar la grilla óptima para cada escena de prueba se usa la Versión RT-GPU-JM-IR del algoritmo para GPU, ejecutando en el Equipo GTX260. En la Tabla \ref{table:CompVersionesBuscarGrilla} se muestran los resultados obtenidos al ejecutar los casos de prueba sobre GPU. Observando los resultados se puede concluir que la grilla optima para todos los casos de prueba se construye partiendo en dos cada eje.
 
 Los resultados obtenidos en estas primeras pruebas muestran que a medida que aumenta la cantidad de primitivas con que esta construida la escena aumenta el tiempo de generación de imagen, y por lo tanto disminuyen los FPS. Esto se pensaba antes de ejecutar estos casos de prueba y fue corroborado por los mismos. También se pensaba que al aumentar la cantidad de primitivas de la escena aumentaría la cantidad de voxels que debía tener la grilla optima, pero esto no fue validado por los resultados obtenidos. Esto puede deberse a que el incremento de la cantidad de primitivas no es suficientemente grande como para obligar a aumentar la resolución de la grilla.
 
@@ -304,7 +304,7 @@ Una vez determinada la grilla optima para cada caso de prueba, se ejecuta cada c
   \small {
     \begin{tabular}{|c|c|c|c|c|}
     \hline
-    Escena & Tamaño Grilla Óptimo & RT(GPU) (FPS) & RT(GPU-JM) (FPS) & RT(GPU-JM-IR) (FPS)\\
+    Escena & Tamaño Grilla Óptimo & RT-GPU (FPS) & RT-GPU-JM (FPS) & RT-GPU-JM-IR (FPS)\\
     \hline
     PRI\_I & 2x2x2 & 5.8 & 26.2 & 36.7\\
     \hline
@@ -326,9 +326,9 @@ Una vez determinada la grilla optima para cada caso de prueba, se ejecuta cada c
 
 Los resultados de la Tabla \ref{table:CompVersionesFPS} reflejan la evolución positiva del algoritmo ya que a medida que se fue sofisticando el algoritmo se incrementaron los FPS para todos los casos de prueba.
 
-El incremento del tiempo de generación de imagen es mayor en el primer cambio de versión, esta diferencia está determinada por el uso de la jerarquía de memoria de la GPU. En la Versión RT(GPU) todos los accesos a memoria son a memoria global mientras que en la Versión RT(GPU-JM) la mayoría de los datos de entrada del algoritmo de Raytracing se encuentran en memoria de textura. Considerando estos casos de prueba, el correcto uso de la jerarquía de memoria permite que el algoritmo pierda menos tiempo accediendo a memoria siendo así (en promedio) tres veces y media más rápido que el algoritmo que no la usa.
+El incremento del tiempo de generación de imagen es mayor en el primer cambio de versión, esta diferencia está determinada por el uso de la jerarquía de memoria de la GPU. En la Versión RT-GPU todos los accesos a memoria son a memoria global mientras que en la Versión RT-GPU-JM la mayoría de los datos de entrada del algoritmo de Raytracing se encuentran en memoria de textura. Considerando estos casos de prueba, el correcto uso de la jerarquía de memoria permite que el algoritmo pierda menos tiempo accediendo a memoria siendo así (en promedio) tres veces y media más rápido que el algoritmo que no la usa.
 
-En el segundo cambio de versión se mejora el algoritmo de intersección rayo-triángulo, el nuevo test de intersección logra el mismo objetivo que el anterior pero con menos operaciones aritméticas, lo cual implica una dis\-mi\-nu\-ción del tiempo de generación de la imagen. Considerando los resultados obtenidos esta mejora del algoritmo de Raytracing ayuda a que la Versión RT(GPU-JM-IR) genere la imagen un 30\% más rápido que en la Versión RT(GPU-JM).
+En el segundo cambio de versión se mejora el algoritmo de intersección rayo-triángulo, el nuevo test de intersección logra el mismo objetivo que el anterior pero con menos operaciones aritméticas, lo cual implica una dis\-mi\-nu\-ción del tiempo de generación de la imagen. Considerando los resultados obtenidos esta mejora del algoritmo de Raytracing ayuda a que la Versión RT-GPU-JM-IR genere la imagen un 30\% más rápido que en la Versión RT-GPU-JM.
 
 \begin{figure}
     \centering
@@ -344,7 +344,7 @@ En el segundo cambio de versión se mejora el algoritmo de intersección rayo-triá
         \label{fig:CompVersionesRenders:c} %% label for second subfigure
         \includegraphics[width=0.3\textwidth]{./Capitulo5/renderPRI5Version3}
     }
-    \caption{Render de PRI\_V en GPU con la Versión RT(GPU), RT(GPU-JM) y RT(GPU-JM-IR) respectivamente.}
+    \caption{Render de PRI\_V en GPU con la Versión RT-GPU, RT-GPU-JM y RT-GPU-JM-IR respectivamente.}
     \label{fig:CompVersionesRenders} %% label for entire figure
 \end{figure}
 
@@ -354,7 +354,7 @@ En la Figura \ref{fig:CompVersionesRenders} se muestran los renders del caso de 
 
 \subsection{Comparación entre C y CUDA}\label{sec:ComparacionCvsCUDA}
 
-La comparación de rendimiento entre el algoritmo para CPU y el algoritmo para GPU se hizo usando los casos de prueba DIST\_I, DIST\_II, DIST\_II y BUNNY. Para esta comparación se usa la versión más eficiente de los algoritmos, la Versión RT(GPU-JM-IR) y la Versión RT(CPU-IR), ejecutando en el Equipo GTX260. En la Tabla \ref{table:CvsCUDACPU} se muestran los resultados obtenidos al ejecutar los casos de prueba sobre CPU, mientras que en la Tabla \ref{table:CvsCUDAGPU} se muestran los resultados obtenidos al ejecutar los mismos casos sobre GPU.
+La comparación de rendimiento entre el algoritmo para CPU y el algoritmo para GPU se hizo usando los casos de prueba DIST\_I, DIST\_II, DIST\_II y BUNNY. Para esta comparación se usa la versión más eficiente de los algoritmos, la Versión RT-GPU-JM-IR y la Versión RT-CPU-IR, ejecutando en el Equipo GTX260. En la Tabla \ref{table:CvsCUDACPU} se muestran los resultados obtenidos al ejecutar los casos de prueba sobre CPU, mientras que en la Tabla \ref{table:CvsCUDAGPU} se muestran los resultados obtenidos al ejecutar los mismos casos sobre GPU.
 
 \begin{table}
 \begin{center}
@@ -463,7 +463,7 @@ Los resultados obtenidos con los casos de prueba DIST\_I, DIST\_II, DIST\_III y 
 
 La comparación de rendimiento entre las diferentes versiones del algoritmo para GPU se hizo usando los casos de prueba PRI\_I a PRI\_V. Esta comparación entre versiones consta de dos partes, en la primera se determina la grilla optima para cada caso de prueba y en la segunda se ejecuta cada caso de prueba en cada una de las versiones del algoritmo utilizando su grilla optima.
 
-Para determinar la grilla optima para cada escena de prueba se usa la Versión RT(GPU-JM-IR) del algoritmo para GPU, ejecutando en el Equipo GTX260. En la Tabla \ref{table:CompVersionesBuscarGrilla} se muestran los resultados obtenidos al ejecutar los casos de prueba sobre GPU. Observando los resultados se puede concluir que la grilla optima para todos los casos de prueba se construye partiendo en dos cada eje.
+Para determinar la grilla optima para cada escena de prueba se usa la Versión RT-GPU-JM-IR del algoritmo para GPU, ejecutando en el Equipo GTX260. En la Tabla \ref{table:CompVersionesBuscarGrilla} se muestran los resultados obtenidos al ejecutar los casos de prueba sobre GPU. Observando los resultados se puede concluir que la grilla optima para todos los casos de prueba se construye partiendo en dos cada eje.
 
 Los resultados obtenidos en estas primeras pruebas muestran que a medida que aumenta la cantidad de primitivas con que esta construida la escena aumenta el tiempo de generación de imagen, y por lo tanto disminuyen los FPS. Esto se pensaba antes de ejecutar estos casos de prueba y fue corroborado por los mismos. También se pensaba que al aumentar la cantidad de primitivas de la escena aumentaría la cantidad de voxels que debía tener la grilla optima, pero esto no fue validado por los resultados obtenidos. Esto puede deberse a que el incremento de la cantidad de primitivas no es suficientemente grande como para obligar a aumentar la resolución de la grilla.
 
@@ -500,7 +500,7 @@ Una vez determinada la grilla optima para cada caso de prueba, se ejecuta cada c
 \resizebox{12cm}{!}{
     \begin{tabular}{|c|c|c|c|c|}
     \hline
-    Escena & Tamaño Grilla Óptimo & RT(GPU) (FPS) & RT(GPU-JM) (FPS) & RT(GPU-JM-IR) (FPS)\\
+    Escena & Tamaño Grilla Óptimo & RT-GPU (FPS) & RT-GPU-JM (FPS) & RT-GPU-JM-IR (FPS)\\
     \hline
     PRI\_I & 2x2x2 & 5.8 & 26.2 & 36.7\\
     \hline
@@ -521,9 +521,9 @@ Una vez determinada la grilla optima para cada caso de prueba, se ejecuta cada c
 
 Sin duda los resultados de la Tabla \ref{table:CompVersionesFPS} reflejan que a medida que se fue mejorando el algoritmo se incrementaron los FPS para todos los casos de prueba.
 
-El incremento del tiempo de generación de imagen es mayor en el primer cambio de versión, esta diferencia esta determinada por el uso de la jerarquía de memoria de la GPU. En la Versión RT(GPU) todos los accesos a memoria son a memoria global mientras que en la Versión RT(GPU-JM) la mayoría de los datos de entrada del algoritmo de Raytracing se encuentran en memoria de textura. Considerando estos casos de prueba, el correcto uso de la jerarquía de memoria permite que el algoritmo pierda menos tiempo accediendo a memoria siendo así (en promedio) tres veces y media más rápido que el algoritmo que no la usa.
+El incremento del tiempo de generación de imagen es mayor en el primer cambio de versión, esta diferencia esta determinada por el uso de la jerarquía de memoria de la GPU. En la Versión RT-GPU todos los accesos a memoria son a memoria global mientras que en la Versión RT-GPU-JM la mayoría de los datos de entrada del algoritmo de Raytracing se encuentran en memoria de textura. Considerando estos casos de prueba, el correcto uso de la jerarquía de memoria permite que el algoritmo pierda menos tiempo accediendo a memoria siendo así (en promedio) tres veces y media más rápido que el algoritmo que no la usa.
 
-En el segundo cambio de versión se mejora el algoritmo de intersección rayo-triángulo, el nuevo test de intersección logra el mismo objetivo que el anterior pero con menos operaciones aritméticas, lo cual implica una disminución del tiempo de generación de la imagen. Considerando los resultados obtenidos esta mejora del algoritmo de Raytracing ayuda a que la Versión RT(GPU-JM-IR) genere la imagen un 30\% más rápido que en la Versión RT(GPU-JM).
+En el segundo cambio de versión se mejora el algoritmo de intersección rayo-triángulo, el nuevo test de intersección logra el mismo objetivo que el anterior pero con menos operaciones aritméticas, lo cual implica una disminución del tiempo de generación de la imagen. Considerando los resultados obtenidos esta mejora del algoritmo de Raytracing ayuda a que la Versión RT-GPU-JM-IR genere la imagen un 30\% más rápido que en la Versión RT-GPU-JM.
 
 \begin{figure}
     \centering
@@ -539,7 +539,7 @@ En el segundo cambio de versión se mejora el algoritmo de intersección rayo-triá
         \label{fig:CompVersionesRenders:c} %% label for second subfigure
         \includegraphics[width=0.3\textwidth]{./Capitulo5/renderPRI5Version3}
     }
-    \caption{Render de PRI\_V en GPU con la Versión RT(GPU), RT(GPU-JM) y RT(GPU-JM-IR) respectivamente.}
+    \caption{Render de PRI\_V en GPU con la Versión RT-GPU, RT-GPU-JM y RT-GPU-JM-IR respectivamente.}
     \label{fig:CompVersionesRenders} %% label for entire figure
 \end{figure}
 
@@ -548,7 +548,7 @@ En la Figura \ref{fig:CompVersionesRenders} se muestran los renders del caso de 
 
 \subsection{Comparación entre equipos}\label{sec:ComparacionEquipos}
 
-La comparación de rendimiento entre los diferentes equipos del proyecto se hizo usando la Versión RT(GPU-JM-IR) del algoritmo implementado para GPU. Los casos de prueba de esta comparación son: DRAGON, BUDDHA y ALEXANDRA. En cada equipo del proyecto, se corren los casos de prueba usando varios tamaños de grilla, de esta forma se puede determinar el tamaño de grilla óptimo para cada caso y equipo. El mejor tiempo de generación de imagen para cada caso y equipo es analizado y comparado con los demás.
+La comparación de rendimiento entre los diferentes equipos del proyecto se hizo usando la Versión RT-GPU-JM-IR del algoritmo implementado para GPU. Los casos de prueba de esta comparación son: DRAGON, BUDDHA y ALEXANDRA. En cada equipo del proyecto, se corren los casos de prueba usando varios tamaños de grilla, de esta forma se puede determinar el tamaño de grilla óptimo para cada caso y equipo. El mejor tiempo de generación de imagen para cada caso y equipo es analizado y comparado con los demás.
 
 En las Tablas \ref{table:EquiposEquipo1}, \ref{table:EquiposEquipo2} y \ref{table:EquiposEquipo3} se muestran los resultados obtenidos para los equipos 9500M, 9600M y GTX260 respectivamente.
 
@@ -674,7 +674,7 @@ Günther et al. usan la estructura Kd-Tree como método de a\-ce\-le\-ra\-ción esp
 
 La GPU utilizada en el trabajo de Günther es nVidia modelo GeForce 8800 GTX, la cual posee 112 núcleos. En el marco de este proyecto la GPU que más se adapta para este caso es la del equipo GTX260, ya que si bien posee más cantidad de núcleos de procesamiento esta cantidad se ve compensada por el uso de la estructura Kd-Tree por parte del algoritmo de Günther et al.
 
-En la Figura \ref{fig:ExitosoBunnyRenders:a} se muestra el render extraído del trabajo de Günther et al. y en la Figura \ref{fig:ExitosoBunnyRenders:b} se muestra el render de la escena BUNNY generado con la Versión RT(GPU-JM-IR) del algoritmo implementado para GPU.
+En la Figura \ref{fig:ExitosoBunnyRenders:a} se muestra el render extraído del trabajo de Günther et al. y en la Figura \ref{fig:ExitosoBunnyRenders:b} se muestra el render de la escena BUNNY generado con la Versión RT-GPU-JM-IR del algoritmo implementado para GPU.
 
 \begin{figure}
     \centering
@@ -699,7 +699,7 @@ La resolución de la imagen que genera el algoritmo de Raytracing implementado po
 
 Debido a que se tiene acceso al ejecutable del algoritmo del \emph{Alexandra Institute} se optó por ejecutar la comparación de rendimiento entre ambos algoritmos en el equipo 9600M.
 
-En la Figura \ref{fig:ExitosoAlexRenders:a} se muestra un render generado por la aplicación desarrollada por el \emph{Alexandra Institute} y en la Figura \ref{fig:ExitosoAlexRenders:b} se muestra el render de la escena ALEXANDRA generado con la Versión RT(GPU-JM-IR) del algoritmo implementado para GPU sobre el equipo 9600M.
+En la Figura \ref{fig:ExitosoAlexRenders:a} se muestra un render generado por la aplicación desarrollada por el \emph{Alexandra Institute} y en la Figura \ref{fig:ExitosoAlexRenders:b} se muestra el render de la escena ALEXANDRA generado con la Versión RT-GPU-JM-IR del algoritmo implementado para GPU sobre el equipo 9600M.
 
 \begin{figure}
     \centering
@@ -711,7 +711,7 @@ En la Figura \ref{fig:ExitosoAlexRenders:a} se muestra un render generado por la
         \label{fig:ExitosoAlexRenders:b} %% label for second subfigure
         \includegraphics[width=0.45\textwidth]{./Capitulo5/renderAlexNuestro}
     }
-    \caption{Render de la aplicación del \emph{Alexandra Institute} y render de ALEXANDRA en GPU sobre Equipo 9600M usando la Versión RT(GPU-JM-IR), respectivamente.}
+    \caption{Render de la aplicación del \emph{Alexandra Institute} y render de ALEXANDRA en GPU sobre Equipo 9600M usando la Versión RT-GPU-JM-IR, respectivamente.}
     \label{fig:ExitosoAlexRenders} %% label for entire figure
 \end{figure}
 
