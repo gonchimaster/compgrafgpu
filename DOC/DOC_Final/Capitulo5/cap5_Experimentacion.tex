@@ -192,9 +192,7 @@ En la Tabla \ref{table:CPTerceros} se muestran algunas características destacabl
 
 \section{Plataforma de ejecución}
 
-Las características de los equipos utilizados para ejecutar los casos de prueba se muestran en la Tabla \ref{table:EquiposUtilizados}. Todos los equipos utilizados usan \emph{Windows} como sistema operativo, a excepción del equipo 9800 que utiliza \emph{Linux}.
-
-%%%% Falta agregar la plataforma linux y detalles de la tarjeta gráfica...
+Las características de los equipos utilizados para ejecutar los casos de prueba se muestran en la Tabla \ref{table:EquiposUtilizados}. Todos los equipos utilizados usan \emph{Windows} como sistema operativo, a excepción del equipo GTX9800 que utiliza \emph{Linux}.
 
 \begin{table}[!hbt]
 \begin{center}
@@ -209,6 +207,8 @@ Las características de los equipos utilizados para ejecutar los casos de prueba 
     9600M & Core 2 Duo P8400 2.26GHz & 4GB DDR2 667 MHz & GeForce 9600M GT & 512 MB\\
     \hline
     GTX260 & Core 2 Duo E7500 2.93GHz & 4GB DDR2 667 MHz & GeForce GTX 260 & 896 MB\\
+    \hline
+    GTX9800 & Core 2 Duo E5200 2.50GHz & 2GB DDR2 667 MHz & GeForce GTX 9800 & 512 MB\\
     \hline
     \end{tabular}
     }
@@ -232,6 +232,8 @@ Todos los equipos utilizados para ejecutar los casos de prueba del proyecto usan
     9500M & 4 & 32 & 500 & 1250 & 400\\
     \hline
     GTX260 & 27 & 216 & 576 & 1242 & 999\\
+    \hline
+    GTX9800 & 16 & 128 & 675 & 1688 & 1100\\
     \hline
     \end{tabular}
 }
@@ -448,7 +450,7 @@ Los resultados obtenidos con los casos de prueba DIST\_I, DIST\_II, DIST\_III y 
 
 La comparación de rendimiento entre los diferentes equipos del proyecto se hizo usando la Versión RT-GPU-JM-IR del algoritmo implementado para GPU. Los casos de prueba de esta comparación son: DRAGON, BUDDHA y ALEXANDRA. En cada equipo del proyecto, se corren los casos de prueba usando varios tamaños de grilla, de esta forma se puede determinar el tamaño de grilla óptimo para cada caso y equipo. El mejor tiempo de generación de imagen para cada caso y equipo es analizado y comparado con los demás.
 
-En las Tablas \ref{table:EquiposEquipo1}, \ref{table:EquiposEquipo2} y \ref{table:EquiposEquipo3} se muestran los resultados obtenidos para los equipos 9500M, 9600M y GTX260 respectivamente.
+En las Tablas \ref{table:EquiposEquipo1}, \ref{table:EquiposEquipo2}, \ref{table:EquiposEquipo3} y \ref{table:EquiposEquipo4} se muestran los resultados obtenidos para los equipos 9500M, 9600M, GTX260 y GTX9800 respectivamente.
 
 \begin{table}[!hbt]
 \begin{center}
@@ -528,14 +530,47 @@ En las Tablas \ref{table:EquiposEquipo1}, \ref{table:EquiposEquipo2} y \ref{tabl
 \end{center}
 \end{table}
 
+\begin{table}[!hbt]
+\begin{center}
+\resizebox{12cm}{!}{
+    \begin{tabular}{|c|c|c|c|c|c|c|}
+    \hline
+    \multirow{2}{*}{\textbf{Escena}}&\multicolumn{6}{|c|}{\textbf{Tamaño de grilla}}\\
+    \cline{2-7}
+    & 20x20x20 & 46x46x46 & 92x92x92 & 138x138x138 & 180x180x180 & 230x230x230\\
+    \hline
+    DRAGON & 5.6 & 12.3 & 12.8 & 9.0 & 6.8 & 5.0\\
+    \hline
+    BUDDHA & 5.0 & 10.0 & 10.4 & 7.9 & 6.1 & 4.5\\
+    \hline
+    \multirow{2}{*}{}&\multicolumn{6}{|c|}{}\\
+    \cline{2-7}
+    & 1x1x1 & 3x3x3 & 6x6x6 & 10x10x10 & 15x15x15 & 30x30x30\\
+    \hline
+    ALEXANDRA & 29.5 & 57.7 & 74.4 & 70.5 & 69.6 & 50.1\\
+    \hline
+    \end{tabular}
+}
+\caption{FPS de DRAGON, BUDDHA y ALEXANDRA en el equipo GTX9800 sobre GPU.}
+\label{table:EquiposEquipo4}
+\end{center}
+\end{table}
+
 De los resultados obtenidos se desprende que para los casos de prueba DRAGON, BUDDHA y ALEXANDRA el tamaño de grilla donde se logran más FPS es el mismo independientemente del equipo en donde se ejecuten. El modelo de programación de CUDA es capaz de ejecutar más hilos en paralelo cuanto más procesadores tenga la GPU. Basado en esto se puede afirmar que el tamaño de grilla óptimo no depende del grado de paralelismo que se logre.
 
-Todas la pruebas realizadas en esta comparación confirmaron que cuanto más procesadores posea la GPU más rápido será la generación de imágenes mediante el algoritmo de Raytracing para CUDA. Los resultados demuestran que la aplicación CUDA implementada puede escalar automáticamente en el número de procesadores de la GPU, esta importante característica surge como consecuencia del modelo de programación de CUDA que permite lograrlo muy fácilmente.
+En la Figura \ref{fig:GraficoFPSFuncionProc} se muestra un gráfico de la cantidad de FPS en función de la cantidad de procesadores de la GPU para cada caso de prueba utilizando su grilla optima.
+\begin{figure}[H]
+    \centering
+        \includegraphics[width=0.85\textwidth]{./Capitulo5/graficaFPS-F(cant_proc)}
+    \caption{FPS en función de la cantidad de procesadores de la GPU.}
+    \label{fig:GraficoFPSFuncionProc}
+\end{figure}
 
-%%%%% se podría incluir una grafica para visualizar mejor los datos
-La GPU del equipo GTX260 tiene un poco más de seis veces más procesadores que la del equipo 9600M. Si consideramos los resultados de los casos DRAGON, BUDDHA y ALEXANDRA con sus grillas óptimas, se observa que la a\-ce\-le\-ra\-ción en la generación de imagen nunca llega a 6, sino que es aproximadamente 5, 4 y 4 respectivamente. Basado en esta información se puede concluir que la ganancia de FPS no es lineal con respecto al aumento de procesadores. Esto se debe al tiempo empleado para la lectura de datos de entrada, a retrasos por se\-ria\-li\-za\-ción de los accesos a memoria o por sincronizaciones entre hilos al momento de escribir los resultados.
+Todas las pruebas realizadas en esta comparación con los casos de prueba DRAGON y BUDDHA (los cuales se consideran complejos por estar conformados por 100.000 triángulos), confirmaron que cuanto más procesadores posea la GPU más rápido será la generación de imágenes mediante el algoritmo de Raytracing para CUDA. Por otro lado los resultados de las pruebas realizadas con el caso ALEXANDRA (considerado una escena sencilla por estar conformado por 236 triángulos) permiten afirmar que el \emph{overhead} generado por el uso de más procesadores afecta al tiempo de generación de imagen. Igualmente los resultados demuestran que la aplicación CUDA implementada puede escalar automáticamente en el número de procesadores de la GPU, esta importante característica surge como consecuencia del modelo de programación de CUDA que permite lograrlo muy fácilmente.
 
-En la Figura \ref{fig:CompEquiposRenders} se muestran renders del caso de prueba BUDDHA con el algoritmo implementado en CUDA. El render de la Figura \ref{fig:CompEquiposRenders:a} fue generado usando el equipo 9500M, el de la Figura \ref{fig:CompEquiposRenders:b} fue generado usando el equipo 9600M y el de la Figura \ref{fig:CompEquiposRenders:c} con el equipo GTX260. No se observan diferencias importantes entre las imágenes generadas por los diferentes equipos utilizados en el proyecto. El aumento del poder de cómputo de la GPU implica un aumento en la cantidad de FPS, esta disminución del tiempo de generación de imágenes no implica perdida de calidad de las mismas.
+La GPU del equipo GTX260 tiene un poco más de seis veces más procesadores que la del equipo 9600M. Como se muestra en la Figura \ref{fig:GraficoFPSFuncionProc}, si consideramos los resultados de los casos DRAGON, BUDDHA y ALEXANDRA con sus grillas óptimas, se observa que la a\-ce\-le\-ra\-ción en la generación de imagen nunca llega a 6, sino que es aproximadamente 5, 4 y 4 respectivamente. Basado en esta información se puede concluir que la ganancia de FPS no es lineal con respecto al aumento de procesadores. Esto se debe al tiempo empleado para la lectura de datos de entrada, a retrasos por se\-ria\-li\-za\-ción de los accesos a memoria o por sincronizaciones entre hilos al momento de escribir los resultados.
+
+En la Figura \ref{fig:CompEquiposRenders} se muestran renders del caso de prueba BUDDHA con el algoritmo implementado en CUDA. El render de la Figura \ref{fig:CompEquiposRenders:a} fue generado usando el equipo 9500M, el de la Figura \ref{fig:CompEquiposRenders:b} fue generado usando el equipo 9600M, el de la Figura \ref{fig:CompEquiposRenders:c} usando el equipo GTX260 y el de la Figura \ref{fig:CompEquiposRenders:d} con el equipo GTX9800. No se observan diferencias importantes entre las imágenes generadas por los diferentes equipos utilizados en el proyecto. El aumento del poder de cómputo de la GPU implica un aumento en la cantidad de FPS, esta disminución del tiempo de generación de imágenes no implica perdida de calidad de las mismas.
 
 \begin{figure}
     \centering
@@ -551,7 +586,11 @@ En la Figura \ref{fig:CompEquiposRenders} se muestran renders del caso de prueba
         \label{fig:CompEquiposRenders:c} %% label for second subfigure
         \includegraphics[width=0.3\textwidth]{./Capitulo5/renderBuddhaEquipo3}
     }
-    \caption{Render de BUDDHA en GPU sobre los equipos 9500M, 9600M y GTX260 respectivamente.}
+    \subfigure[]{
+        \label{fig:CompEquiposRenders:d} %% label for second subfigure
+        \includegraphics[width=0.3\textwidth]{./Capitulo5/renderBuddhaEquipo4}
+    }
+    \caption{Render de BUDDHA en GPU sobre los equipos 9500M, 9600M, GTX260 y GTX9800 respectivamente.}
     \label{fig:CompEquiposRenders} %% label for entire figure
 \end{figure}
 
