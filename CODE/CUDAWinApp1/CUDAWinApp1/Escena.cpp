@@ -307,7 +307,7 @@ int EscenaCrearDesdeArchivo(Escena* escena, char* filename){
 			(float)objData.vertex_list[objData.camera->camera_look_point_index]->e[1],
 			(float)objData.vertex_list[objData.camera->camera_look_point_index]->e[2]);
 	
-	escena->camara.direccion =	target - escena->camara.ojo;
+	escena->camara.target =	target;
 	
 	escena->camara.up = make_float3(
 			(float)objData.vertex_normal_list[objData.camera->camera_up_norm_index]->e[0],

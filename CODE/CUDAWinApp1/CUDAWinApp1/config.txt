@@ -4,16 +4,16 @@
 #=	SI NO SE COLOCA UN PARAMETRO TOMARA EL VALOR POR DEFECTO
 
 #=TAMANIO DE LA PARTICION
-TAMANIO_GRILLA.X=230
-TAMANIO_GRILLA.Y=230
-TAMANIO_GRILLA.Z=230
+TAMANIO_GRILLA.X=6
+TAMANIO_GRILLA.Y=6
+TAMANIO_GRILLA.Z=6
 #=RESOLUCION DE LA IMAGEN
 RESOLUCION.X=640
 RESOLUCION.Y=480
 #=VALOR TOMADO COMO EL INFINITO SEGUN EL PROGRAMA
 INFINITO=3.402823466e+38F
 #=VALOR TOMADO COMO EL CERO DE LOS float
-ZERO=0.00000001
+ZERO=0.000001
 #=VALOR DE PROFUNDIDAD EN LA RECURSION DE LAS REFLECCIONES ESPECULARES
 PROFUNDIDAD_RECURSION=3
 #=CANTIDAD DE THREADS A LANZAR
@@ -39,10 +39,11 @@ THREADS.Z=1
 #=ESCENA=..\escenas\elefantesChicosDistNOUniformeSOLAP.obj
 #=ESCENA=..\escenas\dosElefMediumSobreConos.obj
 #=ESCENA=..\escenas\dosElefChicosSobreConos.obj
-ESCENA=..\escenas\benchmark\buddhaRT.obj
+#=ESCENA=..\escenas\benchmark\buddhaRT.obj
 #=ESCENA=..\escenas\benchmark\dragonRT.obj
 #=ESCENA=..\escenas\benchmark\StanfordBunny.obj
-#=ESCENA=..\escenas\benchmark\escenaAlexandra.obj
+ESCENA=..\escenas\benchmark\escenaAlexandra.obj
+#=ESCENA=C:\Users\veronica\Desktop\alexandra.obj
 #=ESCENA=..\escenas\benchmark\cajaEsfera1.obj
 #=ESCENA=..\escenas\benchmark\cajaEsfera5.obj
 #=ESCENA=..\escenas\benchmark\elefantesChicosDistUniforme.obj

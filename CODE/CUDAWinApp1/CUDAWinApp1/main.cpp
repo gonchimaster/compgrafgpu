@@ -15,6 +15,7 @@
 #include "SDL/SDL.h"
 #include "SDL/SDL_thread.h"
 #include "CargadorDeConfiguracion.h"
+#include "string.h";
 
 
 
@@ -117,14 +118,22 @@ Escena escena2;
 SDL_Surface *screen;
 float3 *imagen;
 
+bool increment_x, decrement_x;
+bool increment_y, decrement_y;
+bool increment_z, decrement_z;
+bool aumenta = true, target = false;
+float delta_value = 1.0f;
+
 int CreateAndDisplayImage(void* pParams){
 //TODO	SDL_Surface *image;
 	clock_t t_inicial, t_final;
 	double tiempoTotal = 0;
 	int cantImagenes = 0;
-	char textoVentana [100];
+	char* textoVentana;
 	
-	sprintf(&(textoVentana[0]), "%d OBJ - [%d x %d x %d] GRID - [%d x %d] RES", escena2.cant_objetos, 
+	textoVentana = (char*)malloc(256 * sizeof(char));
+
+	sprintf(textoVentana, "%d OBJ - [%d x %d x %d] GRID - [%d x %d] RES", escena2.cant_objetos, 
 			(int)escena2.grilla.dimension.x, (int)escena2.grilla.dimension.y, (int)escena2.grilla.dimension.z,
 			config.resolucion.x, config.resolucion.y);
 
@@ -169,10 +178,36 @@ int CreateAndDisplayImage(void* pParams){
 		}
 
 		raytrace(&escena2, config, imagen);
-		UpdateCamera(&escena2, config);
-
+		
 		t_final = clock();
 		
+		UpdateCamera(&escena2, config);
+
+		if(decrement_x && target)
+			escena2.camara.target.x -= delta_value;
+		if(decrement_x && !target)
+			escena2.camara.ojo.x -= delta_value;
+		if(increment_x && target)
+			escena2.camara.target.x += delta_value;
+		if(increment_x && !target)
+			escena2.camara.ojo.x += delta_value;
+		if(decrement_y && target)
+			escena2.camara.target.y -= delta_value;
+		if(decrement_y && !target)
+			escena2.camara.ojo.y -= delta_value;
+		if(increment_y && target)
+			escena2.camara.target.y += delta_value;
+		if(increment_y && !target)
+			escena2.camara.ojo.y += delta_value;
+		if(decrement_z && target)
+			escena2.camara.target.z -= delta_value;
+		if(decrement_z && !target)
+			escena2.camara.ojo.z -= delta_value;
+		if(increment_z && target)
+			escena2.camara.target.z += delta_value;
+		if(increment_z && !target)
+			escena2.camara.ojo.z += delta_value;
+
 		Uint32 color = 0xFFFFFFFF;
 		int i = 0;
 		int j = 0;
@@ -200,9 +235,17 @@ int CreateAndDisplayImage(void* pParams){
 		cantImagenes++;
 		}
 		if(!exited ){
-		sprintf(&(textoVentana[0]), "%d IMG - %.2f SEG - %.2f FPS - %d OBJ - [%d x %d x %d] GRID - [%d x %d] RES", cantImagenes, tiempoTotal,
-			cantImagenes / tiempoTotal, escena2.cant_objetos, (int)escena2.grilla.dimension.x, (int)escena2.grilla.dimension.y,
+			sprintf(textoVentana, "%d IMG - %.2f SEG - %.2f FPS - %d OBJ - [%d x %d x %d] GRID - [%d x %d] RES",
+				cantImagenes, tiempoTotal, cantImagenes / tiempoTotal, escena2.cant_objetos, (int)escena2.grilla.dimension.x, (int)escena2.grilla.dimension.y,
 			(int)escena2.grilla.dimension.z, config.resolucion.x, config.resolucion.y);
+			if(target)
+				textoVentana = strcat(&(textoVentana[0]), " - TARGET");
+			else
+				textoVentana = strcat(&(textoVentana[0]), " - EYE");
+			if(aumenta)
+				textoVentana = strcat(&(textoVentana[0]), " - INC");
+			else
+				textoVentana = strcat(&(textoVentana[0]), " - DEC");
 		}
 	}
 	return 1;
@@ -243,39 +286,60 @@ int main(int argc, char **argv)
 	while(!salir){
 		SDL_Event evento;
 		SDLKey tecla;
+		SDLMod modifier;
 		while (SDL_PollEvent(&evento)) {
+			tecla = evento.key.keysym.sym;
 			switch(evento.type) {
 				case SDL_KEYDOWN:
-					tecla = evento.key.keysym.sym;
-					//printf ("Evento KEY DOWN. Tecla=%d\n",tecla);
 					switch(tecla){
 						case SDLK_ESCAPE:
 							SDL_KillThread(thread);
 							salir = 1;
 							exited = true;
 							break;
-						case SDLK_LEFT:
-							escena2.camara.ojo.y -= 1.0f;
+						case SDLK_x:
+							decrement_x = !aumenta;
+							increment_x = !decrement_x;
 							break;
-						case SDLK_RIGHT:
-							escena2.camara.ojo.y += 1.0f;
+						case SDLK_y:
+							decrement_y = !aumenta;
+							increment_y = !decrement_y;
 							break;
-						case SDLK_UP:
-							escena2.camara.ojo.x -= 5.0f;
-							escena2.plano_de_vista.v1.x -= 5.0f;
-							escena2.plano_de_vista.v2.x -= 5.0f;
-							escena2.plano_de_vista.v3.x -= 5.0f;
+						case SDLK_z:
+							decrement_z = !aumenta;
+							increment_z = !decrement_z;
 							break;
-						case SDLK_DOWN:
-							escena2.camara.ojo.x += 5.0f;
-							escena2.plano_de_vista.v1.x += 5.0f;
-							escena2.plano_de_vista.v2.x += 5.0f;
-							escena2.plano_de_vista.v3.x += 5.0f;
+						case SDLK_a:
+							aumenta = !aumenta;
 							break;
-						}
+						case SDLK_t:
+							target = !target;
+							break;
+						case SDLK_q:
+							delta_value += 1.0f;
+							break;
+						case SDLK_w:
+							delta_value -= 1.0f;
+							break;
+					}
 					break;
 				case SDL_KEYUP:
-					//printf ("Evento KEY UP. Tecla=%d\n",evento.key.keysym.sym);					
+					switch(tecla){
+						case SDLK_x:
+							decrement_x = false;
+							increment_x = false;
+							break;
+						case SDLK_y:
+							decrement_y = false;
+							increment_y = false;
+							break;
+						case SDLK_z:
+							decrement_z = false;
+							increment_z = false;
+							break;
+						case SDLK_DOWN:
+							break;
+					}
 					break;
 				case SDL_MOUSEMOTION:
 					//printf ("Evento MOUSE MOVE. Coords (%d,%d)\n", evento.motion.x, evento.motion.y);
