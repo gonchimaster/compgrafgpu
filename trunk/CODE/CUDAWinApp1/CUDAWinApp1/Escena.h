@@ -5,7 +5,7 @@
 
 typedef struct {
 	float3 ojo;
-	float3 direccion;
+	float3 target;
 	float3 up;
 } Camara;
 

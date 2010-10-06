@@ -110,7 +110,7 @@ bool executeNineTest(Triangulo triTrasladado, float3 e0, float3 e1, float3 e2, f
 			pUno = dot(a_ij, make_float3(triTrasladado.v2));
 			pDos = dot(a_ij, make_float3(triTrasladado.v3));
 			
-			float radius = boxHalfSize.x * abs(a_ij.x) + boxHalfSize.y * abs(a_ij.y) + boxHalfSize.z * abs(a_ij.z);
+			float radius = boxHalfSize.x * fabsf(a_ij.x) + boxHalfSize.y * abs(a_ij.y) + boxHalfSize.z * abs(a_ij.z);
 			float min, max;
 			AuxiliarObtenerMinimoMaximo(pCero, pUno, pDos, &min, &max);
 			if(min > radius || max < -radius){

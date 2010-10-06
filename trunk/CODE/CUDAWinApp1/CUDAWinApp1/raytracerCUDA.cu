@@ -11,7 +11,6 @@
 #include <math_functions.h>
 #include <cutil_math.h>
 
-
 /////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////
 /////////////////          DECLARACIONES           //////////////////////
@@ -573,13 +572,43 @@ __global__ void calcularRayos(float4* rayos){
 
 extern "C" void UpdateCamera(Escena* es, Configuracion conf){
 
+	printf("target = (%f, %f, %f)\n", es->camara.target.x, es->camara.target.y, es->camara.target.z);
+	printf("eye = (%f, %f, %f)\n", es->camara.ojo.x, es->camara.ojo.y, es->camara.ojo.z);
+	float3 n = es->camara.ojo - es->camara.target;
+	float3 u = cross(es->camara.up, n);
+	float3 v = cross(n, u);
+	n = normalize(n);
+	u = normalize(u);
+	v = normalize(v);
+
+	float near = 1.0f;
+	float FOV = 45.0f;
+	float theta = (FOV * 3.14159f * 0.5f) / 180.0f;
+
+	float view_plane_width = 2 * tanf(theta) * near;
+	float view_plane_height = view_plane_width * ((float)conf.resolucion.y / (float)conf.resolucion.x);
+
+	float3 topLeft = -near * n - (view_plane_width * 0.5f) * u + (view_plane_height * 0.5f) * v;
+	float3 topRight = -near * n + (view_plane_width * 0.5f) * u + (view_plane_height * 0.5f) * v;
+	float3 bottomLeft = -near * n - (view_plane_width * 0.5f) * u - (view_plane_height * 0.5f) * v;
+	/* Se pasan a coordenadas absolutas de mundo */
+	topLeft = es->camara.ojo + topLeft;
+	topRight = es->camara.ojo + topRight;
+	bottomLeft = es->camara.ojo + bottomLeft;
+	float3 delta_x = (topRight - topLeft) / (float)conf.resolucion.x;
+	float3 delta_y = (bottomLeft - topLeft) / (float)conf.resolucion.y;
+
+	CUDA_SAFE_CALL(cudaMemcpyToSymbol(ini, &(topLeft), sizeof(float3)));
+	CUDA_SAFE_CALL(cudaMemcpyToSymbol(dx,&(delta_x),sizeof(float3)));
+	CUDA_SAFE_CALL(cudaMemcpyToSymbol(dy,&(delta_y),sizeof(float3)));
+
 	//SE ACTUALIZA LA CAMARA
 	CUDA_SAFE_CALL(cudaMemcpyToSymbol(ojo,&(es->camara.ojo),sizeof(float3)));
-	float3 dx_aca = make_float3((es->plano_de_vista.v2 - es->plano_de_vista.v1)/(float)conf.resolucion.x);
-	float3 dy_aca = make_float3((es->plano_de_vista.v3 - es->plano_de_vista.v1)/(float)conf.resolucion.y);
-	CUDA_SAFE_CALL(cudaMemcpyToSymbol(dx,&(dx_aca),sizeof(float3)));
-	CUDA_SAFE_CALL(cudaMemcpyToSymbol(dy,&(dy_aca),sizeof(float3)));
-	CUDA_SAFE_CALL(cudaMemcpyToSymbol(ini,&(es->plano_de_vista.v3),sizeof(float3)));
+	//float3 dx_aca = make_float3((es->plano_de_vista.v2 - es->plano_de_vista.v1)/(float)conf.resolucion.x);
+	//float3 dy_aca = make_float3((es->plano_de_vista.v3 - es->plano_de_vista.v1)/(float)conf.resolucion.y);
+	//CUDA_SAFE_CALL(cudaMemcpyToSymbol(dx,&(dx_aca),sizeof(float3)));
+	//CUDA_SAFE_CALL(cudaMemcpyToSymbol(dy,&(dy_aca),sizeof(float3)));
+	//CUDA_SAFE_CALL(cudaMemcpyToSymbol(ini,&(es->plano_de_vista.v3),sizeof(float3)));
 
 	//SE RE-CALCULAN LOS RAYOS A TRAZAR
 	dim3 gridR(conf.resolucion.x / conf.threads.x, conf.resolucion.y / conf.threads.y, 1);
