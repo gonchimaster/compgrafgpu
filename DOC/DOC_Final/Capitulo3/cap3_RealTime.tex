@@ -66,7 +66,7 @@ A la segunda categoría pertenecen las técnicas que buscan acelerar la intersecci
 
 Entre las estrategias más importantes para disminuir el tiempo de ejecución del algoritmo de Raytracing se encuentra el uso de estructuras de aceleración espacial. Al momento de llevar a cabo cualquier implementación no trivial del algoritmo se deben considerar este tipo de técnicas ya que las mismas permiten reducir su orden (de $O(N)$ a $O(\log N)$) \cite{wald::PhD}. A continuación se presentan las estructuras de aceleración espacial más usadas.
 
-\section{Estructuras de aceleración espacial}
+\section{Estructuras de aceleración espacial}\label{sec:EstAceleracionEsp}
 Si se consideran todos los chequeos necesarios para generar una imagen utilizando el algoritmo de Raytracing, estos pueden llegar a tomar el 95\% del tiempo de cálculo \cite{TesisEstructuras}.
 Se han desarrollado técnicas para optimizar el tiempo que toman las intersecciones rayo-objeto, basadas en tratar de minimizar el número de intersecciones. A continuación se muestran las más importantes de este tipo de técnicas según el trabajo de Thrane y Ole \cite{TesisEstructuras}.
 
