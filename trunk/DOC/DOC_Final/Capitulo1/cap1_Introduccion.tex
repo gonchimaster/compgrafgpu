@@ -1,3 +1,33 @@
 \chapter{Introducción} % 3 o 4 páginas.....
 
-FALTA COMPLETAR.....
+Este proyecto consiste en estudiar las distintas estrategias de trabajo en las tarjetas gráficas (GPU Graphic Processing Unit) modernas. Para esto se evaluaran las estrategias a seguir para la resolución de problemas utilizando paralalelismos en las GPUs actuales, las cuales pueden ser consideradas en muchos casos de procesamiento para cualquier propósito (GPGPU de su sigla en inglés General Purpose Graphic Processing Unit). A partir de este punto se diseña y personaliza el algoritmo de Raytracing que se encuentra ampliamente extendido en el área de la computación gráfica, siendo la base para otros algoritmos de generación de imágenes fotorealistas como pueden ser Photon Mappint y Radiosidad. Además se evaluaron las estrategias para medir la calidad de los resultados. Bajo la premisa de evaluar la calidad del resultado del proyecto tambien se generaron un conjunto de casos de prueba para la aplicación construida con el fin de evaluar los resultados en varios aspectos.
+
+
+\section{Objetivos}
+
+%Esta primer parte la pongo exactamente como en el brief del proyecto
+En los últimos años las tarjetas gráficas (co-procesador gráfico, GPU) han  experimentado una evolución explosiva.  La evolución no solo fue cuantitativa (capacidad de cómputo) sino que en gran medida ha sido cualitativa (han pasado a computar etapas que antes las computaba la CPU). Este hecho, ha motivado que muchos científicos busquen la utilización de las GPUs para la resolución de problemas generales (bases de datos, computación científica, etc). En particular en áreas de cómputo intensivo, entre las que se destaca la computación gráfica.
+
+En gran medida el aumento en la capacidad de cómputo de las GPUs se sustenta en su arquitectura que permite   trabajar con estrategias de cálculo paralelo.   La arquitectura  de las GPUs evolucionó en forma importante en este siglo en varios aspectos (capacidad, cantidad de procesadores, etc), destacándose especialmente la mejora  en la precisión de los datos con los que trabaja. A comienzos de los años 2000 disponían solamente de números de 8 bits, mientras que en el año 2003 pasaron a trabajar con números en punto flotante de simple precisión de 32 bit.
+
+En base a lo mencionado anteriormente, los objetivos del proyecto son estudiar la arquitectura de las GPU modernas, diseñar e implementar algoritmos para computación gráfica sobre GPU y  evaluar los algoritmos desarrollados sobre un conjunto de casos de pruebas representativos.
+
+
+El trabajo del proyecto tiene como principales metas lograr relevar y estudiar los algoritmos implementados en GPU, así como la arquitectura que presentan. Evaluar las implementaciones existentes de los algoritmos de computación gráfica, comparando luego con una implementación propia. También se proyecta evaluar las diferencias que existen de performance entre una GPU y un CPU clásica, cuyos costos en la actualidad son similares. Por otra parte se desea definir un conjunto de casos de prueba que ayuden en estas comparaciones. Por último evaluar el algoritmo desde el punto de vista de la calidad de los resultados así como también en el desempeño computacional de los algoritmos desarrollados.
+
+
+\section{Descripción del documento}
+Este documento se divide en seis capítulos y dos apéndices (Esto va a cambiar si agregamos apéndices para el artículo) cada uno con un objetivo particular, comenzando por introducir al lector en los temas que se tomarán como base para el desarrollo de este proyecto.
+
+El primer capítulo es una introducción a temas generales de la generación de imágenes por computadora. En esta sección se describe el algoritmo a implementar así como también otros algoritmos relacionados y se introducen conceptos básicos necesarios para comprender los objetivos y los pormenores de los algoritmos de computación gráfica. Se descompone en tres subsecciones que presentarán los conceptos básicos, una clasificación de los modelos de iluminación que siguen para modelar la forma de calcular luces y sombras basándose en los fenómenos naturales de la luz y una introducción al algoritmo de Raytracing en ese orden.
+
+El segundo capítulo toma como punto de partida el algoritmo de Raytracing descrito en la sección anterior y evalúa las distintas alternativas para la aceleración del algoritmo, así como también las posibles aplicaciones de paralelismos en su implementación. También introduce al estado del arte en el algoritmo, mostrando cuan potente puede llegar a ser.
+
+En el capítulo tres se presenta la solución planteada para el proyecto. Se presenta la arquitectura de la solución, cómo se divide y como interactuan cada una de las partes para lograr el objetivo final: generar la imagen de manera correcta en el menor tiempo posible. Este capítulo introduce así mismo las distintas variantes implementadas y las mejoras introducidas en cada una de las versiones.
+
+En el capítulo de análisis experimental se presentan las evaluaciones de los métodos relevados para la cuantificación de la calidad de las imágenes generadas y se presenta el conjunto de casos de prueba a utilizar, mostrando la relevancia de cada uno de ellos. Utilizando estos casos de prueba se realizan pruebas al algoritmo comparando distintas escenarios del algoritmo y algunas comparaciones con otras implementaciones, mostrando de forma tabular los resultados obtenidos.
+
+La última sección muestra las conclusiones del trabajo y las posibles mejoras o cambios que se podrán introducir al algoritmo implementado. En esta sección se evalúa el cumplimiento de los objetivos planteados en esta sección así como los aportes a nivel personal y profesional a los autores y a los integrantes de la comunidad de investigadores del área.
+
+Los apéndices muestran la estructura utilizada para el almacenaje de los datos necesarios para el algoritmo en el primero y en el segundo apéndice se muestran otras posibles estructuras que podrían haberse utilizado para acelerar el algoritmo, estas fueron evaluadas para poder decidir que estructura utilizar.
+
