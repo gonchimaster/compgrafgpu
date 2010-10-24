@@ -2,16 +2,16 @@
 
 \section{Introducción}
 
-El principal objetivo de este proyecto es acelerar el algoritmo de Raytracing utilizando GPUs, buscando renderizar imágenes en tiempo menor al que insume el algoritmo tradicional en CPU y sin perder calidad en las imágenes generadas.
+El principal objetivo de este proyecto es acelerar el algoritmo de \emph{ray tracing} utilizando GPUs, buscando renderizar imágenes en tiempo menor al que insume el algoritmo tradicional en CPU y sin perder calidad en las imágenes generadas.
 
-La primera propuesta de aceleración se basa en paralelizar el trazado de rayos primarios utilizando las capacidades de ejecución multihilo de las GPUs. Recordar que para obtener el color de un pixel con Raytracing se debe lanzar un rayo primario (como mínimo), entonces para renderizar una imagen cuya resolución sea 1024 por 768 pixeles se deben trazar al menos 786432 rayos primarios. En una implementación tradicional del algoritmo se procesa un pixel a la vez, es decir en forma secuencial.
+La primera propuesta de aceleración se basa en paralelizar el trazado de rayos primarios utilizando las capacidades de ejecución multihilo de las GPUs. Recordar que para obtener el color de un píxel con \emph{ray tracing} se debe lanzar un rayo primario (como mínimo), entonces para renderizar una imagen cuya resolución sea de 1024 por 768 píxeles se deben trazar al menos 786432 rayos primarios. En una implementación tradicional del algoritmo se procesa un píxel a la vez, es decir en forma secuencial, mientras que en la propuesta se procesan de forma paralela.
 
 \section{Descripción general}
 
-El algoritmo de Raytracing de Whitted requiere como entrada una escena, la cual será renderizada y posee varias etapas. En el Algoritmo \ref{alg:SeudoProcesoGenImagen} se presenta el pseudocódigo para generar una imagen describiendo las distintas etapas. En una primera etapa se cargan los datos de la escena y se inicializan las estructuras de datos. En el primer paso de la etapa de preprocesamiento se carga la escena desde archivo. Luego, se construye la grilla de la subdivisión espacial uniforme a partir de las primitivas cargadas en el paso anterior. En el último paso se construyen todos los rayos primarios a partir de los datos de la escena y de la resolución de la imagen a generar. La construcción de rayos se realiza en la GPU, paralelizando el cálculo de cada uno de ellos.
+El algoritmo de \emph{ray tracing} de Whitted requiere como entrada una escena, la cual será renderizada y posee varias etapas. En el Algoritmo \ref{alg:SeudoProcesoGenImagen} se presenta el pseudo-código para generar una imagen describiendo las distintas etapas. En una primera etapa se cargan los datos de la escena y se inicializan las estructuras de datos. En el primer paso de la etapa de preprocesamiento se carga la escena desde archivo. Luego, se construye la grilla de la sub-división espacial uniforme a partir de las primitivas cargadas en el paso anterior. En el último paso se construyen todos los rayos primarios a partir de los datos de la escena y de la resolución de la imagen a generar. La construcción de rayos se realiza en la GPU, paralelizando el cálculo de cada uno de ellos.
 
 \begin{algorithm}
-    \caption{Pseudocódigo del proceso para la generación de imagen.}
+    \caption{Pseudo-código del proceso para la generación de imagen.}
     \label{alg:SeudoProcesoGenImagen}
     \begin{algorithmic}
         \State $e$ : Escena;
@@ -37,15 +37,15 @@ El algoritmo de Raytracing de Whitted requiere como entrada una escena, la cual 
 \begin{figure}
     \centering
         \includegraphics[width=0.8\textwidth]{./Capitulo4/ARQ_RT_C}
-    \caption{Arquitectura del Raytracing implementado sobre GPU.}
+    \caption{Arquitectura del \emph{ray tracing} implementado sobre GPU.}
     \label{fig:ArqRayTracingGPU}
 \end{figure}
 
-En primer término se definió una arquitectura genérica para la solución, en la Figura \ref{fig:ArqRayTracingGPU} se muestra un diagrama de arquitectura de la solución implementada. En lo que resta de la sección se detallan las etapas implementadas, se profundiza en las distintas versiones que se desarrollaron, además, se explican las etapas resueltas con otras herramientas.
+En primer término se definió una arquitectura genérica para la solución, en la Figura \ref{fig:ArqRayTracingGPU} se muestra un diagrama de la arquitectura de la solución implementada. En lo que resta de la sección se detallan las etapas implementadas, se profundiza en las distintas versiones que se desarrollaron, además, se explican las etapas resueltas con otras herramientas.
 
-Los componentes involucrados en la etapa de preprocesamiento son: ``\emph{OBJ Loader}'', ``Cargador Escena'' y ``Grilla Uniforme''. El componente ``\emph{OBJ Loader}'' es el encargado de leer el archivo que especifica la escena y los materiales utilizados en la misma. El componente ``Cargador Escena'' que utiliza el ``\emph{OBJ Loader}'' fue implementado en el marco de este proyecto. Este componente tiene su propia estructura de datos para el almacenamiento de la escena, debido a esto se encarga de inicializar su estructura a partir de los datos leídos. Además se encarga de la construcción de la subdivisión espacial uniforme. La división espacial se genera utilizando el componente ``Grilla Uniforme'', esta parte del sistema construye la grilla a partir de la lista de objetos que contiene el encargado de inicializar la estructura de datos de la escena. Por último, el componente ``Raytracing'' es el encargado de calcular los rayos primarios utilizado la GPU.
+Los componentes involucrados en la etapa de preprocesamiento son: ``\emph{OBJ Loader}'', ``Cargador Escena'' y ``Grilla Uniforme''. El componente ``\emph{OBJ Loader}'' es el encargado de leer el archivo que especifica la escena y los materiales utilizados en la misma. El componente ``Cargador Escena'' que utiliza el ``\emph{OBJ Loader}'' fue implementado en el marco de este proyecto. Este componente tiene su propia estructura de datos para el almacenamiento de la escena, debido a esto se encarga de inicializar su estructura a partir de los datos leídos. Además se encarga de la construcción de la sub-división espacial uniforme. La división espacial se genera utilizando el componente ``Grilla Uniforme'', esta parte del sistema construye la grilla a partir de la lista de objetos que contiene el encargado de inicializar la estructura de datos de la escena. Por último, el componente ``Raytracing'' es el encargado de calcular los rayos primarios utilizado la GPU.
 
-En la segunda etapa del proceso de generación de imagen se calcula el color de cada pixel mediante el algoritmo de Raytracing. Esta etapa se realiza enteramente a nivel de GPU. Hablando en términos de la arquitectura, el componente ``Raytracing'' es el encargado de renderizar la imagen. Dentro de este se implementaron los algoritmos que componen el núcleo del raytracing, como por ejemplo el algoritmo de recorrida de un rayo dentro de la subdivisión espacial uniforme, el algoritmo de intersección rayo-triángulo, etc.
+En la segunda etapa del proceso de generación de imagen se calcula el color de cada píxel mediante el algoritmo de \emph{ray tracing}. Esta etapa se realiza enteramente a nivel de GPU. Hablando en términos de la arquitectura, el componente ``Raytracing'' es el encargado de renderizar la imagen. Dentro de este se implementaron los algoritmos que componen el núcleo del \emph{ray tracing}, como por ejemplo el algoritmo de recorrida de un rayo dentro de la sub-división espacial uniforme, el algoritmo de intersección rayo-triángulo, etc.
 
 En la última etapa se presenta en pantalla la imagen que surge como resultado de la etapa anterior. Desde el punto de vista de la arquitectura, el componente ``Raytracing'' es el encargado de mostrar la imagen generada utilizando la librería externa SDL (Simple Directmedia Layer) \cite{SDLLibrarySite}.
 
@@ -55,16 +55,18 @@ A continuación se presentan los aspectos más relevantes del diseño de la solució
 
 En este trabajo la escena es cargada desde un archivo de texto usando exclusivamente la CPU. El formato de este archivo esta basado en el Wavefront OBJ version 3.0 \cite{OBJFileFormat}.
 
-Los datos de la escena son cargados en memoria mediante un cargador implementado por Micah Taylor \cite{FuenteCargadorOBJ} llamado \emph{OBJ Loader}. El \emph{OBJ Loader} es capaz de interpretar el formato OBJ completamente, pero también es capaz de leer otros datos que no son parte del estándar de Wavefront, pero que son muy útiles para el algoritmo de Raytracing. Las características extras soportadas por el \emph{OBJ Loader} y que extienden el formato OBJ son:
+Los datos de la escena son cargados en memoria mediante un cargador implementado por Micah Taylor \cite{FuenteCargadorOBJ} llamado \emph{OBJ Loader}. El \emph{OBJ Loader} es capaz de interpretar el formato OBJ completamente, pero también es capaz de leer otros datos que no son parte del estándar de Wavefront, pero que son muy útiles para el algoritmo de \emph{ray tracing}. Las características extras soportadas por el \emph{OBJ Loader} y que extienden el formato OBJ son:
 \begin{itemize}
-    \item soporte de nuevas primitivas, por ejemplo plano.
+    \item soporte de nuevas primitivas, por ejemplo planos.
     \item soporte de elementos extra, como por ejemplo luces puntuales y cámaras.
     \item soporte de propiedades de material avanzadas, como por ejemplo el coeficiente de reflexión y el de transmisión de un material.
 \end{itemize}
 
 El \emph{OBJ Loader} tiene su propia estructura de datos para almacenar la escena en memoria, pero en la propuesta implementada en este proyecto son utilizadas temporalmente. Después de cargar la escena con el \emph{OBJ Loader}, esta se almacena en una estructura definida especialmente. De esta manera se desacopla el resto del algoritmo de la etapa de carga, lo cual permite cambiar fácilmente la herramienta de carga de la escena.
 
-En la etapa de preprocesamiento se necesitan diferentes parámetros. La resolución de la grilla de aceleración, así como otros parámetros del algoritmo de raytracing se definen mediante el uso de un archivo de configuración. Se tomó la decisión de utilizar un archivo de configuración ya que para las pruebas de rendimiento es interesante cambiar los valores de los parámetros más importantes de cada algoritmo y no tener que re-compilar el código fuente con cada cambio. La Figura \ref{fig:EjemploArchivoConfig} se muestra una posible configuración del algoritmo.
+En la etapa de preprocesamiento se necesitan diferentes parámetros. La resolución de la grilla de aceleración, así como otros parámetros del algoritmo de \emph{ray tracing} se definen mediante el uso de un archivo de configuración. Se tomó la decisión de utilizar un archivo de configuración ya que para las pruebas de rendimiento es interesante cambiar los valores de los parámetros más importantes de cada algoritmo y no tener que re-compilar el código fuente con cada cambio.
+
+En el archivo además del tamaño de la sub-división espacial uniforme, se debe indicar el tamaño de la partición en cada eje de coordenadas, la resolución de la imagen (en píxeles) que genera el algoritmo de \emph{ray tracing}, valores para el cero y para el infinito que usa el algoritmo (el ajuste del cero permite solucionar problemas de errores numéricos mientras que el segundo se usa en algoritmos que necesitan definir una distancia ``infinita''). Otro parámetro necesario para el algoritmo de \emph{ray tracing} es la profundidad máxima considerada por el algoritmo para cada árbol de rayos. Por último, se debe especificar la dimensión de los bloques de hilos de ejecución. La Figura \ref{fig:EjemploArchivoConfig} se muestra una posible configuración del algoritmo.
 
 \begin{figure}[H]
     \begin{center}
@@ -86,11 +88,10 @@ ESCENA=../escenas/afrodita.obj
 \label{fig:EjemploArchivoConfig}
 \end{figure}
 
-En el archivo además del tamaño de la subdivisión espacial uniforme, se debe indicar el tamaño de la partición en cada eje de coordenadas, la resolución de la imagen (en pixeles) que genera el algoritmo de raytracing, valores para el cero y para el infinito que usa el algoritmo (el ajuste del cero permite solucionar problemas de errores numéricos mientras que el segundo se usa en algoritmos que necesitan definir una distancia ``infinita''). Otro parámetro necesario para el algoritmo de raytracing es la profundidad máxima considerada por el algoritmo para cada árbol de rayos. Por último, se debe especificar la dimensión de los bloques de hilos de ejecución.
 
 \subsection{Intersección}
 
-En este proyecto se decidió acelerar el algoritmo de Raytracing por medio de disminuir el tiempo de ejecución que toman las intersecciones rayo-objeto, pues estas consumen más del 90\% del tiempo de generación de imagen \cite{TesisEstructuras}. En este sentido se atacaron los puntos críticos del proceso de intersección rayo-escena: implementar un algoritmo eficiente de intersección rayo-primitiva y reducir la cantidad de intersecciones rayo-primitiva que se prueban por cada rayo primario.
+En este proyecto se decidió acelerar el algoritmo de \emph{ray tracing} por medio de disminuir el tiempo de ejecución que toman las intersecciones rayo-objeto, pues estas consumen más del 90\% del tiempo de generación de imagen \cite{TesisEstructuras}. En este sentido se atacaron los puntos críticos del proceso de intersección rayo-escena, lo que implicó implementar un algoritmo eficiente de intersección rayo-primitiva y reducir la cantidad de intersecciones rayo-primitiva que se prueban por cada rayo primario.
 
 El algoritmo de trazado de rayos implementado únicamente posee un tipo de primitiva, el triángulo, por lo tanto solo se debió escoger un método para la intersección rayo-triángulo. Se escogió únicamente el triángulo como primitiva de construcción de escenas porque es una primitiva sencilla, y a su vez permite construir cualquier objeto tridimensional usándola como base. Asimismo, al ser una primitiva básica su algoritmo de intersección con un rayo es simple, lo cual implica que se requieran pocas operaciones aritméticas para probar su intersección con un rayo. Además, es una primitiva ampliamente soportada por la mayoría de herramientas de modelado tridimensional, como \emph{3D Studio Max} \cite{3DSMAXWebSite}, \emph{Maya} \cite{MayaWebSite}, \emph{Blender} \cite{BlenderWebSite}, etc.
 
@@ -98,28 +99,28 @@ El método utilizado para verificar la intersección entre un rayo y un triángulo 
 
 \subsection{Aceleración espacial}
 
-A pesar de contar con un algoritmo de intersección eficiente es importante implementar una estrategia para no probar para cada rayo primario la intersección con todos los objetos de la escena. En la etapa de relevamiento se evaluaron tres estructuras de aceleración espacial: la subdivisión espacial uniforme, la subdivisión espacial adaptativa (utilizando Kd-trees) y la jerarquía de volúmenes envolventes (BVH), que se describen en el Capitulo \ref{cap:AceleracionRaytracing}.
+A pesar de contar con un algoritmo de intersección eficiente es importante implementar una estrategia para no probar para cada rayo primario la intersección con todos los objetos de la escena. En la etapa de relevamiento se evaluaron tres estructuras de aceleración espacial: la sub-división espacial uniforme, la sub-división espacial adaptativa (utilizando \emph{kd-tree}) y la jerarquía de volúmenes envolventes (BVH), que se describen en el Capítulo \ref{cap:AceleracionRaytracing}.
 
-La estrategia de aceleración espacial que se adopto en este proyecto fue la subdivisión espacial uniforme. El argumento de mayor peso para la elección de esta estructura fue la simplicidad de construcción y recorrida de la misma, lo cual resulta imprescindible para paralelizar los algoritmos usando una GPU.
+La estrategia de aceleración espacial que se adoptó en este proyecto fue la sub-división espacial uniforme. El argumento de mayor peso para la elección de esta estructura fue la simplicidad de construcción y recorrida de la misma, lo cual resulta imprescindible para paralelizar los algoritmos usando una GPU.
 
 \subsubsection{Construcción de la grilla}
 
 Para la construcción de la grilla se evaluaron dos métodos. Ambos métodos se implementaron exclusivamente en la CPU, aunque podrían ser acelerados ejecutándolos en la GPU.
 
-El primer algoritmo implementado fue la construcción por fuerza bruta. Como se muestra en el Algoritmo \ref{alg:SeudoConsGrillaBruto}, este método de construcción recorre todos los voxels de la grilla y para cada uno de ellos recorre todos los objetos de la escena para probar si hay intersección voxel-objeto. Este método es ineficiente porque por lo general se recorren muchos voxels innecesarios (que no tienen intersección con el objeto) por cada objeto de la escena.
+El primer algoritmo implementado fue la construcción por fuerza bruta. Como se muestra en el Algoritmo \ref{alg:SeudoConsGrillaBruto}, este método de construcción recorre todos las cajas de la grilla y para cada una de ellas recorre todos los objetos de la escena para probar si hay intersección caja-objeto. Este método es ineficiente porque por lo general se recorren muchas cajas innecesarias (que no tienen intersección con el objeto) por cada objeto de la escena.
 
-En el Algoritmo \ref{alg:SeudoConsGrillaOptimizado} se describe el segundo algoritmo de construcción. Este caso es un algoritmo optimizado donde se recorren todos los objetos de la escena y para cada uno ellos se calcula (en coordenadas de la grilla) una caja alineada a los ejes que lo envuelve. A partir de la caja se obtienen voxels candidatos a solaparse con el objeto. Para cada voxel candidato se prueba el solapamiento caja-objeto y si da positiva se agrega el objeto al voxel que dio origen a la caja. La optimización introducida con respecto al método mostrado en el Algoritmo \ref{alg:SeudoConsGrillaBruto} permite desechar una cantidad importante de voxels que no tienen intersección con el objeto. Excepto en el peor caso (cuando todos los objetos de la escena se solapan con todos los voxels de la grilla), el método optimizado es más eficiente que el original, ya que disminuye la cantidad de pruebas de intersección voxel-objeto.
+En el Algoritmo \ref{alg:SeudoConsGrillaOptimizado} se describe el segundo algoritmo de construcción. Este caso es un algoritmo optimizado donde se recorren todos los objetos de la escena y para cada uno ellos se calcula (en coordenadas de la grilla) un volumen alineado a los ejes que lo envuelve. A partir del volumen se obtienen cajas de la grilla candidatas a solaparse con el objeto. Para cada caja candidata se prueba el solapamiento caja-objeto y si da positiva se agrega el objeto a la caja de la grilla. La optimización introducida con respecto al método mostrado en el Algoritmo \ref{alg:SeudoConsGrillaBruto} permite desechar una cantidad importante de cajas que no tienen intersección con el objeto. Excepto en el peor caso (cuando todos los objetos de la escena se solapan con todos las cajas de la grilla), el método optimizado es más eficiente que el original, ya que disminuye la cantidad de pruebas de intersección caja-objeto.
 
 \begin{algorithm}
-    \caption{Pseudocódigo del algoritmo de fuerza bruta de construcción de la grilla uniforme.}
+    \caption{Pseudo-código del algoritmo de fuerza bruta de construcción de la grilla uniforme.}
     \label{alg:SeudoConsGrillaBruto}
     \begin{algorithmic}
-        \ForAll {voxel en grilla}
+        \ForAll {caja en grilla}
             \ForAll {obj en listaObjetos}
                 \State //En coordenadas de la grilla
                 \State bbObj = calcularBoundingBoxObjeto(obj);
-                \If{(voxel $\cap$ bbObj) $\neq$ $\emptyset$}
-                    \State agregarObjetoEnVoxel(voxel, obj);
+                \If{(caja $\cap$ bbObj) $\neq$ $\emptyset$}
+                    \State agregarObjetoEnCaja(caja, obj);
                 \EndIf
             \EndFor
         \EndFor
@@ -127,17 +128,17 @@ En el Algoritmo \ref{alg:SeudoConsGrillaOptimizado} se describe el segundo algor
 \end{algorithm}
 
 \begin{algorithm}
-    \caption{Pseudocódigo del algoritmo eficiente de construcción de la grilla uniforme.}
+    \caption{Pseudo-código del algoritmo eficiente de construcción de la grilla uniforme.}
     \label{alg:SeudoConsGrillaOptimizado}
     \begin{algorithmic}
         \ForAll {obj en listaObjetos}
             \State //En coordenadas de grilla
             \State bbObj = calcularBoundingBoxObjeto(obj);
-            \ForAll {voxel $\subset$ bbObj}
+            \ForAll {caja $\subset$ bbObj}
                 \State //En coordenadas de mundo
-                \State voxelMundo = transformarCoorMundo(voxel);
-                \If{boundingBoxOverlapObject(voxelMundo, obj)}
-                    \State agregarObjetoEnVoxel(voxel, obj);
+                \State cajaMundo = transformarCoorMundo(caja);
+                \If{boundingBoxOverlapObject(cajaMundo, obj)}
+                    \State agregarObjetoEnCaja(caja, obj);
                 \EndIf
             \EndFor
         \EndFor
@@ -146,55 +147,55 @@ En el Algoritmo \ref{alg:SeudoConsGrillaOptimizado} se describe el segundo algor
 
 \subsubsection{Recorrido de la grilla}
 
-El algoritmo para recorrer la grilla está basado en el algoritmo de renderizado de una línea en pantalla, que se implementa en las GPUs. El recorrido de un rayo a través de la grilla de subdivisión espacial genera una lista de voxels, estos voxels son los que el rayo atraviesa sucesivamente. El algoritmo se basa en incrementar de manera inteligente un punto a lo largo del rayo, con cada incremento se avanza al siguiente voxel realizando unas pocas sumas y evaluaciones de condición.
+El algoritmo para recorrer la grilla está basado en el algoritmo de renderizado de una línea en pantalla, que se implementa en las GPUs. El recorrido de un rayo a través de la grilla de sub-división espacial genera una lista de cajas, estas cajas son las que el rayo atraviesa sucesivamente. El algoritmo se basa en incrementar de manera inteligente un punto a lo largo del rayo, con cada incremento se avanza a la siguiente caja realizando unas pocas sumas y evaluaciones de condición.
 
-La implementación se realiza en 2 pasos, primero se computa el cálculo del voxel inicial y de los incrementos en cada una de las 3 direcciones para un rayo específico y por otra parte la manera en que se computa cada cambio de voxel. El voxel inicial se calcula de manera sencilla intersecando el rayo con el cubo que acota toda la escena que se utiliza para generar la grilla, con el punto de intersección se calcula cual es el voxel al que pertenece el punto. Para obtener el incremento se calcula la derivada en cada una de las 3 componentes, con esa derivada y el tamaño de los voxels en x, y, z se obtiene la distancia que debe recorrer el rayo para poder alcanzar el siguiente voxel, esta se calcula para cada una de las 3 componentes y se almacena en una variable, así como también se hace con las derivadas.
+La implementación se realiza en 2 pasos, primero se computa el cálculo de la caja inicial y de los incrementos en cada una de las 3 direcciones para un rayo específico y por otra parte la manera en que se computa cada cambio de caja. La caja inicial se calcula de manera sencilla intersecando el rayo con el volumen que acota a la escena que se utiliza para generar la grilla, con el punto de intersección se calcula cual es la caja de la grilla al que pertenece el punto. Para obtener el incremento se calcula la derivada en cada una de las 3 componentes, con esa derivada y el tamaño de las cajas de la grilla en x, y, z se obtiene la distancia que debe recorrer el rayo para poder alcanzar la siguiente, esta se calcula para cada una de las 3 componentes y se almacena en una variable, así como también se hace con las derivadas.
 
-En el Algoritmo \ref{alg:SeudoSiguinteVoxelGrilla} se muestra la forma en que se calcula el siguiente voxel. Este cálculo está basado en la distancia que tiene que recorrer el rayo desde su origen hasta el siguiente punto de intersección. Se tienen tres distancias que debe recorrer el rayo para pasar al siguiente voxel en el eje X, para pasar al siguiente voxel en el eje Y y para pasar al siguiente voxel en el eje Z. La mínima de estas distancias determina cual de los tres incrementos es el que hay que realizar, el voxel que esté más cerca es el siguiente, por lo tanto hay que incrementar 1 en la dirección determinada por dicho mínimo.
+En el Algoritmo \ref{alg:SeudoSiguinteVoxelGrilla} se muestra la forma en que se calcula la siguiente caja. Este cálculo está basado en la distancia que tiene que recorrer el rayo desde su origen hasta el siguiente punto de intersección. Se tienen tres distancias que debe recorrer el rayo para pasar a la siguiente caja en el eje X, para pasar a la siguiente caja en el eje Y y para pasar a la siguiente caja en el eje Z. La mínima de estas distancias determina cual de los tres incrementos es el que hay que realizar, la caja que esté más cerca es la siguiente, por lo tanto hay que incrementar 1 en la dirección determinada por dicho mínimo.
 
 \begin{algorithm}[H]
-    \caption{Pseudocódigo del algoritmo para avanzar en los voxels.}
+    \caption{Pseudo-código del algoritmo para avanzar en las cajas de la grilla.}
     \label{alg:SeudoSiguinteVoxelGrilla}
     \begin{algorithmic}
         \If{(Minimo(DX, DY, DZ) == DX)}
             \State DX = DX + incrementoX;
-            \State VoxelActualX = VoxelActualX + signo(incrementoX) * 1;
+            \State CajaActualX = CajaActualX + signo(incrementoX) * 1;
         \EndIf
         \If{(Minimo(DX, DY, DZ) == DY)}
             \State DY = DY + incrementoY;
-            \State VoxelActualY = VoxelActualY + signo(incrementoY) * 1;
+            \State CajaActualY = CajaActualY + signo(incrementoY) * 1;
         \EndIf
         \If{(Minimo(DX, DY, DZ) == DZ)}
             \State DZ = DZ + incrementoZ;
-            \State VoxelActualZ = VoxelActualZ + signo(incrementoZ) * 1;
+            \State CajaActualZ = CajaActualZ + signo(incrementoZ) * 1;
         \EndIf
     \end{algorithmic}
 \end{algorithm}
 
-\subsection{Núcleo de Raytracing sobre GPUs}
+\subsection{Núcleo de \emph{ray tracing} sobre GPUs}
 
-Considerando la arquitectura del sistema, el núcleo principal del Raytracing para GPU se encuentra implementado dentro del componente ``Raytracing''. Para lograr que el algoritmo tenga un buen rendimiento es necesario utilizar adecuadamente la jerarquía de memoria de la GPU. Los datos más utilizados por el algoritmo, como por ejemplo la lista de objetos de la escena o los voxeles de la subdivisión espacial, deben estar almacenados en un tipo de memoria que tenga tiempo de lectura bajo, y pudiendo ser de solo lectura, ya que esta información es frecuentemente accedida y nunca debe ser actualizada. Es por ello que la lista de triángulos y sus normales, las luces, los voxeles de la grilla de subdivisión espacial y la lista de materiales se copian a la memoria de textura de la GPU. Otra información como los datos de la cámara, la cantidad de luces, la dimensión de la grilla se copian a la memoria constante de la GPU, que también es de solo lectura. La lectura en los dos tipos de memoria mencionados es mucho más rápida que una lectura en memoria global.
+Considerando la arquitectura del sistema, el núcleo principal del \emph{ray tracing} para GPU se encuentra implementado dentro del componente ``Raytracing''. Para lograr que el algoritmo tenga un buen rendimiento es necesario utilizar adecuadamente la jerarquía de memoria de la GPU. Los datos más utilizados por el algoritmo, como por ejemplo la lista de objetos de la escena o las cajas de la sub-división espacial, deben estar almacenados en un tipo de memoria que tenga tiempo de lectura bajo, y pudiendo ser de solo lectura, ya que esta información es frecuentemente accedida y nunca debe ser actualizada. Es por ello que la lista de triángulos y sus normales, las luces, las cajas de la grilla de sub-división espacial y la lista de materiales se copian a la memoria de textura de la GPU. Otra información como los datos de la cámara, la cantidad de luces, la dimensión de la grilla se copian a la memoria constante de la GPU, que también es de solo lectura. La lectura en los dos tipos de memoria mencionados es mucho más rápida que una lectura en memoria global.
 
 El uso de la jerarquía de memoria que provee CUDA afecta directamente a la estructura de datos que almacena la escena. Por ejemplo, la lista de triángulos de la escena ocupa una cantidad grande de memoria y al cargarla desde archivo insume un tiempo de ejecución considerable. Toma prácticamente el mismo tiempo transformar toda la lista de triángulos desde el formato en que esta almacenada hacia el formato que requiere CUDA para cargarla en memoria de textura. Es por esto que se decidió almacenarla directamente en el formato que debe tener para copiarla a memoria de la GPU (ver Apéndice \ref{sec:ApendiceEstructurasDatos}).
 
 En la memoria de textura solo se pueden copiar vectores de dos o cuatro elementos, debido a esto cada vértice de triángulo se almacena como un vector de cuatro componentes, desperdiciando una componente (4 bytes) por cada vértice. En algunos casos se aprovecha la memoria de la cuarta componente, por ejemplo el identificador de material se guarda en la cuarta componente del primer vértice de cada triángulo. De todas formas para usar la jerarquía de memoria y mejorar el tiempo de ejecución del algoritmo se pierde la generalidad en las estructuras de datos y la legibilidad del código fuente.
 
-Una vez copiados todos los datos de entrada del algoritmo de Raytracing a la GPU, se procede a la invocación del \emph{kernel} encargado de calcular los rayos primarios. Como se muestra en la Figura \ref{fig:DiagramaRTGPU}, los datos necesarios para calcular los rayos primarios son: el plano de vista, la cámara y la resolución de la imagen a renderizar. Toda esta información se encuentra en memoria constante y puede ser accedida en cualquier instante del tiempo de vida de la aplicación CUDA. Es importante resaltar que la invocación al \emph{kernel} que calcula rayos se hace desde la CPU y cuando este finaliza su procesamiento retorna nuevamente a la CPU.
+Una vez copiados todos los datos de entrada del algoritmo de \emph{ray tracing} a la GPU, se procede a la invocación del \emph{kernel} encargado de calcular los rayos primarios. Como se muestra en la Figura \ref{fig:DiagramaRTGPU}, los datos necesarios para calcular los rayos primarios son: el plano de vista, la cámara y la resolución de la imagen a renderizar. Toda esta información se encuentra en memoria constante y puede ser accedida en cualquier instante del tiempo de vida de la aplicación CUDA. Es importante resaltar que la invocación al \emph{kernel} que calcula rayos se hace desde la CPU y cuando este finaliza su procesamiento retorna nuevamente a la CPU.
 
-Los rayos primarios son datos de entrada para el \emph{kernel} encargado de calcular el color de cada pixel. Inmediatamente después que se tienen calculados los rayos primarios, se invoca el \emph{kernel} (desde la CPU) que genera la imagen. Dentro de este se encuentra implementado el corazón del algoritmo de raytracing. Los datos de entrada necesarios para calcular el color de cada pixel se muestran en la Figura \ref{fig:DiagramaRTGPU} y son leídos desde memoria de textura, cuyo tiempo de vida es igual al de la aplicación CUDA.
+Los rayos primarios son datos de entrada para el \emph{kernel} encargado de calcular el color de cada píxel. Inmediatamente después que se tienen calculados los rayos primarios, se invoca el \emph{kernel} (desde la CPU) que genera la imagen. Dentro de este se encuentra implementado el corazón del algoritmo de \emph{ray tracing}. Los datos de entrada necesarios para calcular el color de cada píxel se muestran en la Figura \ref{fig:DiagramaRTGPU} y son leídos desde memoria de textura, cuyo tiempo de vida es igual al de la aplicación CUDA.
 
-El \emph{kernel} principal es invocado según una división en parches (conjunto de pixeles) de la imagen a generar, tal como se detalla en la Sección \ref{sec:ParalelizacionAlgoritmo}. De esta forma, cada parche es asociado con un bloque de ejecución de CUDA y la cantidad de hilos que ejecutan el procedimiento de cálculo de color es igual a la cantidad de pixeles. Cada uno de los rayos lanzados recorrerá la estructura de aceleración espacial, siguiendo los reflejos y refracciones. Al finalizar esta ejecución es que se realiza la copia de los datos generados en la GPU nuevamente a la CPU para ser mostrados en pantalla.
+El \emph{kernel} principal es invocado según una división en parches (conjunto de píxeles) de la imagen a generar, tal como se detalla en la Sección \ref{sec:ParalelizacionAlgoritmo}. De esta forma, cada parche es asociado con un bloque de ejecución de CUDA y la cantidad de hilos que ejecutan el procedimiento de cálculo de color es igual a la cantidad de píxeles. Cada uno de los rayos lanzados recorrerá la estructura de aceleración espacial, siguiendo los reflejos y refracciones. Al finalizar esta ejecución es que se realiza la copia de los datos generados en la GPU nuevamente a la CPU para ser mostrados en pantalla.
 
 \begin{figure}[H]
     \centering
         \includegraphics[width=0.8\textwidth]{./Capitulo4/diagramaRT_GPU}
-    \caption{Estructura del algoritmo de raytracing implementado en CUDA.}
+    \caption{Estructura del algoritmo de \emph{ray tracing} implementado en CUDA.}
     \label{fig:DiagramaRTGPU}
 \end{figure}
 
 \subsection{Paralelización del algoritmo}\label{sec:ParalelizacionAlgoritmo}
 
-Para resolver el problema en términos del modelo de programación usado por CUDA se hizo una descomposición en sub-problemas, dividiendo la imagen a renderizar. La imagen se divide usando una grilla uniforme de dos dimensiones, donde cada celda de la grilla tiene la misma cantidad de pixeles. En la Figura \ref{fig:subfigDivisionImagen:a} se muestra una posible división de la imagen. En este ejemplo la imagen se divide en $n \times m$ celdas, quedando así cada celda con $\frac{R_{x}}{n}\times\frac{R_{y}}{m}$ pixeles. En la Figura \ref{fig:subfigDivisionImagen:b} se muestra en detalle la celda definida por los intervalos $[X_{i},X_{i+1}]$ y $[Y_{j},Y_{j+1}]$, la cual contiene una pequeña parte de los pixeles de la imagen. Cada celda de la grilla se corresponde directamente con un bloque de hilos de ejecución de CUDA, es decir cada división de la imagen es procesada por un bloque de CUDA diferente. Además, como cada pixel de la imagen es procesado por un hilo de ejecución diferente, la cantidad de hilos por bloque es igual a la cantidad de pixeles que contiene cada división. Es por esta razón que la partición queda totalmente establecida cuando se fija la cantidad de hilos de ejecución por bloque (en el archivo de configuración), además de la resolución de la imagen a renderizar. Si se tiene una resolución de imagen de $640\times480$ pixeles y el tamaño de los bloques es de $16\times8$ hilos la imagen es dividida en una grilla de $40\times60$ celdas.
+Para resolver el problema en términos del modelo de programación usado por CUDA se hizo una descomposición en sub-problemas, dividiendo la imagen a renderizar. La imagen se divide usando una grilla uniforme de dos dimensiones, donde cada celda de la grilla tiene la misma cantidad de píxeles. En la Figura \ref{fig:subfigDivisionImagen:a} se muestra una posible división de la imagen. En este ejemplo la imagen se divide en $n \times m$ celdas, quedando así cada celda con $\frac{R_{x}}{n}\times\frac{R_{y}}{m}$ píxeles. En la Figura \ref{fig:subfigDivisionImagen:b} se muestra en detalle la celda definida por los intervalos $[X_{i},X_{i+1}]$ y $[Y_{j},Y_{j+1}]$, la cual contiene una pequeña parte de los píxeles de la imagen. Cada celda de la grilla se corresponde directamente con un bloque de hilos de ejecución de CUDA, es decir cada división de la imagen es procesada por un bloque de CUDA diferente. Además, como cada píxel de la imagen es procesado por un hilo de ejecución diferente, la cantidad de hilos por bloque es igual a la cantidad de píxeles que contiene cada división. Es por esta razón que la partición queda totalmente establecida cuando se fija la cantidad de hilos de ejecución por bloque (en el archivo de configuración), además de la resolución de la imagen a renderizar. Si se tiene una resolución de imagen de $640\times480$ píxeles y el tamaño de los bloques es de $16\times8$ hilos la imagen quedará dividida en una grilla de $40\times60$ celdas.
 
 \begin{figure}[H]
     \centering
@@ -204,18 +205,18 @@ Para resolver el problema en términos del modelo de programación usado por CUDA 
     \subfigure[]{
         \label{fig:subfigDivisionImagen:b} %% label for second subfigure
         \includegraphics[width=0.45\textwidth]{./Capitulo4/divisionBloque}}
-    \caption{Subdivision de la imagen para lograr paralelismo.}
+    \caption{Sub-division de la imagen para lograr paralelismo.}
     \label{fig:subfigDivisionImagen} %% label for entire figure
 \end{figure}
 
-Mediante esta forma de descomponer el problema el raytracing para CUDA puede escalar fácilmente en el número de procesadores de la GPU sin necesidad de recompilar su código fuente. Además mediante el archivo de configuración es posible cambiar la partición de la imagen a renderizar de manera de optimizarla para cualquier GPU.
+Mediante esta forma de descomponer el problema el \emph{ray tracing} para CUDA puede escalar fácilmente en el número de procesadores de la GPU sin necesidad de recompilar su código fuente. Además mediante el archivo de configuración es posible cambiar la partición de la imagen a renderizar de manera de optimizarla para cualquier GPU.
 
-La cantidad máxima de hilos de ejecución por bloque es $512$, por consiguiente $512$ es la cantidad máxima de pixels que pueden ser procesados por un mismo bloque, limite impuesto por CUDA (versión 2.3). También hay que tener en cuenta que la cantidad de hilos por bloque puede verse limitada por la cantidad de registros que consuma cada hilo, ya que por ejemplo la cantidad máxima de registros por bloque es $8192$ (CUDA versión 2.3).
+La cantidad máxima de hilos de ejecución por bloque es $512$, por consiguiente $512$ es la cantidad máxima de píxeles que pueden ser procesados por un mismo bloque, límite impuesto por CUDA (versión 2.3). También hay que tener en cuenta que la cantidad de hilos por bloque puede verse limitada por la cantidad de registros que consuma cada hilo, ya que por ejemplo la cantidad máxima de registros por bloque es $8192$ (CUDA versión 2.3).
 
 
 \subsection{Eliminación de la recursión}
 
-El algoritmo de Raytracing es un algoritmo inherentemente recursivo, esto es una limitación a la hora de hacer que se ejecute en la GPU dado que la ejecución debe ser secuencial, ya que CUDA no tiene soporte para recursión. Este algoritmo puede analizarse como una recorrida en un árbol binario (el árbol de rayos originado por un rayo primario y sus sucesivos rebotes debido a los fenómenos de reflexión y refracción).
+El algoritmo de \emph{Ray tracing} es un algoritmo inherentemente recursivo, esto es una limitación a la hora de hacer que se ejecute en la GPU dado que la ejecución debe ser secuencial, ya que CUDA no tiene soporte para recursión. Este algoritmo puede analizarse como una recorrida en un árbol binario (el árbol de rayos originado por un rayo primario y sus sucesivos rebotes debido a los fenómenos de reflexión y refracción).
 
 Para resolver este problema se evaluaron dos opciones, la primera consiste en implementar una pila la cual sirva de apoyo para la recorrida del árbol binario. La segunda consiste en simplificar el árbol de manera que degenere en una lista, esta forma de simplificar el árbol implica una pre-condición sobre la escena de entrada, que en la escena no existan objetos que reflejen y transmitan la luz al mismo tiempo.
 
@@ -232,11 +233,11 @@ Entre los campos más importantes de la estructura utilizada para almacenar la es
 \begin{itemize}
     \item \emph{dimension}: almacena la dimensión de la grilla que divide el espacio de la escena.
     \item \emph{bbEscena}: almacena una caja alineada a los ejes de coordenadas que contiene a toda la escena.
-    \item \emph{voxels}: array de punteros a entradas de \emph{listasGrid}. Cada entrada de \emph{voxels} se corresponde con un voxel de la escena, donde se almacena un puntero a la lista de objetos que contiene el voxel.
+    \item \emph{voxels}: array de punteros a entradas de \emph{listasGrid}. Cada entrada de \emph{voxels} se corresponde con una caja de la grilla, donde se almacena un puntero a la lista de objetos que contiene la caja.
     \item \emph{listasGrid}: array de listas de punteros a objetos.
 \end{itemize}
 
-Se puede ver un ejemplo esquemático de la estructura \emph{UniformGrid} en la Figura \ref{fig:exampleEstructuraUGrid}. En este ejemplo se considera una escena con seis objetos, los cuales están completamente contenidos es una caja alineada a los ejes definida por los puntos $min = (-10, -10, -10)$ y $max = (10, 10, 10)$. Al aplicarle una subdivisión espacial uniforme con dimensiones $2\times2\times3$ a la escena se generan $12$ voxels, tal como se muestra en el vector ``voxels''. Cada objeto de la escena se encuentra contenido en una o más divisiones, por lo tanto por cada división se tiene una lista de objetos contenidos. El vector ``listasGrid'' contiene las listas de todos los voxels de la subdivisión y mediante las entradas del vector ``voxels'' se accede a cada una de ellas. El caso especial en que la lista de objetos de un voxel es vacía se marca con un valor especial en el vector ``voxels''.
+Se puede ver un ejemplo esquemático de la estructura \emph{UniformGrid} en la Figura \ref{fig:exampleEstructuraUGrid}. En este ejemplo se considera una escena con seis objetos, los cuales están completamente contenidos es una caja alineada a los ejes definida por los puntos $min = (-10, -10, -10)$ y $max = (10, 10, 10)$. Al aplicarle una sub-división espacial uniforme con dimensiones $2\times2\times3$ a la escena se generan $12$ cajas, tal como se muestra en el vector ``voxels''. Cada objeto de la escena se encuentra contenido en una o más divisiones, por lo tanto por cada división se tiene una lista de objetos contenidos. El vector ``listasGrid'' contiene las listas de todas las cajas de la sub-división y mediante las entradas del vector ``voxels'' se accede a cada una de ellas. El caso especial en que la lista de objetos de una caja es vacía se marca con un valor especial en el vector ``voxels''.
 
 \begin{figure}[H]
   \centering
@@ -253,7 +254,7 @@ Los campos más importantes de la segunda versión de la estructura son los mismos
 Otra diferencia importante entre la primera y la segunda versión es que en la segunda algunos tipos de datos se modificaron para adaptarlos a los tipos de datos soportados por la jerarquía de memoria de CUDA. Por ejemplo, en la primera versión la lista de luces es una lista de \emph{float3}, donde los primeros dos definen la posición y el color de la primer luz respectivamente, los segundos dos la posición y el color de la segunda y así sucesivamente. Como la lista de luces se carga en memoria de textura y la memoria de textura no permite cargar vectores de tres componentes, en la segunda versión se optó por transformar la colección de luces en una lista de \emph{float4}, donde cada propiedad es definida utilizando únicamente las primeras tres componentes.
 
 \section{Versiones implementadas}
-El desarrollo del Raytracing para CUDA fue iterativo-incremental, desarrollando tres grandes versiones. En forma general la primera versión implementa el Raytracing de Whitted completo, la segunda versión esta marcada por la introducción de mejoras que tienen que ver con la optimización en la explotación de la jerarquía de memoria de la GPU. Por último, la tercera está señalada por la mejora del algoritmo de cálculo de la intersección rayo-triángulo.
+El desarrollo del \emph{ray tracing} para CUDA fue iterativo-incremental, desarrollando tres grandes versiones. En forma general la primera versión implementa el \emph{ray tracing} de Whitted completo, la segunda versión está marcada por la introducción de mejoras que tienen que ver con la optimización en la explotación de la jerarquía de memoria de la GPU. Por último, la tercera está señalada por la mejora del algoritmo de cálculo de la intersección rayo-triángulo.
 
 \subsection{Versión 1: RT-GPU}
 Las principales caracteristicas de esta versión son:
@@ -274,10 +275,10 @@ Las principales restricciones de la versión RT-GPU son:
 \end{itemize}
 
 \subsection{Versión 2: RT-GPU-JM}
-Esta versión presenta las mismas características que RT-GPU y elimina la restricción ``no explota al máximo la estructura de memoria de la GPU'', usando la jerarquía de memoria (memoria de textura y constante principalmente) para almacenar las estructuras de datos que representan la escena a procesar por el algoritmo.
+Esta versión presenta las mismas características que RT-GPU y elimina la restricción de ``no explota al máximo la estructura de memoria de la GPU'', usando la jerarquía de memoria para almacenar las estructuras de datos que representan la escena a procesar por el algoritmo.
 
 \subsection{Versión 3: RT-GPU-JM-IR}
 Esta versión presenta las mismas características que RT-GPU-JM y modifica el algoritmo de intersección rayo-triángulo para disminuir el tiempo de ejecución de cada test de intersección.
 
 \subsection{Versiones para CPU}
-Para cada versión desarrollada del Raytracing sobre GPU se implementó una versión similar en cuanto a las cualidades de optimización para ejecutarla sobre CPU. De esta manera se dispone de versiones de referencia sobre arquitecturas tradicionales para comparar el desempeño. 
+Para cada versión desarrollada del \emph{ray tracing} sobre GPU se im\-ple\-men\-tó una versión similar en cuanto a las cualidades de optimización para ejecutarla sobre CPU. De esta manera se dispone de versiones de referencia sobre arquitecturas tradicionales para comparar el desempeño. 
