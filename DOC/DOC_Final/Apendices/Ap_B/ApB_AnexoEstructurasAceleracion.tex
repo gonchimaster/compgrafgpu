@@ -2,7 +2,7 @@
 
 Este apéndice contiene la especificación de los algoritmos descriptos en el Capítulo 3 agregando información que puede ser útil para el lector. Los algoritmos y técnicas de este anexo no fueron implementados en el presente trabajo.
 
-\section{Particularidades del KD-Tree}
+\section{Particularidades de \emph{kd-tree}}
 
 La dificultad de construir esta estructura dado un volumen a dividir radica en escoger el lugar donde colocar el plano de corte. Thrane y Ole \cite{TesisEstructuras} usan una función de costo para evaluar en donde se coloca el plano. Esta se basa en que la probabilidad de que un rayo atraviese un nodo hijo es proporcional a la proporción entre el área de la superficie del nodo hijo y el área de la superficie del nodo padre. Luego de algunos refinamientos la función pasa a tener en cuenta también, lo que sucede cuando un objeto es cortado por el plano de corte. Esto es importante porque los objetos cortados se propagan a través de los dos volúmenes hijos y por lo tanto se incurre en un alto costo de procesamiento. La forma de escoger una posición para el plano de corte es evaluar la función de costo a lo largo de todos los ejes de las cajas que envuelven a los objetos de la escena. La posición con menos costo según la función es elegida para posicionar el plano. A modo de ejemplo se puede considerar la Figura \ref{fig:exFCKd-tree} donde se muestra el procedimiento para un solo eje, en el procedimiento real se deben considerar también los dos restantes \cite{TesisEstructuras}.
 
@@ -98,7 +98,7 @@ En el trabajo de Horn et al. \cite{Horn07} se presentan optimizaciones que puede
 \end{itemize}
 
 
-\section{Particularidades del BVH}
+\section{Particularidades de BVH}
 
 Antes de presentar las ideas para construir una estructura BVH es importante considerar que en la práctica, los volúmenes más usados para construir una BVH son los volúmenes envolventes alineados a los ejes de coordenadas (AABB). Los AABB pierden rendimiento porque no se ajustan perfectamente a los objetos, pero lo ganan por el lado de permitir un chequeo de intersección simple y rápido. También son muy buenas estructuras en términos de simplicidad de implementación \cite{TesisEstructuras}. Los dos enfoques de construcción que se presentan a continuación utilizan este tipo de volumen envolvente.
 

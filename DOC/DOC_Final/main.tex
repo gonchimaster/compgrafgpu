@@ -26,16 +26,15 @@
 
 \newcommand{\piRsquare}{\pi r^2}		% This is my own macro !!!
 
-\title{Documentación - ``Computación Gráfica sobre GPU''}
-\author{Gonzalo Ordeix, Santiago Cioli}
-\date{\today}
-
 \begin{document}
 
 \input{./../DOC_Implementacion/spanishAlgorithmic} % mi archivo de traducción
 \renewcommand{\tablename}{Tabla}
 
-\maketitle						% automatic title!
+\newcommand{\Keywords}[1]{\par\noindent
+{\small{\textbf{Palabras clave}}: #1}}
+
+\input{./Resumen/resumen.tex}
 
 \newpage
 \tableofcontents
