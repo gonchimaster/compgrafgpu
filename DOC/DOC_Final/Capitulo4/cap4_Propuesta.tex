@@ -64,9 +64,7 @@ Los datos de la escena son cargados en memoria mediante un cargador implementado
 
 El \emph{OBJ Loader} tiene su propia estructura de datos para almacenar la escena en memoria, pero en la propuesta implementada en este proyecto son utilizadas temporalmente. Después de cargar la escena con el \emph{OBJ Loader}, esta se almacena en una estructura definida especialmente. De esta manera se desacopla el resto del algoritmo de la etapa de carga, lo cual permite cambiar fácilmente la herramienta de carga de la escena.
 
-En la etapa de preprocesamiento se necesitan diferentes parámetros. La resolución de la grilla de aceleración, así como otros parámetros del algoritmo de \emph{ray tracing} se definen mediante el uso de un archivo de configuración. Se tomó la decisión de utilizar un archivo de configuración ya que para las pruebas de rendimiento es interesante cambiar los valores de los parámetros más importantes de cada algoritmo y no tener que re-compilar el código fuente con cada cambio.
-
-En el archivo además del tamaño de la sub-división espacial uniforme, se debe indicar el tamaño de la partición en cada eje de coordenadas, la resolución de la imagen (en píxeles) que genera el algoritmo de \emph{ray tracing}, valores para el cero y para el infinito que usa el algoritmo (el ajuste del cero permite solucionar problemas de errores numéricos mientras que el segundo se usa en algoritmos que necesitan definir una distancia ``infinita''). Otro parámetro necesario para el algoritmo de \emph{ray tracing} es la profundidad máxima considerada por el algoritmo para cada árbol de rayos. Por último, se debe especificar la dimensión de los bloques de hilos de ejecución. La Figura \ref{fig:EjemploArchivoConfig} se muestra una posible configuración del algoritmo.
+En la etapa de preprocesamiento se necesitan diferentes parámetros. La resolución de la grilla de aceleración, así como otros parámetros del algoritmo de \emph{ray tracing} se definen mediante el uso de un archivo de configuración. Se tomó la decisión de utilizar un archivo de configuración ya que para las pruebas de rendimiento es interesante cambiar los valores de los parámetros más importantes de cada algoritmo y no tener que re-compilar el código fuente con cada cambio. La Figura \ref{fig:EjemploArchivoConfig} muestra una posible configuración del algoritmo.
 
 \begin{figure}[H]
     \begin{center}
@@ -88,6 +86,7 @@ ESCENA=../escenas/afrodita.obj
 \label{fig:EjemploArchivoConfig}
 \end{figure}
 
+En el archivo además del tamaño de la sub-división espacial uniforme, se debe indicar el tamaño de la partición en cada eje de coordenadas, la resolución de la imagen (en píxeles) que genera el algoritmo de \emph{ray tracing}, valores para el cero y para el infinito que usa el algoritmo (el ajuste del cero permite solucionar problemas de errores numéricos mientras que el segundo se usa en algoritmos que necesitan definir una distancia ``infinita''). Otro parámetro necesario para el algoritmo de \emph{ray tracing} es la profundidad máxima considerada por el algoritmo para cada árbol de rayos. Por último, se debe especificar la dimensión de los bloques de hilos de ejecución.
 
 \subsection{Intersección}
 
