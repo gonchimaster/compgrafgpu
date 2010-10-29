@@ -1,4 +1,4 @@
-\documentclass[12pt]{report}
+\documentclass[a4paper,12pt,titlepage]{report}
 
 \usepackage[spanish,activeacute]{babel}
 \usepackage[fixlanguage]{babelbib}
@@ -34,26 +34,40 @@
 \newcommand{\Keywords}[1]{\par\noindent
 {\small{\textbf{Palabras clave}}: #1}}
 
+\pagestyle{empty}
+
 \input{./Portada/portada.tex}
+
+\clearpage\mbox{}\clearpage
 
 \input{./Resumen/resumen.tex}
 
+\clearpage\mbox{}\clearpage
+
 \newpage
+\pagestyle{plain}
+\setcounter{page}{1}
 \tableofcontents
 
+
 \include{./Capitulo1/cap1_Introduccion}
+\clearpage\mbox{}\clearpage
 \include{./Capitulo2/cap2_Problema}
+\clearpage\mbox{}\clearpage
 \include{./Capitulo3/cap3_RealTime}
 \include{./Capitulo4/cap4_Propuesta}
 \include{./Capitulo5/cap5_Experimentacion}
+\clearpage\mbox{}\clearpage
 \include{./Capitulo6/cap6_Concl_TF}
 
 \appendix
 
 \include{./Apendices/Ap_A/ApA_Esctructuras_datos}
+\clearpage\mbox{}\clearpage
 \include{./Apendices/Ap_B/ApB_AnexoEstructurasAceleracion}
+\clearpage\mbox{}\clearpage
 \include{./Apendices/Ap_C/ApC_Articulo_IEEE}
-
+\clearpage\mbox{}\clearpage
 \newpage
 \bibliography{./../bibliografia}
 \bibliographystyle{plain}
