@@ -71,9 +71,9 @@ Si se consideran todos los chequeos necesarios para generar una imagen utilizand
 Se han desarrollado técnicas para optimizar el tiempo que toman las intersecciones rayo-objeto, basadas en tratar de minimizar el número de intersecciones. A continuación se muestran las técnicas más importantes de este tipo según el trabajo de Thrane y Ole \cite{TesisEstructuras}.
 
 \subsection{Subdivisión espacial}
-En el método de sub-división espacial el volumen de la escena se divide en regiones. A cada región se le asigna una lista con todos los objetos que contiene, total o parcialmente. Estas listas se completan asignando a cada objeto la celda o las celdas que lo contienen. Esta técnica requiere un preproceso para crear la estructura de datos donde quedará registrada la información relativa al espacio que ocupan los objetos en la escena.
+En el método de sub-división espacial el volumen de la escena se divide en regiones. A cada región se le asigna una lista con todos los objetos que contiene, total o parcialmente. Estas listas se completan asignando a cada objeto la celda o las celdas que lo contienen. Esta técnica requiere un pre-proceso para crear la estructura de datos donde quedará registrada la información relativa al espacio que ocupan los objetos en la escena.
 
-El preproceso consiste en dividir el volumen total de la escena en pequeños volúmenes o cajas. La forma de definir estas cajas es lo que marca la diferencia entre las técnicas de sub-división espacial. Una vez que las cajas están definidas juegan el mismo papel en todas ellas.
+El pre-proceso consiste en dividir el volumen total de la escena en pequeños volúmenes o cajas. La forma de definir estas cajas es lo que marca la diferencia entre las técnicas de sub-división espacial. Una vez que las cajas están definidas juegan el mismo papel en todas ellas.
 
 La gran ventaja de esta técnica de sub-división es que solo los objetos asignados a las cajas atravesadas por los rayos deben ser probados para una posible intersección.
 
@@ -251,7 +251,7 @@ Para lograr que el algoritmo de \emph{ray tracing} sea interactivo se le deben a
 El artículo de Wald et al. describe la exploración dentro de las técnicas que buscan acelerar los algoritmos de \emph{ray tracing} de modo de intentar que se puedan ejecutar de manera interactiva. En dicha investigación realizan la implementación de un algoritmo de \emph{ray tracing} que ejecuta en una arquitectura multiprocesador. En la solución desarrollada se logró la interactividad, en gran medida porque la plataforma de ejecución consistió en una plataforma de gran poder de cómputo (SGI Origin 2000). Por otra parte se menciona que aún fuera de estas condiciones (usando PCs de bajo costo) es posible lograr que \emph{ray tracing} sea interactivo por tres características del algoritmo:
 \begin{itemize}
   \item escala bien en cientos de procesadores.
-  \item para escenas estáticas el tiempo de render de los frames (generación de cada cuadro de una animación) el orden del algoritmo es sub-lineal en la cantidad de objetos básicos en la escena.
+  \item para escenas estáticas, el orden del algoritmo de generación de cada cuadro de una animación es sub-lineal en la cantidad de objetos básicos en la escena.
   \item permite agregar una gran variedad de objetos básicos y efectos de sombreado programados por el usuario.
 \end{itemize}
 
