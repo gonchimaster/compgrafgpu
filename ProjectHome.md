@@ -1,0 +1,1 @@
+Computación Gráfica sobre GPU.
